@@ -6,10 +6,13 @@ Top-down, twin-stick. The hero has no levels — all progression lives in the gu
 ## Running
 
 1. Godot **4.4+** (written against 4.4–4.7 syntax). Renderer: Mobile (Vulkan); the web build falls back to Compatibility automatically.
-2. `Import` → pick `project.godot` → F5.
-3. Export: the `data/` and `lang/` folders (JSON) must end up in the build — if they don't, add `data/*, lang/*`
+2. **Music is not in the repository** (~150 MB). Download it once: `python tools/fetch_music.py` — it reads
+   `music/SOURCES.txt` and fetches every track from Wikimedia Commons (all public domain / CC0).
+   `--quality 0` re-encodes with ffmpeg to ~64 kbit/s for smaller builds. Without music the game just plays silently.
+3. `Import` → pick `project.godot` → F5.
+4. Export: the `data/` and `lang/` folders (JSON) must end up in the build — if they don't, add `data/*, lang/*`
    to "Filters to export non-resource files". Put the `Mods/` folder next to the exe (it is not packed into the build).
-4. Android: JDK 17 + Android SDK (`platform-tools`, `build-tools`, `platforms`), paths in Editor Settings → Export → Android,
+5. Android: JDK 17 + Android SDK (`platform-tools`, `build-tools`, `platforms`), paths in Editor Settings → Export → Android,
    and a release keystore in the Android preset (or export with "Export With Debug").
 
 On start there is a loading screen (`systems/warmup.gd`). It warms up everything once that would otherwise
