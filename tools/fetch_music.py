@@ -19,6 +19,7 @@ import shutil
 import subprocess
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -41,11 +42,27 @@ def read_sources():
     return out
 
 
+def with_retries(what, fn, tries=4):
+    """Network call with a few retries (hotspots and flaky DNS)."""
+    for n in range(tries):
+        try:
+            return fn()
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
+            if n == tries - 1:
+                raise
+            wait = 2 * (n + 1)
+            print(f"    {what}: {getattr(e, 'reason', e)} — retry in {wait} s")
+            time.sleep(wait)
+
+
 def get_json(params):
     url = API + "?" + urllib.parse.urlencode(params)
     req = urllib.request.Request(url, headers={"User-Agent": UA})
-    with urllib.request.urlopen(req, timeout=60) as r:
-        return json.load(r)
+
+    def call():
+        with urllib.request.urlopen(req, timeout=60) as r:
+            return json.load(r)
+    return with_retries("Commons API", call)
 
 
 def resolve(titles):
@@ -76,8 +93,11 @@ def resolve(titles):
 def download(url, dest):
     tmp = dest + ".part"
     req = urllib.request.Request(url, headers={"User-Agent": UA})
-    with urllib.request.urlopen(req, timeout=300) as r, open(tmp, "wb") as f:
-        shutil.copyfileobj(r, f, 1 << 20)
+
+    def call():
+        with urllib.request.urlopen(req, timeout=300) as r, open(tmp, "wb") as f:
+            shutil.copyfileobj(r, f, 1 << 20)
+    with_retries("download", call)
     os.replace(tmp, dest)
 
 
@@ -102,7 +122,12 @@ def main():
     print(f"{len(tracks)} tracks, {len(todo)} to download")
     if not todo:
         return
-    urls = resolve([t for _, t in todo])
+    try:
+        urls = resolve([t for _, t in todo])
+    except urllib.error.URLError as e:
+        sys.exit(f"\nCan't reach commons.wikimedia.org: {getattr(e, 'reason', e)}\n"
+                 "Check the internet connection / DNS (does https://commons.wikimedia.org open in a browser?)\n"
+                 "and run the script again — tracks that are already there are skipped.")
     failed = []
     for n, (path, title) in enumerate(todo, 1):
         url = urls.get(title)
