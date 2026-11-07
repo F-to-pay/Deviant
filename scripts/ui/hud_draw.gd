@@ -15,7 +15,7 @@ func _draw() -> void:
 	var main: Main = Game.main
 	if main == null or main.player == null:
 		return
-	var vp := get_viewport_rect().size
+	var vp := size     # область внутри отступов от краёв (UiFit), в единицах слоя
 	var p := main.player
 	var f := U.font()
 	var fb := U.font_bold()
@@ -51,7 +51,7 @@ func _draw() -> void:
 		U.draw_text(self, f, Vector2(12, vp.y - 12), U.t("FPS %d · enemies %d · projectiles %d") % [Engine.get_frames_per_second(),
 			main.enemies.size(), main.projectiles.count()], 13, Color(0.7, 1.0, 0.7), 3)
 	if hud.fade > 0.0:
-		draw_rect(Rect2(Vector2.ZERO, vp), Color(0, 0, 0, hud.fade))
+		draw_rect(Rect2(-position - Vector2(64, 64), get_viewport_rect().size + Vector2(128, 128)), Color(0, 0, 0, hud.fade))
 	if bool(Game.setting("show_fps")) and not Game.debug:
 		U.draw_text_r(self, f, Vector2(vp.x - 12, vp.y - 12), "FPS %d" % Engine.get_frames_per_second(), 14, Color(0.7, 1.0, 0.7), 3)
 	if hud.dead_screen:
@@ -193,7 +193,7 @@ func _draw_banner(vp: Vector2, fb: Font, f: Font) -> void:
 
 func _draw_death(vp: Vector2, f: Font, fb: Font) -> void:
 	var a := clampf(hud.death_t / 0.8, 0.0, 1.0)
-	draw_rect(Rect2(Vector2.ZERO, vp), Color(0.15, 0.0, 0.0, 0.7 * a))
+	draw_rect(Rect2(-position - Vector2(64, 64), get_viewport_rect().size + Vector2(128, 128)), Color(0.15, 0.0, 0.0, 0.7 * a))
 	U.draw_text_c(self, fb, Vector2(vp.x * 0.5, vp.y * 0.26), U.t(hud.death_title), 60, Color(1.0, 0.3, 0.25, a), 7)
 	var y := vp.y * 0.38
 	var lines: Array = [

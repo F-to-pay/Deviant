@@ -16,6 +16,14 @@ const DEFAULTS := {
 	"binds": "",         # переназначенные кнопки, JSON (InputSetup)
 	"touch_controls": "auto",  # экранные кнопки: auto (когда играешь пальцем) / on / off
 	"touch_scale": 1.0,  # размер экранных кнопок
+	"touch_static": false,    # неподвижные стики (иначе — где коснулся, там и стик)
+	"touch_tap_fire": false,  # стрельба по тапу в точку вместо правого стика
+	"auto_fire": false,       # автоогонь по видимым врагам (геймпад и сенсор)
+	"touch_layout": "",       # расположение и размер экранных кнопок, JSON (TouchControls)
+	"ui_scale": 1.0,          # размер интерфейса (UiFit)
+	"ui_margin_x": 0.0,       # отступ интерфейса от краёв экрана по бокам
+	"ui_margin_y": 0.0,       # ... сверху и снизу
+	"ui_safe_area": true,     # на телефоне — ещё и безопасная зона системы (вырез, скругления)
 }
 
 var rng := RandomNumberGenerator.new()

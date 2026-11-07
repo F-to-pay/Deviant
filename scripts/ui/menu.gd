@@ -34,6 +34,7 @@ var _listening := ""      # "действие:колонка", пока ждём
 var _listen_t := 0.0
 var _controls_status: Label
 var _touch_opt: Button
+var _refit_pending := false
 const LISTEN_TIME := 6.0
 
 ## Кнопки, которые страница справочника может попросить в "actions" (data/codex.json).
@@ -51,6 +52,7 @@ func _ready() -> void:
 	visible = false
 	Game.settings_changed.connect(_on_setting)
 	Game.main.controls.mode_changed.connect(_on_input_mode)
+	get_viewport().size_changed.connect(_fit)
 
 
 ## Сменили устройство: подсказки паузы — под него; на геймпаде фокус нужен на кнопке.
@@ -94,11 +96,28 @@ func _build_ui() -> void:
 	cursor.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(cursor)
 	cursor.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_fit()
+
+
+## Масштаб и отступы (UiFit): фон — на весь экран, экраны меню — внутри отступов.
+func _fit() -> void:
+	_refit_pending = false
+	if _root == null:
+		return
+	UiFit.fit(self, [_root], [])
+	for k in screens:
+		UiFit.inset(screens[k])
 
 
 func _on_setting(key: String) -> void:
 	if key == "language":
 		_rebuild.call_deferred()
+	elif key in UiFit.KEYS:
+		# пока тянешь ползунок размера — не перестраиваем (меню уехало бы из-под мыши)
+		if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+			_refit_pending = true
+		else:
+			_fit()
 
 
 func _rebuild() -> void:
@@ -177,6 +196,14 @@ func show_screen(sname: String) -> void:
 func _process(delta: float) -> void:
 	if visible:
 		cursor.queue_redraw()
+	if _refit_pending and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+		_fit()
+	# геймпад: правый стик листает текст справочника
+	if visible and current == "codex" and Controls.mode == "pad" and _codex_text != null:
+		var v := Input.get_axis("aim_up", "aim_down")
+		if absf(v) > 0.2:
+			var bar := _codex_text.get_v_scroll_bar()
+			bar.value += v * 1400.0 * delta
 	if _listening != "":
 		_listen_t -= delta
 		var b: Button = _bind_buttons.get(_listening)
@@ -354,6 +381,7 @@ func _build_codex(root: Control) -> void:
 	var scroll := ScrollContainer.new()
 	scroll.custom_minimum_size = Vector2(320, 0)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.follow_focus = true
 	hb.add_child(scroll)
 	var list := VBoxContainer.new()
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -487,12 +515,23 @@ func _build_controls(root: Control) -> void:
 	top.add_child(back)
 	_first_focus["controls"] = back
 
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.follow_focus = true
+	vb.add_child(scroll)
+	var inner := VBoxContainer.new()
+	inner.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	inner.add_theme_constant_override("separation", 14)
+	scroll.add_child(inner)
+
 	var opts := GridContainer.new()
 	opts.columns = 3
 	opts.add_theme_constant_override("h_separation", 24)
 	opts.add_theme_constant_override("v_separation", 8)
-	vb.add_child(opts)
+	inner.add_child(opts)
 	_check(opts, "auto_aim", U.t("Auto-aim (gamepad and touch)"))
+	_check(opts, "auto_fire", U.t("Auto-fire at visible enemies (gamepad and touch)"))
 	opts.add_child(_label(U.t("Touch controls"), 22, TEXT, false, HORIZONTAL_ALIGNMENT_RIGHT))
 	_touch_opt = Button.new()
 	_touch_opt.custom_minimum_size = Vector2(340, 40)
@@ -501,18 +540,22 @@ func _build_controls(root: Control) -> void:
 	_touch_opt.pressed.connect(func() -> void: Sfx.ui("ui/click", -6.0))
 	opts.add_child(_touch_opt)
 	opts.add_child(Control.new())
+	_check(opts, "touch_static", U.t("Fixed sticks (don't follow the finger)"))
+	_check(opts, "touch_tap_fire", U.t("Tap to shoot at that point (instead of the right stick)"))
 	_slider(opts, "touch_scale", U.t("Touch controls size"), 0.6, 1.6, 0.05, "pct")
+	opts.add_child(Control.new())
+	var edit := _button(U.t("Edit touch layout"), _edit_touch_layout)
+	edit.custom_minimum_size = Vector2(340, 48)
+	edit.add_theme_font_size_override("font_size", 20)
+	opts.add_child(edit)
+	opts.add_child(Control.new())
 
-	var scroll := ScrollContainer.new()
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	vb.add_child(scroll)
 	var grid := GridContainer.new()
 	grid.columns = 3
 	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	grid.add_theme_constant_override("h_separation", 18)
 	grid.add_theme_constant_override("v_separation", 6)
-	scroll.add_child(grid)
+	inner.add_child(grid)
 	grid.add_child(_label("", 18, DIM))
 	grid.add_child(_label(U.t("Keyboard and mouse"), 18, DIM, true))
 	grid.add_child(_label(U.t("Gamepad"), 18, DIM, true))
@@ -550,6 +593,16 @@ func _refresh_controls() -> void:
 			b.text = InputSetup.action_label(parts[0], parts[1], 3)
 
 
+func _edit_touch_layout() -> void:
+	visible = false
+	Game.main.touch.start_edit(_end_touch_edit)
+
+
+func _end_touch_edit() -> void:
+	visible = true
+	show_screen("controls")
+
+
 func _cycle_touch() -> void:
 	var order := ["auto", "on", "off"]
 	var i := order.find(str(Game.setting("touch_controls")))
@@ -570,8 +623,18 @@ func _stop_listening() -> void:
 
 
 ## Пока ждём нажатия — ловим его раньше всех (и кнопки меню его не получат).
+## Геймпад без фокуса: первое нажатие ставит фокус на кнопку экрана, иначе A/B/крестовине некуда идти.
 func _input(event: InputEvent) -> void:
-	if _listening == "" or not visible:
+	if not visible:
+		return
+	if _listening == "":
+		if (event is InputEventJoypadButton and event.is_pressed()) or \
+				(event is InputEventJoypadMotion and absf((event as InputEventJoypadMotion).axis_value) > 0.5):
+			if get_viewport().gui_get_focus_owner() == null:
+				var fb: Control = _first_focus.get(current)
+				if fb != null and fb.is_visible_in_tree():
+					fb.grab_focus()
+					get_viewport().set_input_as_handled()
 		return
 	var parts := _listening.split(":")
 	var action := parts[0]
@@ -817,11 +880,17 @@ func _build_settings(root: Control) -> void:
 	var box := _screen(root, "settings")
 	box.add_child(_label(U.t("SETTINGS"), 56, ACCENT, true))
 	box.add_child(_gap(16))
+	var sc := ScrollContainer.new()
+	sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	sc.follow_focus = true
+	sc.custom_minimum_size = Vector2(900, 620)
+	box.add_child(sc)
 	var grid := GridContainer.new()
 	grid.columns = 3
+	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	grid.add_theme_constant_override("h_separation", 24)
 	grid.add_theme_constant_override("v_separation", 14)
-	box.add_child(grid)
+	sc.add_child(grid)
 	_slider(grid, "master", U.t("Master volume"), 0.0, 1.0, 0.05, "pct")
 	_slider(grid, "music_volume", U.t("Music"), 0.0, 1.0, 0.05, "pct")
 	_check(grid, "music_muted", U.t("Music muted"))
@@ -832,6 +901,10 @@ func _build_settings(root: Control) -> void:
 	_slider(grid, "shake", U.t("Screen shake"), 0.0, 1.5, 0.05, "pct")
 	_check(grid, "damage_numbers", U.t("Damage numbers"))
 	_check(grid, "show_fps", U.t("Show FPS"))
+	_slider(grid, "ui_scale", U.t("Interface size"), 0.7, 1.5, 0.05, "pct")
+	_slider(grid, "ui_margin_x", U.t("Screen edge margin: sides"), 0.0, 160.0, 4.0, "px")
+	_slider(grid, "ui_margin_y", U.t("Screen edge margin: top and bottom"), 0.0, 120.0, 4.0, "px")
+	_check(grid, "ui_safe_area", U.t("Avoid the phone's notch and rounded corners"))
 	box.add_child(_gap(20))
 	box.add_child(_button(U.t("Controls"), func() -> void: show_screen("controls")))
 	var back := _button(U.t("Back"), func() -> void: show_screen(mode))
@@ -947,6 +1020,8 @@ func _refresh_settings() -> void:
 func _fmt(v: float, fmt: String) -> String:
 	if fmt == "pct":
 		return "%d%%" % roundi(v * 100.0)
+	if fmt == "px":
+		return "%d" % roundi(v)
 	return str(v)
 
 

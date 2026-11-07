@@ -7,6 +7,9 @@ extends Node
 ##  сенсор — правый экранный стик. Автоприцел (настройка "auto_aim") на геймпаде и сенсоре:
 ##  если правый стик не трогаешь, а стреляешь — ствол сам смотрит на ближайшего видимого врага.
 ##  Огонь: действие shoot (ЛКМ, RT) или палец на правом экранном стике / кнопке огня.
+##  Автоогонь (настройка "auto_fire", геймпад и сенсор): пока на экране есть видимый враг —
+##  стреляем сами и целимся в него (стик вручную по-прежнему важнее).
+##  «Стрельба по тапу» (сенсор): палец справа = прицел в точку под пальцем + огонь (touch_target).
 ##  Движение: действия move_* (клавиши, левый стик, крестовина) + левый экранный стик.
 
 signal mode_changed(mode: String)
@@ -26,6 +29,8 @@ static var _auto_target: Variant = null  # Vector2 ближайшего враг
 static var _manual_aim := false          # в этом кадре прицел ведётся стиком вручную
 static var _self: Controls = null
 static var _frame := -1                  # кадр, для которого уже посчитан прицел
+static var touch_target: Variant = null  # «стрельба по тапу»: мировая точка под пальцем (или null)
+static var _visible_target: Variant = null  # ближайший враг на экране в прямой видимости (для автоогня)
 
 
 func _ready() -> void:
@@ -79,8 +84,41 @@ static func _update_aim() -> void:
 		_aim_len = clampf(v.length(), 0.0, 1.0)
 		_manual_aim = true
 	_auto_target = null
-	if mode != "kbm" and not _manual_aim and bool(Game.setting("auto_aim")) and firing():
-		_auto_target = _nearest_enemy()
+	_visible_target = null
+	if mode == "kbm":
+		return
+	var auto_fire := bool(Game.setting("auto_fire"))
+	if auto_fire:
+		_visible_target = _nearest_visible()
+	if touch_target != null:
+		return   # тап в точку — целимся туда, автоприцел не нужен
+	if not _manual_aim:
+		if auto_fire and _visible_target != null:
+			_auto_target = _visible_target
+		elif bool(Game.setting("auto_aim")) and (Input.is_action_pressed("shoot") or touch_fire):
+			_auto_target = _nearest_enemy()
+
+
+## Ближайший живой враг на экране и в прямой видимости (для автоогня), или null.
+static func _nearest_visible() -> Variant:
+	var main: Main = Game.main
+	if main == null or main.player == null or main.player.dead or _self == null:
+		return null
+	var vp := _self.get_viewport()
+	var view := vp.get_canvas_transform().affine_inverse() * vp.get_visible_rect()
+	view = view.grow(-20.0)
+	var pp := main.player.position
+	var best: Variant = null
+	var best_d := INF
+	for o in main.enemies:
+		var e: Enemy = o
+		if e.dead or not view.has_point(e.position):
+			continue
+		var d2 := pp.distance_squared_to(e.position)
+		if d2 < best_d and main.zone.ray_clear(pp, e.position):
+			best_d = d2
+			best = e.position
+	return best
 
 
 ## Ближайший живой враг в пределах AUTO_RANGE, лучше — в прямой видимости.
@@ -118,6 +156,8 @@ static func aim_world(from: Vector2) -> Vector2:
 		var vp := _self.get_viewport()
 		return vp.get_canvas_transform().affine_inverse() * vp.get_mouse_position()
 	_update_aim()
+	if touch_target != null:
+		return touch_target
 	if _auto_target != null:
 		return _auto_target
 	return from + _aim_dir * lerpf(AIM_MIN, AIM_MAX, _aim_len)
@@ -131,7 +171,12 @@ static func move_vector() -> Vector2:
 
 ## Зажат ли огонь.
 static func firing() -> bool:
-	return Input.is_action_pressed("shoot") or touch_fire
+	if Input.is_action_pressed("shoot") or touch_fire:
+		return true
+	if mode != "kbm" and bool(Game.setting("auto_fire")):
+		_update_aim()
+		return _visible_target != null
+	return false
 
 
 ## Курсор-прицел на экране: мышь, а на геймпаде и сенсоре — точка прицела.

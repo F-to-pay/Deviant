@@ -644,6 +644,16 @@
 		"[%s] — one more time": "[%s] — ещё разок",
 		"drag a gun here": "тащи сюда пушку",
 		"drag here or press [%s]": "перетащи сюда или нажми [%s]",
-		"mouse": "мышь"
+		"mouse": "мышь",
+		"Auto-fire at visible enemies (gamepad and touch)": "Автоогонь по видимым врагам (геймпад и сенсор)",
+		"Fixed sticks (don't follow the finger)": "Неподвижные стики (не ездят за пальцем)",
+		"Tap to shoot at that point (instead of the right stick)": "Стрельба по тапу в точку (вместо правого стика)",
+		"Edit touch layout": "Расставить экранные кнопки",
+		"Interface size": "Размер интерфейса",
+		"Screen edge margin: sides": "Отступ от краёв: по бокам",
+		"Screen edge margin: top and bottom": "Отступ от краёв: сверху и снизу",
+		"Avoid the phone's notch and rounded corners": "Обходить вырез и скругления телефона",
+		"Done": "Готово",
+		"Drag the controls. Tap one, then − / + to change its size.": "Перетаскивай кнопки. Тапни по кнопке, потом − / + — размер."
 	}
 }

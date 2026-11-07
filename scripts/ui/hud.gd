@@ -40,6 +40,19 @@ func _ready() -> void:
 	add_child(cursor)
 	cursor.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	Game.message.connect(_on_message)
+	Game.settings_changed.connect(_on_setting)
+	get_viewport().size_changed.connect(fit)
+	fit()
+
+
+## Масштаб интерфейса и отступы от краёв (UiFit): HUD — внутри отступов, инвентарь и прицел — на весь экран.
+func fit() -> void:
+	UiFit.fit(self, [inv, cursor], [root])
+
+
+func _on_setting(key: String) -> void:
+	if key in UiFit.KEYS:
+		fit()
 
 
 func on_run_start() -> void:

@@ -644,6 +644,16 @@
 		"[%s] — one more time": "[%s] — en gang til",
 		"drag a gun here": "dra et våpen hit",
 		"drag here or press [%s]": "dra hit eller trykk [%s]",
-		"mouse": "mus"
+		"mouse": "mus",
+		"Auto-fire at visible enemies (gamepad and touch)": "Autoskyting på synlige fiender (håndkontroll og berøring)",
+		"Fixed sticks (don't follow the finger)": "Faste spaker (følger ikke fingeren)",
+		"Tap to shoot at that point (instead of the right stick)": "Trykk for å skyte dit (i stedet for høyre spak)",
+		"Edit touch layout": "Plasser skjermknappene",
+		"Interface size": "Størrelse på grensesnittet",
+		"Screen edge margin: sides": "Avstand fra kanten: sidene",
+		"Screen edge margin: top and bottom": "Avstand fra kanten: topp og bunn",
+		"Avoid the phone's notch and rounded corners": "Unngå kamerahakket og de runde hjørnene",
+		"Done": "Ferdig",
+		"Drag the controls. Tap one, then − / + to change its size.": "Dra knappene. Trykk på en, så − / + for å endre størrelsen."
 	}
 }

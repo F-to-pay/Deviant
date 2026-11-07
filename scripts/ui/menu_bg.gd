@@ -40,7 +40,7 @@ func _ready() -> void:
 
 
 func _respawn(f: Fly, anywhere: bool) -> void:
-	var vp := get_viewport_rect().size
+	var vp := size
 	# уровень и бонус пошире — чтобы мелькали и серые, и абсурдные
 	f.g = GunGen.generate(rng.randi_range(1, 40), rng, rng.randf_range(0.0, 3.5))
 	f.sc = rng.randf_range(1.3, 2.6)
@@ -61,7 +61,7 @@ func _process(delta: float) -> void:
 	if not is_visible_in_tree():
 		return
 	_t += delta
-	var vp := get_viewport_rect().size
+	var vp := size
 	var area := Rect2(Vector2.ZERO, vp).grow(MARGIN)
 	for f in flies:
 		f.pos += f.vel * delta
@@ -98,7 +98,7 @@ func _shoot(f: Fly) -> void:
 
 
 func _draw() -> void:
-	var vp := get_viewport_rect().size
+	var vp := size
 	draw_rect(Rect2(Vector2.ZERO, vp), Color(0.025, 0.022, 0.04))
 	# медленная диагональная сетка
 	var step := 80.0

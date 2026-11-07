@@ -38,7 +38,7 @@ func _ready() -> void:
 
 
 func _vp() -> Vector2:
-	return get_viewport_rect().size
+	return size
 
 
 func _panel() -> Rect2:

@@ -77,6 +77,28 @@ const MOUSE_NAMES := {
 
 static func setup() -> void:
 	apply({})
+	_ensure_ui_pad()
+
+
+## Навигация по меню с геймпада: A — выбрать, B — назад, крестовина и левый стик — фокус.
+## Добавляем к стандартным ui_* действиям, если их там нет.
+static func _ensure_ui_pad() -> void:
+	for pair in [["ui_accept", JOY_BUTTON_A], ["ui_cancel", JOY_BUTTON_B], ["ui_up", JOY_BUTTON_DPAD_UP],
+			["ui_down", JOY_BUTTON_DPAD_DOWN], ["ui_left", JOY_BUTTON_DPAD_LEFT], ["ui_right", JOY_BUTTON_DPAD_RIGHT]]:
+		var jb := InputEventJoypadButton.new()
+		jb.button_index = pair[1]
+		_add_missing(str(pair[0]), jb)
+	for t in [["ui_up", JOY_AXIS_LEFT_Y, -1.0], ["ui_down", JOY_AXIS_LEFT_Y, 1.0],
+			["ui_left", JOY_AXIS_LEFT_X, -1.0], ["ui_right", JOY_AXIS_LEFT_X, 1.0]]:
+		var jm := InputEventJoypadMotion.new()
+		jm.axis = t[1]
+		jm.axis_value = t[2]
+		_add_missing(str(t[0]), jm)
+
+
+static func _add_missing(action: String, ev: InputEvent) -> void:
+	if InputMap.has_action(action) and not InputMap.action_has_event(action, ev):
+		InputMap.action_add_event(action, ev)
 
 
 ## Пересобрать InputMap: DEFAULTS, поверх — переназначенное игроком (из настройки "binds").
