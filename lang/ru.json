@@ -654,6 +654,10 @@
 		"Screen edge margin: top and bottom": "Отступ от краёв: сверху и снизу",
 		"Avoid the phone's notch and rounded corners": "Обходить вырез и скругления телефона",
 		"Done": "Готово",
-		"Drag the controls. Tap one, then − / + to change its size.": "Перетаскивай кнопки. Тапни по кнопке, потом − / + — размер."
+		"Drag the controls. Tap one, then − / + next to it to change its size.": "Перетаскивай кнопки. Тапни по кнопке — рядом появятся − / + для её размера.",
+		"Gun card on the ground": "Карточка пушки на земле",
+		"On the right": "Справа",
+		"On the left": "Слева",
+		"Above the gun": "Над пушкой"
 	}
 }

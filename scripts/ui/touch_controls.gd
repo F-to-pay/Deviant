@@ -24,6 +24,8 @@ const COL := Color(1, 1, 1, 0.55)
 const COL_DIM := Color(1, 1, 1, 0.18)
 const ACCENT := Color(1.0, 0.55, 0.2)
 ## Элементы раскладки: id -> [x, y (доли области внутри отступов), базовый радиус, подпись].
+## Радиус -1 — «пилюля» (прямоугольная кнопка PILL × масштаб). Пилюли interact/swap/scrap видны в игре,
+## только когда рядом пушка (или сундук — тогда interact = «Открыть»), в редакторе — всегда.
 const ELEMENTS := {
 	"move": [0.125, 0.78, STICK_R, ""],
 	"aim": [0.875, 0.78, STICK_R, ""],
@@ -32,8 +34,11 @@ const ELEMENTS := {
 	"next_weapon": [0.875, 0.572, BTN_R, ""],
 	"inventory": [0.465, 0.06, SMALL_R, "Bag"],
 	"pause": [0.535, 0.06, SMALL_R, "II"],
+	"interact": [0.39, 0.66, -1.0, "Take"],
+	"swap": [0.5, 0.66, -1.0, "Swap"],
+	"scrap": [0.61, 0.66, -1.0, "Scrap"],
 }
-const EDIT_TOOLS := ["smaller", "bigger", "reset", "done"]
+const EDIT_TOOLS := ["reset", "done"]
 
 var _root: Control
 var _touches := {}           # палец -> {"role": move/aim/tap/btn, "base", "pos" (локально), "vpos" (вьюпорт), "action"}
@@ -161,7 +166,7 @@ func _release_all() -> void:
 
 # --- Кнопки ----------------------------------------------------------------------------
 
-## Кнопки: [действие, подпись, центр, радиус] — радиус -1 у «пилюль».
+## Кнопки: [действие, подпись, центр, радиус] — отрицательный радиус у «пилюль»: -масштаб.
 func _buttons() -> Array:
 	var s := _gscale()
 	var vp := _root.size
@@ -169,30 +174,39 @@ func _buttons() -> Array:
 	var out: Array = []
 	if main.hud.dead_screen:
 		if main.hud.death_t > 0.6:
-			out.append(["restart", U.t("One more time"), Vector2(vp.x * 0.5 - 130 * s, vp.y - 150 * s), -1.0])
-			out.append(["pause", U.t("Main menu"), Vector2(vp.x * 0.5 + 130 * s, vp.y - 150 * s), -1.0])
+			out.append(["restart", U.t("One more time"), Vector2(vp.x * 0.5 - 130 * s, vp.y - 150 * s), -s])
+			out.append(["pause", U.t("Main menu"), Vector2(vp.x * 0.5 + 130 * s, vp.y - 150 * s), -s])
 		return out
 	for id in ["dodge", "reload", "next_weapon", "inventory", "pause"]:
-		out.append([id, U.t(str(ELEMENTS[id][3])) if str(ELEMENTS[id][3]) != "II" else "II", _pos(id), _radius(id)])
-	var y := vp.y - 330 * s
+		out.append([id, _label_of(id), _pos(id), _radius(id)])
 	if main.near_item != null and is_instance_valid(main.near_item):
-		out.append(["interact", U.t("Take"), Vector2(vp.x * 0.5 - 210 * s, y), -1.0])
-		out.append(["swap", U.t("Swap"), Vector2(vp.x * 0.5, y), -1.0])
-		out.append(["scrap", U.t("Scrap"), Vector2(vp.x * 0.5 + 210 * s, y), -1.0])
+		for id in ["interact", "swap", "scrap"]:
+			out.append([id, _label_of(id), _pos(id), _radius(id)])
 	elif main.near_chest != null and is_instance_valid(main.near_chest):
-		out.append(["interact", U.t("Open"), Vector2(vp.x * 0.5, y), -1.0])
+		out.append(["interact", U.t("Open"), _pos("interact"), _radius("interact")])
 	return out
 
 
+func _label_of(id: String) -> String:
+	var l := str(ELEMENTS[id][3])
+	return l if l == "II" or l == "" else U.t(l)
+
+
+## Прямоугольник «пилюли» с масштабом k.
+func _pill(ctr: Vector2, k: float) -> Rect2:
+	return Rect2(ctr - PILL * k * 0.5, PILL * k)
+
+
+## Попадает ли точка в кнопку [.., центр, радиус].
+func _hits(c: Vector2, r: float, p: Vector2, slack: float = 1.2) -> bool:
+	if r < 0.0:
+		return _pill(c, -r).grow(8.0).has_point(p)
+	return p.distance_to(c) <= r * slack
+
+
 func _button_at(p: Vector2) -> Array:
-	var s := _gscale()
 	for b in _buttons():
-		var r := float(b[3])
-		var c: Vector2 = b[2]
-		if r < 0.0:
-			if Rect2(c - PILL * s * 0.5, PILL * s).grow(8.0).has_point(p):
-				return b
-		elif p.distance_to(c) <= r * 1.2:
+		if _hits(b[2], float(b[3]), p):
 			return b
 	return []
 
@@ -353,14 +367,27 @@ func _edit_ids() -> Array:
 	return out
 
 
-## Панель редактора: [инструмент, подпись, прямоугольник].
+## Панель редактора: [инструмент, подпись, прямоугольник]. «−» и «+» — рядом с выбранной кнопкой.
 func _tools() -> Array:
 	var out: Array = []
 	var w := 170.0
-	var x0 := _root.size.x * 0.5 - (w + 12.0) * 2.0
-	var names := {"smaller": "−", "bigger": "+", "reset": U.t("Reset"), "done": U.t("Done")}
+	var x0 := _root.size.x * 0.5 - (w + 12.0)
+	var names := {"reset": U.t("Reset"), "done": U.t("Done")}
 	for k in EDIT_TOOLS.size():
 		out.append([EDIT_TOOLS[k], str(names[EDIT_TOOLS[k]]), Rect2(x0 + k * (w + 12.0), _root.size.y * 0.42, w, 64)])
+	if _sel != "":
+		var p := _pos(_sel)
+		var r := _radius(_sel)
+		var half := (PILL.y * -r * 0.5) if r < 0.0 else r
+		var bw := 84.0
+		# под кнопкой, а если не влезает — над ней
+		var y := p.y + half + 18.0
+		if y + 64.0 > _root.size.y:
+			y = p.y - half - 18.0 - 64.0
+		var x := clampf(p.x - bw - 60.0, 0.0, _root.size.x - bw * 2.0 - 120.0)
+		out.append(["smaller", "−", Rect2(x, y, bw, 64)])
+		out.append(["size", "%d%%" % roundi(float(_layout[_sel]["s"]) * 100.0), Rect2(x + bw, y, 120, 64)])
+		out.append(["bigger", "+", Rect2(x + bw + 120.0, y, bw, 64)])
 	return out
 
 
@@ -386,7 +413,7 @@ func _edit_input(event: InputEvent) -> void:
 		var ids := _edit_ids()
 		for k in range(ids.size() - 1, -1, -1):
 			var id := str(ids[k])
-			if p.distance_to(_pos(id)) <= _radius(id) * 1.15:
+			if _hits(_pos(id), _radius(id), p, 1.15):
 				_sel = id
 				_drag = true
 				_drag_off = _pos(id) - p
@@ -407,6 +434,9 @@ func _tool(t: String) -> void:
 			if _sel != "":
 				var e: Dictionary = _layout[_sel]
 				e["s"] = clampf(float(e["s"]) + (0.1 if t == "bigger" else -0.1), 0.4, 2.5)
+				_save_layout()
+		"size":
+			pass
 		"reset":
 			Game.set_setting("touch_layout", "")
 			_load_layout()
@@ -458,10 +488,10 @@ func _draw_button(c: CanvasItem, b: Array, on: bool, fb: Font, s: float) -> void
 	var r := float(b[3])
 	var fill := Color(ACCENT, 0.45) if on else Color(0, 0, 0, 0.35)
 	if r < 0.0:
-		var rect := Rect2(ctr - PILL * s * 0.5, PILL * s)
+		var rect := _pill(ctr, -r)
 		c.draw_rect(rect, fill)
 		c.draw_rect(rect, COL, false, 2.0)
-		U.draw_text_c(c, fb, ctr + Vector2(0, 7), str(b[1]), 20, Color.WHITE, 3)
+		U.draw_text_c(c, fb, ctr + Vector2(0, 7), str(b[1]), 20 if -r >= 0.8 else 16, Color.WHITE, 3)
 		return
 	c.draw_circle(ctr, r, fill)
 	c.draw_arc(ctr, r, 0.0, TAU, 40, COL, 2.0, true)
@@ -495,19 +525,23 @@ func _draw_editor() -> void:
 	# граница области (внутри отступов от краёв экрана)
 	c.draw_rect(Rect2(Vector2.ZERO, _root.size), Color(1, 1, 1, 0.25), false, 2.0)
 	U.draw_text_c(c, fb, Vector2(_root.size.x * 0.5, _root.size.y * 0.32),
-		U.t("Drag the controls. Tap one, then − / + to change its size."), 20, Color.WHITE, 3)
+		U.t("Drag the controls. Tap one, then − / + next to it to change its size."), 20, Color.WHITE, 3)
 	for id in _edit_ids():
 		var p := _pos(id)
 		var r := _radius(id)
 		if id == "move" or id == "aim":
 			_draw_stick(c, {}, p, r, "")
 		else:
-			_draw_button(c, [id, U.t(str(ELEMENTS[id][3])) if str(ELEMENTS[id][3]) != "II" else "II", p, r], false, fb, s)
+			_draw_button(c, [id, _label_of(id), p, r], false, fb, s)
 		if id == _sel:
-			c.draw_arc(p, r + 8.0, 0.0, TAU, 48, ACCENT, 4.0, true)
+			if r < 0.0:
+				c.draw_rect(_pill(p, -r).grow(6.0), ACCENT, false, 4.0)
+			else:
+				c.draw_arc(p, r + 8.0, 0.0, TAU, 48, ACCENT, 4.0, true)
 	for tl in _tools():
 		var rect: Rect2 = tl[2]
-		var dim: bool = (tl[0] == "smaller" or tl[0] == "bigger") and _sel == ""
-		c.draw_rect(rect, Color(0, 0, 0, 0.6))
-		c.draw_rect(rect, Color(1, 1, 1, 0.25 if dim else 0.7), false, 2.0)
-		U.draw_text_c(c, fb, rect.get_center() + Vector2(0, 8), str(tl[1]), 20, Color(1, 1, 1, 0.4 if dim else 1.0), 3)
+		var plain: bool = tl[0] == "size"
+		c.draw_rect(rect, Color(0, 0, 0, 0.35 if plain else 0.7))
+		if not plain:
+			c.draw_rect(rect, Color(1, 1, 1, 0.7), false, 2.0)
+		U.draw_text_c(c, fb, rect.get_center() + Vector2(0, 8), str(tl[1]), 20, Color(1, 1, 1), 3)

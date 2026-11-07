@@ -654,6 +654,10 @@
 		"Screen edge margin: top and bottom": "Avstand fra kanten: topp og bunn",
 		"Avoid the phone's notch and rounded corners": "Unngå kamerahakket og de runde hjørnene",
 		"Done": "Ferdig",
-		"Drag the controls. Tap one, then − / + to change its size.": "Dra knappene. Trykk på en, så − / + for å endre størrelsen."
+		"Drag the controls. Tap one, then − / + next to it to change its size.": "Dra knappene. Trykk på en — da dukker − / + opp ved siden av for å endre størrelsen.",
+		"Gun card on the ground": "Våpenkort på bakken",
+		"On the right": "Til høyre",
+		"On the left": "Til venstre",
+		"Above the gun": "Over våpenet"
 	}
 }

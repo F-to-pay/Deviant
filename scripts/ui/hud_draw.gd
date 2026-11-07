@@ -29,9 +29,7 @@ func _draw() -> void:
 	if not hud.inv.visible and not hud.dead_screen:
 		if main.near_item != null and is_instance_valid(main.near_item):
 			var g: Gun = main.near_item.gun
-			var card_h := GunCard.height(g)
-			var cy := clampf(vp.y * 0.5 - card_h * 0.5, 70.0, vp.y - card_h - 150.0)
-			GunCard.draw_card(self, g, Vector2(vp.x - GunCard.W - 24.0, cy), p.gun())
+			GunCard.draw_card(self, g, _card_pos(g, main.near_item.position, vp), p.gun())
 			if Controls.mode != "touch":   # на сенсоре вместо подсказки — кнопки
 				U.draw_text_c(self, fb, Vector2(vp.x * 0.5, vp.y - 170.0), U.t("[%s] Pick up     [%s] Swap with current     [%s] Scrap for ammo") % [
 					Controls.label("interact"), Controls.label("swap"), Controls.label("scrap")], 18, Color(1, 1, 1), 4)
@@ -223,3 +221,19 @@ func _draw_death(vp: Vector2, f: Font, fb: Font) -> void:
 			var again := InputSetup.action_label("restart", "pad", 1) if Controls.mode == "pad" else Controls.label("reload")
 			U.draw_text_c(self, fb, Vector2(vp.x * 0.5, y), U.t("[%s] — one more time") % again, 24, Color(1, 1, 1, a), 4)
 			U.draw_text_c(self, f, Vector2(vp.x * 0.5, y + 36.0), U.t("[%s] — main menu") % Controls.label("pause"), 18, Color(0.8, 0.8, 0.8, a), 3)
+
+
+## Где показать карточку пушки на земле (настройка gun_card): справа, слева или над самой пушкой.
+func _card_pos(g: Gun, world: Vector2, vp: Vector2) -> Vector2:
+	var card_h := GunCard.height(g)
+	var cy := clampf(vp.y * 0.5 - card_h * 0.5, 70.0, vp.y - card_h - 150.0)
+	match str(Game.setting("gun_card")):
+		"left":
+			return Vector2(24.0, maxf(cy, 150.0))
+		"above":
+			# мир -> экран -> координаты этого Control (он масштабирован и сдвинут UiFit)
+			var screen := get_viewport().get_canvas_transform() * world
+			var local := get_global_transform_with_canvas().affine_inverse() * screen
+			var pos := local - Vector2(GunCard.W * 0.5, card_h + 46.0)
+			return Vector2(clampf(pos.x, 8.0, vp.x - GunCard.W - 8.0), clampf(pos.y, 8.0, vp.y - card_h - 8.0))
+	return Vector2(vp.x - GunCard.W - 24.0, cy)

@@ -35,6 +35,8 @@ var _listen_t := 0.0
 var _controls_status: Label
 var _touch_opt: Button
 var _refit_pending := false
+var _card_opt: Button
+const CARD_MODES := {"right": "On the right", "left": "On the left", "above": "Above the gun"}
 const LISTEN_TIME := 6.0
 
 ## Кнопки, которые страница справочника может попросить в "actions" (data/codex.json).
@@ -593,6 +595,13 @@ func _refresh_controls() -> void:
 			b.text = InputSetup.action_label(parts[0], parts[1], 3)
 
 
+func _cycle_card() -> void:
+	var order: Array = CARD_MODES.keys()
+	var i := order.find(str(Game.setting("gun_card")))
+	Game.set_setting("gun_card", order[(i + 1) % order.size()])
+	_card_opt.text = U.t(str(CARD_MODES.get(str(Game.setting("gun_card")), "On the right")))
+
+
 func _edit_touch_layout() -> void:
 	visible = false
 	Game.main.touch.start_edit(_end_touch_edit)
@@ -905,6 +914,14 @@ func _build_settings(root: Control) -> void:
 	_slider(grid, "ui_margin_x", U.t("Screen edge margin: sides"), 0.0, 160.0, 4.0, "px")
 	_slider(grid, "ui_margin_y", U.t("Screen edge margin: top and bottom"), 0.0, 120.0, 4.0, "px")
 	_check(grid, "ui_safe_area", U.t("Avoid the phone's notch and rounded corners"))
+	grid.add_child(_label(U.t("Gun card on the ground"), 22, TEXT, false, HORIZONTAL_ALIGNMENT_RIGHT))
+	_card_opt = Button.new()
+	_card_opt.custom_minimum_size = Vector2(340, 40)
+	_card_opt.add_theme_font_size_override("font_size", 20)
+	_card_opt.pressed.connect(_cycle_card)
+	_card_opt.pressed.connect(func() -> void: Sfx.ui("ui/click", -6.0))
+	grid.add_child(_card_opt)
+	grid.add_child(Control.new())
 	box.add_child(_gap(20))
 	box.add_child(_button(U.t("Controls"), func() -> void: show_screen("controls")))
 	var back := _button(U.t("Back"), func() -> void: show_screen(mode))
@@ -1007,6 +1024,8 @@ func _on_slider(v: float, key: String, val: Label, fmt: String) -> void:
 
 ## Подтянуть значения: громкость могли поменять горячими клавишами.
 func _refresh_settings() -> void:
+	if _card_opt != null:
+		_card_opt.text = U.t(str(CARD_MODES.get(str(Game.setting("gun_card")), "On the right")))
 	for key in _settings_ui:
 		var row: Array = _settings_ui[key]
 		var v: Variant = Game.setting(str(key))
