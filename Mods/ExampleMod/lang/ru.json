@@ -1,0 +1,13 @@
+{
+	"meta": {"code": "ru", "name": "Русский"},
+	"strings": {
+		"Bouncy": {"m": "Прыгучий", "f": "Прыгучая"},
+		"Lucky": {"m": "Везучий", "f": "Везучая"},
+		"Example Corp": "Пример Корп",
+		"Your example. Our responsibility.": "Ваш пример. Наша ответственность.",
+		"Rubber Duck": "Резиновая Уточка",
+		"Squeaks menacingly.": "Угрожающе пищит.",
+		"Rubber Duck Jr.": "Уточка-младшая",
+		"The Big Duck": "Большая Утка"
+	}
+}

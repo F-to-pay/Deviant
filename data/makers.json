@@ -1,0 +1,138 @@
+{
+	"synergis": {
+		"name": "Synergis",
+		"motto": "Infinity is not the limit. Damage is.",
+		"color": "#4cd9cc",
+		"dark": "#143338",
+		"projectile_color": "#80fff2",
+		"weight": 10.0,
+		"legendary": true,
+		"ops": [["mul", "damage", 0.6], ["set", "free_ammo", true], ["mul", "proc_mult", 0.5]],
+		"no_explosive": true
+	},
+	"hypernova": {
+		"name": "Hypernova",
+		"motto": "Everything is a rocket if you try hard enough.",
+		"color": "#f2731a",
+		"dark": "#401f0f",
+		"projectile_color": "#ffb24c",
+		"weight": 10.0,
+		"legendary": false,
+		"ops": [["mul", "damage", 2.0], ["mul", "fire_rate", 0.5], ["mul", "ammo_per_shot", 2]],
+		"projectile_arch": "rocket",
+		"sound": {"pitch": 0.9, "vol": 1.0}
+	},
+	"shabash": {
+		"name": "Sabbath",
+		"motto": "Reloading is a ritual. A short one.",
+		"color": "#73338c",
+		"dark": "#1f0d1f",
+		"projectile_color": "#d980ff",
+		"weight": 10.0,
+		"legendary": true,
+		"ops": [["mul", "reload_time", 0.3], ["mul", "damage", 0.9]]
+	},
+	"chaos": {
+		"name": "Chaos Forge",
+		"motto": "A legend for the poor.",
+		"color": "#bf1a26",
+		"dark": "#260a0d",
+		"projectile_color": "#ff5959",
+		"weight": 8.0,
+		"legendary": false,
+		"ops": [["mul", "damage", 0.6]],
+		"random_legendary_perk": true
+	},
+	"erosion": {
+		"name": "Errosion",
+		"motto": "Everything rusts. Especially enemies.",
+		"color": "#80a633",
+		"dark": "#2e2614",
+		"projectile_color": "#b2ff4c",
+		"weight": 10.0,
+		"legendary": true,
+		"ops": [
+			["if", ["element", "==", "none"], [["set", "element", "random"]]],
+			["add", "elem_chance", 0.35],
+			["set", "elem_mult", 2.0],
+			["mul", "damage", 0.75]
+		]
+	},
+	"atlant": {
+		"name": "Atlas",
+		"motto": "No magic. Just lead.",
+		"color": "#8c949e",
+		"dark": "#2e2e33",
+		"projectile_color": "#f2e6bf",
+		"weight": 10.0,
+		"legendary": false,
+		"ops": [["mul", "damage", 1.2]],
+		"no_proc_perks": true
+	},
+	"liven": {
+		"name": "Downpour",
+		"motto": "Something's bound to hit.",
+		"color": "#4c80f2",
+		"dark": "#141a40",
+		"projectile_color": "#99ccff",
+		"weight": 10.0,
+		"legendary": true,
+		"ops": [["mul", "fire_rate", 1.6], ["mul", "damage", 0.8]],
+		"sound": {"pitch": 1.08}
+	},
+	"dandy": {
+		"name": "Dandy",
+		"motto": "Stylish, trendy, in every direction.",
+		"color": "#e6b2bf",
+		"dark": "#4c331f",
+		"projectile_color": "#ffd999",
+		"weight": 10.0,
+		"legendary": true,
+		"ops": [["mul", "damage", 0.85]],
+		"perks": ["scatter"]
+	},
+	"noname": {
+		"name": "Noname",
+		"motto": "No name. No claims. No warranty.",
+		"color": "#808080",
+		"dark": "#333333",
+		"projectile_color": "#e6e6e6",
+		"weight": 12.0,
+		"legendary": true,
+		"ops": []
+	},
+	"godforce": {
+		"name": "Godforce",
+		"motto": "One shot. One corpse. Every three seconds.",
+		"color": "#991a1a",
+		"dark": "#402e0d",
+		"projectile_color": "#ffcc4c",
+		"weight": 8.0,
+		"legendary": false,
+		"ops": [
+			["mul", "damage", 3.0],
+			["mul", "fire_rate", 0.3],
+			["mul", "ammo_per_shot", 3],
+			["mul", "crit_mult", 1.5]
+		],
+		"sound": {"pitch": 0.72, "vol": 3.0}
+	},
+	"abordage": {
+		"name": "BOARDING",
+		"motto": "All hands on deck. Point-blank.",
+		"color": "#266673",
+		"dark": "#0d1f26",
+		"projectile_color": "#99fff2",
+		"weight": 10.0,
+		"legendary": true,
+		"ops": [
+			["mul", "mag_size", 0.3],
+			["max", "mag_size", 1],
+			["mul", "proj_speed", 3.0],
+			["if", ["proj_kind", "!=", "grenade"], [["mul", "lifetime", 0.3333333]]],
+			["mul", "damage", 1.4],
+			["mul", "knock", 2.0]
+		],
+		"sound": {"pitch": 1.12}
+	}
+}

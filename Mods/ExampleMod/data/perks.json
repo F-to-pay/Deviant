@@ -1,0 +1,21 @@
+[
+	{
+		"id": "example_bouncy",
+		"name": "Bouncy",
+		"weight": 6,
+		"min_rarity": 1,
+		"group": "",
+		"tags": ["proc", "no_shell"],
+		"fits": [["proj_kind", "!=", "shell"]],
+		"ops": [["add", "bounces", 5], ["mul", "damage", 0.9], ["mul", "lifetime", 1.3]]
+	},
+	{
+		"id": "example_lucky",
+		"name": "Lucky",
+		"weight": 4,
+		"min_rarity": 2,
+		"group": "",
+		"tags": [],
+		"script": "scripts/lucky.gd"
+	}
+]

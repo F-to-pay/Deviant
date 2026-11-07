@@ -32,18 +32,18 @@ func _draw() -> void:
 			var card_h := GunCard.height(g)
 			var cy := clampf(vp.y * 0.5 - card_h * 0.5, 70.0, vp.y - card_h - 150.0)
 			GunCard.draw_card(self, g, Vector2(vp.x - GunCard.W - 24.0, cy), p.gun())
-			U.draw_text_c(self, fb, Vector2(vp.x * 0.5, vp.y - 170.0), U.t("[E] Подобрать     [F] Заменить текущую     [X] Разобрать на патроны"), 18, Color(1, 1, 1), 4)
+			U.draw_text_c(self, fb, Vector2(vp.x * 0.5, vp.y - 170.0), U.t("[E] Pick up     [F] Swap with current     [X] Scrap for ammo"), 18, Color(1, 1, 1), 4)
 		elif main.near_chest != null and is_instance_valid(main.near_chest):
-			U.draw_text_c(self, fb, Vector2(vp.x * 0.5, vp.y - 170.0), U.t("[E] Открыть сундук"), 18, Color(1.0, 0.9, 0.5), 4)
+			U.draw_text_c(self, fb, Vector2(vp.x * 0.5, vp.y - 170.0), U.t("[E] Open chest"), 18, Color(1.0, 0.9, 0.5), 4)
 	_draw_messages(vp, fb)
 	_draw_banner(vp, fb, f)
 	if hud.help_t > 0.0 and Game.zone_level == 1:
 		var a := clampf(hud.help_t / 2.0, 0.0, 1.0)
 		U.draw_text_c(self, f, Vector2(vp.x * 0.5, vp.y - 205.0),
-			U.t("WASD — бег · ЛКМ — огонь · Пробел/ПКМ — перекат · R — перезарядка · E/F/X — лут · Tab — инвентарь · 1-4/колесо — оружие"),
+			U.t("WASD — move · LMB — shoot · Space/RMB — dodge · R — reload · E/F/X — loot · Tab — inventory · 1-4/wheel — weapons"),
 			15, Color(1, 1, 1, 0.85 * a), 3)
 	if Game.debug:
-		U.draw_text(self, f, Vector2(12, vp.y - 12), U.t("FPS %d · врагов %d · снарядов %d") % [Engine.get_frames_per_second(),
+		U.draw_text(self, f, Vector2(12, vp.y - 12), U.t("FPS %d · enemies %d · projectiles %d") % [Engine.get_frames_per_second(),
 			main.enemies.size(), main.projectiles.count()], 13, Color(0.7, 1.0, 0.7), 3)
 	if hud.fade > 0.0:
 		draw_rect(Rect2(Vector2.ZERO, vp), Color(0, 0, 0, hud.fade))
@@ -68,16 +68,16 @@ func _draw_hp(p: Player, f: Font, fb: Font) -> void:
 	var dk := 1.0 - clampf(p.dodge_cd / Player.DODGE_CD, 0.0, 1.0)
 	var dodge_ready := p.dodge_cd <= 0.0
 	_bar(Rect2(24, 52, 120, 6), dk, Color(0.4, 0.85, 1.0) if dodge_ready else Color(0.3, 0.5, 0.7))
-	var dl := U.t("перекат готов") if dodge_ready else U.t("перекат %.1f с") % p.dodge_cd
+	var dl := U.t("dodge ready") if dodge_ready else U.t("dodge %.1f s") % p.dodge_cd
 	U.draw_text(self, f, Vector2(150, 59), dl, 12, Color(0.7, 0.85, 1.0, 0.9 if dodge_ready else 0.6), 2)
 
 
 func _draw_zone_info(main: Main, f: Font, fb: Font) -> void:
 	var zname := U.t(str(main.zone.biome.get("name", "")))
-	U.draw_text(self, fb, Vector2(24, 86), U.t("Зона %d · %s") % [Game.zone_level, zname], 17, Color(1, 1, 1), 3)
-	U.draw_text(self, f, Vector2(24, 108), U.t("Убито: %d   Время: %s") % [Game.kills, U.fmt_time(Game.run_time)], 14, Color(0.8, 0.8, 0.85), 3)
+	U.draw_text(self, fb, Vector2(24, 86), U.t("Zone %d · %s") % [Game.zone_level, zname], 17, Color(1, 1, 1), 3)
+	U.draw_text(self, f, Vector2(24, 108), U.t("Kills: %d   Time: %s") % [Game.kills, U.fmt_time(Game.run_time)], 14, Color(0.8, 0.8, 0.85), 3)
 	if Game.best_zone > 0:
-		U.draw_text(self, f, Vector2(24, 128), U.t("Рекорд: зона %d") % Game.best_zone, 13, Color(0.7, 0.7, 0.75), 3)
+		U.draw_text(self, f, Vector2(24, 128), U.t("Best: zone %d") % Game.best_zone, 13, Color(0.7, 0.7, 0.75), 3)
 
 
 func _draw_weapons(p: Player, vp: Vector2, f: Font, fb: Font) -> void:
@@ -100,7 +100,7 @@ func _draw_weapons(p: Player, vp: Vector2, f: Font, fb: Font) -> void:
 			_bar(Rect2(r.position.x + 6, r.end.y - 9, r.size.x - 12, 4), float(g.ammo) / float(g.mag_size), Color(1.0, 0.85, 0.4))
 			var rs := p.reserve_of(g.ammo_type())
 			U.draw_text_r(self, U.font(), r.position + Vector2(r.size.x - 6, 16), "∞" if g.free_ammo else str(rs), 12,
-				GunData.AMMO_COL[g.ammo_type()] if (rs > 0 or g.free_ammo) else Color(1.0, 0.35, 0.3), 2)
+				GunData.ammo_color(g.ammo_type()) if (rs > 0 or g.free_ammo) else Color(1.0, 0.35, 0.3), 2)
 		else:
 			draw_rect(r, Color(1, 1, 1, 0.12), false, 1.0)
 		U.draw_text(self, fb, r.position + Vector2(6, 16), str(i + 1), 14, Color(1, 1, 1, 0.7), 2)
@@ -110,18 +110,18 @@ func _draw_weapons(p: Player, vp: Vector2, f: Font, fb: Font) -> void:
 		var cy := y0 - 14.0
 		U.draw_text_c(self, fb, Vector2(vp.x * 0.5, cy - 26.0), ag.gun_name, 18, ag.rarity_color(), 4)
 		var res := p.reserve_of(ag.ammo_type())
-		var ammo_s := U.t("%d / %d   ·   запас %d/%d %s") % [ag.ammo, ag.mag_size, res, GunData.ammo_cap(ag.ammo_type()), ag.ammo_name()]
+		var ammo_s := U.t("%d / %d   ·   reserve %d/%d %s") % [ag.ammo, ag.mag_size, res, GunData.ammo_cap(ag.ammo_type()), ag.ammo_name()]
 		if ag.free_ammo:
 			res = 1
-			ammo_s = U.t("%d / %d   ·   запас ∞") % [ag.ammo, ag.mag_size]
+			ammo_s = U.t("%d / %d   ·   reserve ∞") % [ag.ammo, ag.mag_size]
 		if p.is_reloading():
-			ammo_s = U.t("ПЕРЕЗАРЯДКА")
+			ammo_s = U.t("RELOADING")
 		elif ag.ammo <= 0:
-			ammo_s = U.t("ПУСТО — [R]") if res > 0 else U.t("НЕТ ПАТРОНОВ: %s") % ag.ammo_name()
+			ammo_s = U.t("EMPTY — [R]") if res > 0 else U.t("NO AMMO: %s") % ag.ammo_name()
 		U.draw_text_c(self, fb, Vector2(vp.x * 0.5, cy), ammo_s, 16, Color(1.0, 0.9, 0.6), 3)
 		if p.is_reloading():
 			_bar(Rect2(vp.x * 0.5 - 90, cy + 6, 180, 5), p.reload_progress(), Color(1, 1, 1))
-	U.draw_text_r(self, f, Vector2(x0 - 12, vp.y - 30), U.t("рюкзак %d/%d") % [p.backpack.size(), Player.BACKPACK_SIZE], 13, Color(0.75, 0.75, 0.8), 2)
+	U.draw_text_r(self, f, Vector2(x0 - 12, vp.y - 30), U.t("backpack %d/%d") % [p.backpack.size(), Player.BACKPACK_SIZE], 13, Color(0.75, 0.75, 0.8), 2)
 
 
 func _draw_minimap(main: Main, vp: Vector2, f: Font) -> void:
@@ -155,7 +155,7 @@ func _draw_minimap(main: Main, vp: Vector2, f: Font) -> void:
 	var me := r.position + main.player.position * k
 	draw_circle(me, 3.5, Color(0.4, 0.9, 1.0))
 	draw_line(me, me + main.player.aim * 9.0, Color(0.4, 0.9, 1.0), 1.5)
-	U.draw_text_r(self, f, Vector2(r.end.x, r.end.y + 16), U.t("портал — фиолетовый"), 12, Color(0.7, 0.7, 0.75, 0.7), 2)
+	U.draw_text_r(self, f, Vector2(r.end.x, r.end.y + 16), U.t("portal — purple"), 12, Color(0.7, 0.7, 0.75, 0.7), 2)
 
 
 func _draw_boss(b: Boss, vp: Vector2, fb: Font) -> void:
@@ -189,27 +189,27 @@ func _draw_death(vp: Vector2, f: Font, fb: Font) -> void:
 	U.draw_text_c(self, fb, Vector2(vp.x * 0.5, vp.y * 0.26), U.t(hud.death_title), 60, Color(1.0, 0.3, 0.25, a), 7)
 	var y := vp.y * 0.38
 	var lines: Array = [
-		U.t("Дошёл до зоны %d") % Game.zone_level,
-		U.t("Убито: %d   ·   Время: %s   ·   Пушек найдено: %d") % [Game.kills, U.fmt_time(Game.run_time), Game.guns_found],
+		U.t("Reached zone %d") % Game.zone_level,
+		U.t("Kills: %d   ·   Time: %s   ·   Guns found: %d") % [Game.kills, U.fmt_time(Game.run_time), Game.guns_found],
 		Menu.run_info(),
-		U.t("Рейтинг: %s   (очки %s × %.2f)%s") % [U.fmt(float(Game.rating())), U.fmt(float(Game.run_points())), Game.rating_mult(),
-			U.t("   — НОВЫЙ ЛУЧШИЙ!") if Game.new_rating_record else U.t("   · лучший: ") + U.fmt(float(Game.best_rating))],
+		U.t("Rating: %s   (points %s × %.2f)%s") % [U.fmt(float(Game.rating())), U.fmt(float(Game.run_points())), Game.rating_mult(),
+			U.t("   — NEW BEST!") if Game.new_rating_record else U.t("   · best: ") + U.fmt(float(Game.best_rating))],
 	]
 	for l in lines:
 		U.draw_text_c(self, f, Vector2(vp.x * 0.5, y), str(l), 22, Color(1, 1, 1, a), 3)
 		y += 36.0
 	if Game.best_gun != null:
-		U.draw_text_c(self, f, Vector2(vp.x * 0.5, y), U.t("Лучшая находка:"), 18, Color(0.8, 0.8, 0.8, a), 3)
+		U.draw_text_c(self, f, Vector2(vp.x * 0.5, y), U.t("Best find:"), 18, Color(0.8, 0.8, 0.8, a), 3)
 		y += 30.0
 		U.draw_text_c(self, fb, Vector2(vp.x * 0.5, y), Game.best_gun.gun_name, 22, Color(Game.best_gun.rarity_color(), a), 4)
 		y += 40.0
 	if hud.new_record:
-		U.draw_text_c(self, fb, Vector2(vp.x * 0.5, y), U.t("НОВЫЙ РЕКОРД!"), 28, Color(1.0, 0.85, 0.3, a), 4)
+		U.draw_text_c(self, fb, Vector2(vp.x * 0.5, y), U.t("NEW RECORD!"), 28, Color(1.0, 0.85, 0.3, a), 4)
 	elif not Game.counts_for_records():
-		U.draw_text_c(self, f, Vector2(vp.x * 0.5, y), U.t("Настраиваемый старт — рекорд не засчитывается"), 18, Color(0.8, 0.8, 0.8, a), 3)
+		U.draw_text_c(self, f, Vector2(vp.x * 0.5, y), U.t("Custom start — record not counted"), 18, Color(0.8, 0.8, 0.8, a), 3)
 	else:
-		U.draw_text_c(self, f, Vector2(vp.x * 0.5, y), U.t("Рекорд: зона %d") % Game.best_zone, 18, Color(0.8, 0.8, 0.8, a), 3)
+		U.draw_text_c(self, f, Vector2(vp.x * 0.5, y), U.t("Best: zone %d") % Game.best_zone, 18, Color(0.8, 0.8, 0.8, a), 3)
 	y += 60.0
 	if hud.death_t > 0.6:
-		U.draw_text_c(self, fb, Vector2(vp.x * 0.5, y), U.t("[R] — ещё разок"), 24, Color(1, 1, 1, a), 4)
-		U.draw_text_c(self, f, Vector2(vp.x * 0.5, y + 36.0), U.t("[Esc] — в главное меню"), 18, Color(0.8, 0.8, 0.8, a), 3)
+		U.draw_text_c(self, fb, Vector2(vp.x * 0.5, y), U.t("[R] — one more time"), 24, Color(1, 1, 1, a), 4)
+		U.draw_text_c(self, f, Vector2(vp.x * 0.5, y + 36.0), U.t("[Esc] — main menu"), 18, Color(0.8, 0.8, 0.8, a), 3)

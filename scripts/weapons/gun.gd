@@ -14,7 +14,7 @@ var special: String = ""
 ## Имя собирается на лету из name_parts (см. GunGen.build_name) — так оно всегда
 ## на текущем языке. Присвоение строки задаёт имя напрямую (без перевода).
 var name_parts: Dictionary = {}
-var _fixed_name: String = "Пушка"
+var _fixed_name: String = "Gun"
 var gun_name: String:
 	get:
 		return GunGen.build_name(self) if not name_parts.is_empty() else _fixed_name
@@ -86,56 +86,61 @@ const NUKE_COST := 600.0   # сколько нормированного уро�
 
 
 func rarity_color() -> Color:
-	return GunData.RARITIES[rarity]["col"]
+	return GunData.RARITIES[rarity].get("color", Color.WHITE)
 
 
 func rarity_name() -> String:
-	return U.t(GunData.RARITIES[rarity]["n"])
+	return U.t(str(GunData.RARITIES[rarity].get("name", "?")))
 
 
 func maker_name() -> String:
-	return U.t(GunData.MAKERS[maker]["n"])
+	return U.t(str(GunData.MAKERS.get(maker, {}).get("name", maker)))
 
 
+func _arch_name(id: String) -> String:
+	return str(GunData.ARCH.get(id, {}).get("name", id))
+
+
+## Грамматический род основы в текущем языке (для прилагательных в имени).
 func gender() -> String:
-	return GunData.ARCH[archetype]["g"]
+	return I18n.gender(_arch_name(archetype))
 
 
 ## Тип патронов = тип снаряда. Гибрид ест патроны второй основы
 ## (дробовик-гранатомёт стреляет гранатами -> гранаты).
-## Исключение — Гипернова: ракеты у неё «пули-ракеты», ест патроны своей основы (ПП -> патроны ПП).
+## Исключение — марки с projectile_arch (Гипернова): ракеты у неё «пули-ракеты»,
+## ест патроны своей основы (ПП -> патроны ПП).
 func ammo_type() -> String:
 	var base := archetype
-	if maker != "hypernova" and archetype2 != "":
+	if str(GunData.MAKERS.get(maker, {}).get("projectile_arch", "")) == "" and archetype2 != "":
 		base = archetype2
 	# у некоторых основ патроны чужие (миномёт ест гранаты)
-	return str(GunData.ARCH[base].get("ammo", base))
+	return str(GunData.ARCH.get(base, {}).get("ammo", base))
 
 
 func ammo_name() -> String:
-	return U.t(GunData.ARCH[ammo_type()]["nl"])
+	return GunData.ammo_label(ammo_type())
 
 
-## «Дробовик-гранатомёт» и прочие мутанты.
+## «Дробовик-гранатомёт» и прочие мутанты (порядок — шаблон языка type_hybrid).
 func type_name() -> String:
-	if I18n.is_en():
-		var e := U.t(GunData.ARCH[archetype]["n"])
-		if archetype2 != "":
-			e += "-" + U.t(GunData.ARCH[archetype2]["n"])
-		return e
-	var a: String = GunData.ARCH[archetype]["n"]
-	if archetype2 != "":
-		a += "-" + str(GunData.ARCH[archetype2]["nl"])
-	return a
+	var a := _arch_name(archetype)
+	if archetype2 == "":
+		return U.t(a)
+	var b := _arch_name(archetype2)
+	return I18n.tpl("type_hybrid", {"a": U.t(a), "b": U.t(b), "a_l": I18n.word(a, "lower"), "b_l": I18n.word(b, "lower")})
 
 
+## Строчная форма — для имён вида «Злой дробовик-гранатомёт» (в английском = type_name()).
 func type_name_lower() -> String:
 	if I18n.is_en():
 		return type_name()
-	var a: String = GunData.ARCH[archetype]["nl"]
-	if archetype2 != "":
-		a += "-" + str(GunData.ARCH[archetype2]["nl"])
-	return a
+	var a := _arch_name(archetype)
+	if archetype2 == "":
+		return I18n.word(a, "lower")
+	var b := _arch_name(archetype2)
+	var al := I18n.word(a, "lower")
+	return I18n.tpl("type_hybrid", {"a": al, "b": I18n.word(b, "lower"), "a_l": al, "b_l": I18n.word(b, "lower")})
 
 
 ## Эффективная дальность (px). Дальше пуля летит, но урон резко падает.
@@ -163,9 +168,9 @@ func elem_proc() -> float:
 ## Строка стихии для карточки. Кислота/холод — линейный набор, огонь/ток — шанс.
 func elem_text() -> String:
 	if element == U.EL_ACID or element == U.EL_CRYO:
-		return U.t("%s +%d%%/с") % [U.el_name(element), roundi(10.0 * elem_mult)]
+		return U.t("%s +%d%%/s") % [U.el_name(element), roundi(10.0 * elem_mult)]
 	if element == U.EL_CURSE:
-		return U.t("%s +%d%%/с") % [U.el_name(element), roundi(100.0 * Actor.CURSE_RATE * elem_mult)]
+		return U.t("%s +%d%%/s") % [U.el_name(element), roundi(100.0 * Actor.CURSE_RATE * elem_mult)]
 	return "%s %d%%" % [U.el_name(element), roundi(elem_proc() * 100.0)]
 
 
@@ -207,79 +212,79 @@ func perk_lines() -> Array:
 	var good := Color(0.45, 1.0, 0.5)
 	var bad := Color(1.0, 0.45, 0.4)
 	if proj_kind == GunData.K_GRENADE:
-		out.append([U.t("Снаряды — прыгучие гранаты"), w])
+		out.append([U.t("Projectiles — bouncy grenades"), w])
 	elif proj_kind == GunData.K_ROCKET:
-		out.append([U.t("Снаряды — ракеты"), w])
+		out.append([U.t("Projectiles — rockets"), w])
 	elif proj_kind == GunData.K_ORB:
-		out.append([U.t("Огромные медленные шары"), w])
+		out.append([U.t("Huge slow orbs"), w])
 	elif proj_kind == GunData.K_SHELL:
-		out.append([U.t("Мина: взрыв в точке прицела через %.0f с") % GunData.SHELL_TIME, w])
-		out.append([U.t("Разброс = отклонение точки падения"), w])
+		out.append([U.t("Shell: explodes at the aim point after %.0f s") % GunData.SHELL_TIME, w])
+		out.append([U.t("Spread = landing point deviation"), w])
 	if "slug" in mods:
-		out.append([U.t("Пулевой: один целый снаряд вместо дроби"), w])
+		out.append([U.t("Slug: one solid round instead of pellets"), w])
 	if explode_r > 0.0 and explode_chance >= 1.0:
-		out.append([U.t("Взрыв, радиус %d") % roundi(explode_r), w])
+		out.append([U.t("Explosion, radius %d") % roundi(explode_r), w])
 	elif explode_r > 0.0:
-		out.append([U.t("Взрыв с шансом %d%%, радиус %d") % [roundi(explode_chance * proc_coef() * 100.0), roundi(explode_r)], w])
+		out.append([U.t("%d%% chance to explode, radius %d") % [roundi(explode_chance * proc_coef() * 100.0), roundi(explode_r)], w])
 	if cluster_n > 0:
-		out.append([U.t("Кассета: +%d мини-бомб") % cluster_n, w])
+		out.append([U.t("Cluster: +%d bomblets") % cluster_n, w])
 	if pierce >= 50:
-		out.append([U.t("Пробивает всё"), w])
+		out.append([U.t("Pierces everything"), w])
 	elif pierce > 0:
-		out.append([U.t("Пробивает врагов: %d") % pierce, w])
+		out.append([U.t("Pierces enemies: %d") % pierce, w])
 	if bounces > 0 and proj_kind != GunData.K_GRENADE:
-		out.append([U.t("Рикошет от стен ×%d") % bounces, w])
+		out.append([U.t("Ricochets off walls ×%d") % bounces, w])
 	if split_n > 0 and split_depth > 1:
-		out.append([U.t("Фрактальное деление ×%d, глубина %d") % [split_n, split_depth], w])
+		out.append([U.t("Fractal split ×%d, depth %d") % [split_n, split_depth], w])
 	elif split_n > 0:
-		out.append([U.t("Делится на %d при попадании") % split_n, w])
+		out.append([U.t("Splits into %d on hit") % split_n, w])
 	if homing > 0.0:
-		out.append([U.t("Самонаведение"), w])
+		out.append([U.t("Homing projectiles"), w])
 	if boomerang:
-		out.append([U.t("Возвращается бумерангом"), w])
+		out.append([U.t("Returns like a boomerang"), w])
 	if sine > 0.0:
-		out.append([U.t("Летит змейкой"), w])
+		out.append([U.t("Flies in a wave"), w])
 	if chain_n > 0:
-		out.append([U.t("Цепная молния: %d целей, шанс %d%%") % [chain_n, roundi(proc_coef() * 100.0)], w])
+		out.append([U.t("Chain lightning: %d targets, %d%% chance") % [chain_n, roundi(proc_coef() * 100.0)], w])
 	if leech > 0.0:
-		out.append([U.t("Вампиризм %.1f%%") % (leech * 100.0), good])
+		out.append([U.t("Lifesteal %.1f%%") % (leech * 100.0), good])
 	if vortex > 0.0:
-		out.append([U.t("Чёрная дыра: %.1f%% за снаряд") % (vortex_chance() * 100.0), w])
+		out.append([U.t("Black hole: %.1f%% per projectile") % (vortex_chance() * 100.0), w])
 	if seeder > 0.0:
-		out.append([U.t("Снаряды на лету стреляют вбок"), w])
+		out.append([U.t("Projectiles shoot sideways mid-flight"), w])
 	if teleport > 0.0:
-		out.append([U.t("Снаряды телепортируются вперёд"), w])
+		out.append([U.t("Projectiles teleport forward"), w])
 	if burst > 1:
-		out.append([U.t("Очередь по %d") % burst, w])
+		out.append([U.t("Bursts of %d") % burst, w])
 	if ammo_per_shot > 1:
-		out.append([U.t("Расход: %d патр. за выстрел") % ammo_per_shot, bad])
+		out.append([U.t("Uses %d rounds per shot") % ammo_per_shot, bad])
 	if legend_perk != "":
-		out.insert(0, [U.t("Легендарный перк: «%s»") % U.t(legend_perk), Color(1.0, 0.6, 0.15)])
+		out.insert(0, [U.t("Legendary perk: \"%s\"") % U.t(legend_perk), Color(1.0, 0.6, 0.15)])
 	if free_ammo:
-		out.append([U.t("Не тратит запас патронов"), good])
+		out.append([U.t("Doesn't use reserve ammo"), good])
 	if element == U.EL_CURSE:
-		out.append([U.t("Проклятие: −20% урона пушки"), bad])
+		out.append([U.t("Curse: −20% gun damage"), bad])
 	if proc_mult < 0.99:
-		out.append([U.t("Эффекты срабатывают в %.1f раза реже") % (1.0 / proc_mult), bad])
+		out.append([U.t("Effects proc %.1f× less often") % (1.0 / proc_mult), bad])
 	elif proc_mult > 1.01:
-		out.append([U.t("Эффекты срабатывают в %.1f раза чаще") % proc_mult, good])
+		out.append([U.t("Effects proc %.1f× more often") % proc_mult, good])
 	if elem_mult > 1.01:
-		out.append([U.t("Шанс стихии ×%.0f") % elem_mult, good])
+		out.append([U.t("Element chance ×%.0f") % elem_mult, good])
 	if armor > 0.0:
-		out.append([U.t("Броня: −%d%% входящего урона") % roundi(armor * 100.0), good])
+		out.append([U.t("Armor: −%d%% damage taken") % roundi(armor * 100.0), good])
 	if move_mult > 1.01:
-		out.append([U.t("+%d%% к скорости бега") % roundi((move_mult - 1.0) * 100.0), good])
+		out.append([U.t("+%d%% move speed") % roundi((move_mult - 1.0) * 100.0), good])
 	elif move_mult < 0.99:
-		out.append([U.t("−%d%% к скорости бега") % roundi((1.0 - move_mult) * 100.0), bad])
+		out.append([U.t("−%d%% move speed") % roundi((1.0 - move_mult) * 100.0), bad])
 	match special:
 		"ring":
-			out.append([U.t("Кольцо пуль (40%% урона), шанс %d%% на выстрел") % roundi(GunGen.proc_keep_chance(self) * 100.0), Color(1.0, 0.7, 0.3)])
+			out.append([U.t("Bullet ring (40%% damage), %d%% chance per shot") % roundi(GunGen.proc_keep_chance(self) * 100.0), Color(1.0, 0.7, 0.3)])
 		"nuke10":
-			out.append([U.t("Копит урон: ядерка ~ раз в %d выстр.") % shots_per_nuke(), Color(1.0, 0.7, 0.3)])
+			out.append([U.t("Stores damage: a nuke every ~%d shots") % shots_per_nuke(), Color(1.0, 0.7, 0.3)])
 		"chaos":
-			out.append([U.t("Урон каждой пули: от 0 до ×2"), Color(1.0, 0.7, 0.3)])
+			out.append([U.t("Each bullet deals ×0 to ×2 damage"), Color(1.0, 0.7, 0.3)])
 		"expert":
-			out.append([U.t("Молния бьёт всех, кто рядом"), Color(1.0, 0.7, 0.3)])
+			out.append([U.t("Lightning hits everyone nearby"), Color(1.0, 0.7, 0.3)])
 		"singularity":
-			out.append([U.t("Каждый шар — чёрная дыра"), Color(1.0, 0.7, 0.3)])
+			out.append([U.t("Every orb is a black hole"), Color(1.0, 0.7, 0.3)])
 	return out

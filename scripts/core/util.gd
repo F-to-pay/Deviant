@@ -9,7 +9,7 @@ const EL_ACID := 2
 const EL_CRYO := 3
 const EL_CURSE := 4
 
-const EL_NAMES := ["Огонь", "Электричество", "Кислота", "Холод", "Проклятие"]
+const EL_NAMES := ["Fire", "Shock", "Acid", "Cryo", "Curse"]
 const EL_COLORS := [
 	Color(1.0, 0.45, 0.12),
 	Color(0.45, 0.75, 1.0),
@@ -58,9 +58,9 @@ static func el_name(el: int) -> String:
 	return t(EL_NAMES[el])
 
 
-## Перевод строки на текущий язык (см. I18n). Русский — исходный.
+## Перевод строки на текущий язык (см. I18n). Английский — исходный.
 static func t(s: String) -> String:
-	return I18n.tr_text(s)
+	return I18n.t(s)
 
 
 ## 1234567 -> "1.23M". Бесконечный рогалик — бесконечные цифры.

@@ -1,0 +1,50 @@
+[
+	{
+		"name": "Common",
+		"color": "#dbdbdb",
+		"damage_mult": 1.0,
+		"perks": 0,
+		"weight": 100.0,
+		"hybrid_chance": 0.0
+	},
+	{
+		"name": "Uncommon",
+		"color": "#59eb59",
+		"damage_mult": 1.12,
+		"perks": 1,
+		"weight": 42.0,
+		"hybrid_chance": 0.03
+	},
+	{
+		"name": "Rare",
+		"color": "#4c94ff",
+		"damage_mult": 1.25,
+		"perks": 2,
+		"weight": 16.0,
+		"hybrid_chance": 0.08
+	},
+	{
+		"name": "Epic",
+		"color": "#b861ff",
+		"damage_mult": 1.42,
+		"perks": 3,
+		"weight": 5.0,
+		"hybrid_chance": 0.18
+	},
+	{
+		"name": "Legendary",
+		"color": "#ff991a",
+		"damage_mult": 1.7,
+		"perks": 1,
+		"weight": 1.1,
+		"hybrid_chance": 0.0
+	},
+	{
+		"name": "Absurd",
+		"color": "#ff4cb8",
+		"damage_mult": 2.0,
+		"perks": 5,
+		"weight": 0.25,
+		"hybrid_chance": 1.0
+	}
+]

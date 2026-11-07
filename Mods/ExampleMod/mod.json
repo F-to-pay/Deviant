@@ -1,0 +1,9 @@
+{
+	"name": "Example Mod",
+	"author": "Deviant",
+	"version": "1.0",
+	"description": "Пример мода: новый перк (данными и скриптом), марка, легендарка, прозвище и русский перевод. Выключен по умолчанию.",
+	"enabled": false,
+	"replace_sfx": [],
+	"replace_music": []
+}

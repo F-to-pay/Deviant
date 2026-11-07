@@ -34,10 +34,10 @@ static func draw_card(ci: CanvasItem, g: Gun, pos: Vector2, cmp: Gun = null) -> 
 	ci.draw_multiline_string(fb, Vector2(pos.x + 12.0, y + 17.0), g.gun_name, HORIZONTAL_ALIGNMENT_LEFT,
 		W - 24.0, 17, nl, col)
 	y += 22.0 * nl
-	U.draw_text(ci, f, Vector2(pos.x + 12.0, y + 14.0), U.t("%s · %s · ур. %d") % [g.rarity_name(), g.type_name(), g.level], 13,
+	U.draw_text(ci, f, Vector2(pos.x + 12.0, y + 14.0), U.t("%s · %s · lvl %d") % [g.rarity_name(), g.type_name(), g.level], 13,
 		Color(0.78, 0.78, 0.82))
 	y += 20.0
-	U.draw_text(ci, f, Vector2(pos.x + 12.0, y + 12.0), g.maker_name() + U.t("  ·  патроны: ") + g.ammo_name(), 12, Color(g.body_color.lightened(0.35)))
+	U.draw_text(ci, f, Vector2(pos.x + 12.0, y + 12.0), g.maker_name() + U.t("  ·  ammo: ") + g.ammo_name(), 12, Color(g.body_color.lightened(0.35)))
 	y += 18.0
 
 	# Иконка: вписываем и по ширине, и по высоте. Над осью ствола — корпус + прицел/труба
@@ -56,21 +56,21 @@ static func draw_card(ci: CanvasItem, g: Gun, pos: Vector2, cmp: Gun = null) -> 
 	# Статы
 	var rows: Array = []
 	var dmg_s := U.fmt(g.damage) + (" ×%d" % g.pellets if g.pellets > 1 else "")
-	rows.append([U.t("Урон"), dmg_s, g.damage * g.pellets, cmp.damage * cmp.pellets if cmp else 0.0, true])
-	rows.append([U.t("Урон в секунду"), U.fmt(g.dps()), g.dps(), cmp.dps() if cmp else 0.0, true])
-	rows.append([U.t("Скорострельность"), U.t("%.1f/с") % g.fire_rate, g.fire_rate, cmp.fire_rate if cmp else 0.0, true])
-	rows.append([U.t("Точность"), "%d%%" % g.accuracy(), float(g.accuracy()), float(cmp.accuracy()) if cmp else 0.0, true])
-	rows.append([U.t("Дальность"), U.t("%d м") % roundi(g.eff_range() / 40.0), g.eff_range(), cmp.eff_range() if cmp else 0.0, true])
-	rows.append([U.t("Магазин"), str(g.mag_size), float(g.mag_size), float(cmp.mag_size) if cmp else 0.0, true])
-	rows.append([U.t("Перезарядка"), U.t("%.1f с") % g.reload_time, g.reload_time, cmp.reload_time if cmp else 0.0, false])
-	rows.append([U.t("Крит"), "%d%% ×%.1f" % [roundi(g.crit_chance * 100.0), g.crit_mult],
+	rows.append([U.t("Damage"), dmg_s, g.damage * g.pellets, cmp.damage * cmp.pellets if cmp else 0.0, true])
+	rows.append([U.t("DPS"), U.fmt(g.dps()), g.dps(), cmp.dps() if cmp else 0.0, true])
+	rows.append([U.t("Fire rate"), U.t("%.1f/s") % g.fire_rate, g.fire_rate, cmp.fire_rate if cmp else 0.0, true])
+	rows.append([U.t("Accuracy"), "%d%%" % g.accuracy(), float(g.accuracy()), float(cmp.accuracy()) if cmp else 0.0, true])
+	rows.append([U.t("Range"), U.t("%d m") % roundi(g.eff_range() / 40.0), g.eff_range(), cmp.eff_range() if cmp else 0.0, true])
+	rows.append([U.t("Magazine"), str(g.mag_size), float(g.mag_size), float(cmp.mag_size) if cmp else 0.0, true])
+	rows.append([U.t("Reload"), U.t("%.1f s") % g.reload_time, g.reload_time, cmp.reload_time if cmp else 0.0, false])
+	rows.append([U.t("Crit"), "%d%% ×%.1f" % [roundi(g.crit_chance * 100.0), g.crit_mult],
 		g.crit_chance * g.crit_mult, cmp.crit_chance * cmp.crit_mult if cmp else 0.0, true])
 	for r in rows:
 		_row(ci, f, pos.x, y, str(r[0]), str(r[1]), float(r[2]), float(r[3]), bool(r[4]), cmp != null and cmp != g)
 		y += ROW
 	if g.element >= 0:
 		var ec := U.el_color(g.element)
-		U.draw_text(ci, f, Vector2(pos.x + 12.0, y + 14.0), U.t("Стихия"), 14, Color(0.7, 0.7, 0.75))
+		U.draw_text(ci, f, Vector2(pos.x + 12.0, y + 14.0), U.t("Element"), 14, Color(0.7, 0.7, 0.75))
 		U.draw_text_r(ci, fb, Vector2(pos.x + W - 30.0, y + 14.0), g.elem_text(), 14, ec)
 		y += ROW
 	y += 8.0

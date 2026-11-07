@@ -27,4 +27,4 @@ func _draw() -> void:
 		var a := t * (2.5 - float(i) * 0.35) * (1.0 if i % 2 == 0 else -1.0)
 		draw_arc(Vector2.ZERO, r, a, a + PI * 1.3, 24, Color(base.lightened(float(i) * 0.08), 0.85 - float(i) * 0.12), 3.0)
 	draw_circle(Vector2.ZERO, 8.0 + sin(t * 4.0) * 2.0, Color(1, 0.9, 1, 0.9))
-	U.draw_text_c(self, U.font_bold(), Vector2(0, -60), U.t("Зона %d") % target_level, 16, Color(0.9, 0.75, 1.0))
+	U.draw_text_c(self, U.font_bold(), Vector2(0, -60), U.t("Zone %d") % target_level, 16, Color(0.9, 0.75, 1.0))

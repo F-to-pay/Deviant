@@ -108,7 +108,7 @@ func hurt(amount: float, crit: bool, el: int, kb: Vector2, quiet: bool = false, 
 	if shield_t > 0.0:
 		if _shield_msg_cd <= 0.0:
 			_shield_msg_cd = 0.6
-			main.fx.text(position + Vector2(0, -radius - 10.0), U.t("ЩИТ"), Color(0.6, 0.85, 1.0), 14, 0.5)
+			main.fx.text(position + Vector2(0, -radius - 10.0), U.t("SHIELD"), Color(0.6, 0.85, 1.0), 14, 0.5)
 		return
 	var a := amount * vulnerability()
 	hp -= a

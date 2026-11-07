@@ -41,7 +41,7 @@ func _behave(delta: float, player: Player, to_p: Vector2, dist: float) -> void:
 	var rate_k := 1.35 if enraged else 1.0
 	if not enraged and hp < max_hp * 0.5:
 		enraged = true
-		Game.say(U.t("%s в ярости!") % title, Color(1.0, 0.35, 0.25))
+		Game.say(U.t("%s is enraged!") % title, Color(1.0, 0.35, 0.25))
 		Game.main.fx.shake(10.0)
 		Sfx.ui("boss/enrage", -2.0)
 		_ring(24, 240.0, 0.0, 7.0)

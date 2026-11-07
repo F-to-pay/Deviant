@@ -1,6 +1,7 @@
 class_name Music
 extends Node
-## Музыка: сама находит треки в res://music/ и раскладывает их по категориям.
+## Музыка: сама находит треки в music/ игры и включённых модов (Mods/<мод>/music/) и раскладывает
+## их по категориям. Чтобы мод заменил категорию целиком — "replace_music": ["zone"] в mod.json.
 ##  Категория — по префиксу имени файла (zone_, boss_, calm_, death_), иначе по имени папки.
 ##  zone  — обычные зоны, перемешанный плейлист, трек не рвётся при смене зоны.
 ##  boss  — арена с боссом.        calm  — пауза (Esc) и передышка после босса.
@@ -10,8 +11,6 @@ extends Node
 ## Шины Music и SFX создаются кодом; громкость — в настройках Game (deviant.cfg).
 
 const CATS := ["zone", "boss", "calm", "death", "menu"]
-const EXTS := ["ogg", "mp3", "wav"]
-const ROOT := "res://music/"
 const FADE := 1.5            # кроссфейд по умолчанию, с
 const MUFFLE_CUTOFF := 700.0
 const MUFFLE_GAIN := 0.45
@@ -19,31 +18,31 @@ const VOL_STEP := 0.1
 const ANNOUNCE_COL := Color(0.75, 0.7, 1.0)
 
 const TITLES := {
-	"zone_grieg_mountain_king": "Григ — В пещере горного короля",
-	"zone_beethoven5_i": "Бетховен — Симфония №5, I",
-	"zone_beethoven5_iii": "Бетховен — Симфония №5, III",
-	"zone_mozart40_i": "Моцарт — Симфония №40, I",
-	"zone_mozart40_iv": "Моцарт — Симфония №40, IV",
-	"zone_vivaldi_summer_presto": "Вивальди — «Лето», Presto",
-	"zone_mendelssohn_saltarello": "Мендельсон — Сальтарелло",
-	"zone_eroica_iv": "Бетховен — «Героическая», финал",
-	"zone_brahms4_iv": "Брамс — Симфония №4, IV",
-	"zone_dvorak_carnival": "Дворжак — «Карнавал»",
-	"zone_tchaikovsky6_iii": "Чайковский — «Патетическая», III",
-	"boss_danse_macabre": "Сен-Санс — Пляска смерти",
-	"boss_bald_mountain": "Мусоргский — Ночь на Лысой горе",
-	"boss_toccata": "Бах — Токката и фуга ре минор",
-	"boss_toccata_brass": "Бах — Токката и фуга (медь)",
-	"boss_moonlight_presto": "Бетховен — «Лунная», Presto",
-	"boss_coriolan": "Бетховен — «Кориолан»",
-	"boss_brahms_tragic": "Брамс — Трагическая увертюра",
-	"calm_satie_gymnopedie1": "Сати — Гимнопедия №1",
-	"calm_grieg_morning": "Григ — Утро",
-	"calm_chopin_op48_1": "Шопен — Ноктюрн op. 48 №1",
-	"calm_chopin_op55_1": "Шопен — Ноктюрн op. 55 №1",
-	"calm_goldberg_aria": "Бах — Гольдберг-вариации, Ария",
-	"death_grieg_aase": "Григ — Смерть Озе",
-	"death_eroica_funebre": "Бетховен — Похоронный марш",
+	"zone_grieg_mountain_king": "Grieg — In the Hall of the Mountain King",
+	"zone_beethoven5_i": "Beethoven — Symphony No. 5, I",
+	"zone_beethoven5_iii": "Beethoven — Symphony No. 5, III",
+	"zone_mozart40_i": "Mozart — Symphony No. 40, I",
+	"zone_mozart40_iv": "Mozart — Symphony No. 40, IV",
+	"zone_vivaldi_summer_presto": "Vivaldi — Summer, Presto",
+	"zone_mendelssohn_saltarello": "Mendelssohn — Saltarello",
+	"zone_eroica_iv": "Beethoven — Eroica, Finale",
+	"zone_brahms4_iv": "Brahms — Symphony No. 4, IV",
+	"zone_dvorak_carnival": "Dvořák — Carnival Overture",
+	"zone_tchaikovsky6_iii": "Tchaikovsky — Pathétique, III",
+	"boss_danse_macabre": "Saint-Saëns — Danse Macabre",
+	"boss_bald_mountain": "Mussorgsky — Night on Bald Mountain",
+	"boss_toccata": "Bach — Toccata and Fugue in D minor",
+	"boss_toccata_brass": "Bach — Toccata and Fugue (brass)",
+	"boss_moonlight_presto": "Beethoven — Moonlight Sonata, Presto",
+	"boss_coriolan": "Beethoven — Coriolan Overture",
+	"boss_brahms_tragic": "Brahms — Tragic Overture",
+	"calm_satie_gymnopedie1": "Satie — Gymnopédie No. 1",
+	"calm_grieg_morning": "Grieg — Morning Mood",
+	"calm_chopin_op48_1": "Chopin — Nocturne Op. 48 No. 1",
+	"calm_chopin_op55_1": "Chopin — Nocturne Op. 55 No. 1",
+	"calm_goldberg_aria": "Bach — Goldberg Variations, Aria",
+	"death_grieg_aase": "Grieg — The Death of Åse",
+	"death_eroica_funebre": "Beethoven — Funeral March",
 }
 
 var tracks := {}             # категория -> Array путей
@@ -78,9 +77,7 @@ func _ready() -> void:
 		add_child(p)
 		p.finished.connect(_on_finished.bind(i))
 		_players.append(p)
-	for c in CATS:
-		tracks[c] = []
-	_scan(ROOT)
+	rescan()
 	_apply_volume()
 
 
@@ -150,7 +147,7 @@ func title_of(path: String) -> String:
 
 func volume_text() -> String:
 	if bool(Game.setting("music_muted")):
-		return U.t("выкл")
+		return U.t("off")
 	return "%d%%" % roundi(float(Game.setting("music_volume")) * 100.0)
 
 
@@ -163,7 +160,7 @@ func play_category(c: String, fade: float = FADE, announce: bool = true) -> void
 		_fade_out(fade)
 		track = ""
 		return
-	var s := load(path) as AudioStream
+	var s := Mods.load_audio(path)
 	if s == null:
 		return
 	# зацикливание делаем сами — иначе не будет сигнала finished и смены трека
@@ -243,7 +240,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	else:
 		return
 	get_viewport().set_input_as_handled()
-	Game.say(U.t("Музыка: ") + volume_text(), ANNOUNCE_COL)
+	Game.say(U.t("Music: ") + volume_text(), ANNOUNCE_COL)
 
 
 func _set_volume(v: float, m: bool) -> void:
@@ -270,17 +267,28 @@ func _ensure_bus(bus_name: String) -> int:
 	return i
 
 
-## list_directory видит ресурсы и в экспортированной игре (там .ogg лежат как .import).
-func _scan(dir: String) -> void:
-	for n in ResourceLoader.list_directory(dir):
-		var fname := str(n)
-		if fname.ends_with("/"):
-			_scan(dir + fname)
-			continue
-		if not EXTS.has(fname.get_extension().to_lower()):
-			continue
-		var c := _cat_of(fname.get_basename(), dir)
-		(tracks[c] as Array).append(dir + fname)
+## Перечитать треки игры и модов (при старте и после включения/выключения модов).
+func rescan() -> void:
+	tracks.clear()
+	_bags.clear()
+	for c in CATS:
+		tracks[c] = []
+	var replace := {}       # корень мода -> категории, которые он заменяет
+	for m in Mods.list:
+		if bool(m["enabled"]):
+			var info: Dictionary = m["info"]
+			var rl: Variant = info.get("replace_music", [])
+			replace[str(m["path"])] = rl if rl is Array else []
+	var cleared := {}
+	for f in Mods.files("music", Mods.AUDIO_EXTS, true):
+		var rel := str(f[0])
+		var full := str(f[1])
+		var c := _cat_of(rel.get_file().get_basename(), "music/" + rel.get_base_dir())
+		for root in replace:
+			if full.begins_with(str(root)) and (replace[root] as Array).has(c) and not cleared.has(root + c):
+				cleared[root + c] = true
+				tracks[c] = []
+		(tracks[c] as Array).append(full)
 
 
 func _cat_of(stem: String, dir: String) -> String:

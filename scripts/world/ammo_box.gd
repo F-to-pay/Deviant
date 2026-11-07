@@ -26,8 +26,8 @@ func _physics_process(delta: float) -> void:
 		var got := p.add_ammo(ammo_type, amount)
 		if got > 0:
 			Sfx.at("pickup/ammo", position, -8.0, 1.0, 0.06, 2, 0.08)
-			main.fx.text(position + Vector2(0, -20), "+%d %s" % [got, U.t(str(GunData.ARCH[ammo_type]["nl"]))],
-				GunData.AMMO_COL[ammo_type], 14, 0.8)
+			main.fx.text(position + Vector2(0, -20), "+%d %s" % [got, GunData.ammo_label(ammo_type)],
+				GunData.ammo_color(ammo_type), 14, 0.8)
 		amount -= got
 		if amount <= 0:
 			main.remove_ammo(self)
@@ -38,7 +38,7 @@ func _process(_delta: float) -> void:
 
 
 func _draw() -> void:
-	var col: Color = GunData.AMMO_COL[ammo_type]
+	var col: Color = GunData.ammo_color(ammo_type)
 	var bob := sin(t * 4.0) * 2.0
 	draw_rect(Rect2(-9, 4, 18, 4), Color(0, 0, 0, 0.3))
 	draw_rect(Rect2(-8, -8 + bob, 16, 12), col.darkened(0.45))

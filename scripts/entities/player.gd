@@ -169,7 +169,7 @@ func _on_dodged() -> void:
 		return
 	perfect_dodge = true
 	dodge_cd = minf(dodge_cd, PERFECT_DODGE_CD + dodge_t)
-	Game.main.fx.text(position + Vector2(0, -34), U.t("УКЛОН!"), Color(0.5, 0.9, 1.0), 16, 0.6)
+	Game.main.fx.text(position + Vector2(0, -34), U.t("DODGED!"), Color(0.5, 0.9, 1.0), 16, 0.6)
 	Game.main.fx.ring(position, 40.0, Color(0.5, 0.9, 1.0), 0.3)
 	Sfx.at("player/perfect", position, -3.0, 1.0, 0.04, 1, 0.2)
 
@@ -340,7 +340,7 @@ func scrap(g: Gun) -> int:
 	g.ammo = 0
 	Sfx.ui("ui/scrap", -4.0)
 	var got := add_ammo(t, n)
-	Game.say(U.t("Разобрано: +%d патр. (%s)") % [got, g.ammo_name()] + ("" if got == n else U.t(" — запас полон")), GunData.AMMO_COL[t])
+	Game.say(U.t("Scrapped: +%d rounds (%s)") % [got, g.ammo_name()] + ("" if got == n else U.t(" — reserve full")), GunData.ammo_color(t))
 	return got
 
 
@@ -358,7 +358,7 @@ func start_reload(manual: bool = false) -> void:
 		return
 	if reserve_of(g.ammo_type()) <= 0 and not g.free_ammo:
 		if manual or g.ammo <= 0:
-			_dry(U.t("НЕТ ПАТРОНОВ"))
+			_dry(U.t("NO AMMO"))
 		return
 	reload_t = g.reload_time
 	burst_left = 0
@@ -460,7 +460,7 @@ func _fire(g: Gun) -> void:
 		if g.nuke_charge >= 1.0:
 			g.nuke_charge -= 1.0
 			main.projectiles.fire_nuke(g, mpos, aim)
-			Game.say(U.t("ЯДЕРКА!"), Color(1.0, 0.85, 0.3))
+			Game.say(U.t("NUKE!"), Color(1.0, 0.85, 0.3))
 	bloom = minf(bloom + g.spread * 0.12 + 0.4, 18.0)
 	muzzle = 0.06
 	main.fx.muzzle_flash(mpos, aim, g.proj_color)

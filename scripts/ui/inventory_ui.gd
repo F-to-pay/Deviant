@@ -245,7 +245,7 @@ func _move_slot_to_bag(si: int, bi: int) -> void:
 		_last_gun_msg()
 		return
 	if p.backpack.size() >= Player.BACKPACK_SIZE:
-		Game.say(U.t("Рюкзак полон."), BAD_COL)
+		Game.say(U.t("Backpack full."), BAD_COL)
 		Sfx.ui("ui/error", -6.0)
 		return
 	p.backpack.append(g)
@@ -294,7 +294,7 @@ func _scrap_from(kind: String, idx: int) -> void:
 
 
 func _last_gun_msg() -> void:
-	Game.say(U.t("Последнюю пушку не отдам. Ты что, голыми руками?"), BAD_COL)
+	Game.say(U.t("Not giving up your last gun. Planning to punch them?"), BAD_COL)
 	Sfx.ui("ui/error", -6.0)
 
 
@@ -325,8 +325,8 @@ func _draw() -> void:
 	var pr := _panel()
 	draw_rect(pr, Color(0.07, 0.07, 0.1, 0.97))
 	draw_rect(pr, Color(0.5, 0.45, 0.7, 0.6), false, 2.0)
-	U.draw_text(self, fb, pr.position + Vector2(24, 44), U.t("ИНВЕНТАРЬ"), 26, Color.WHITE)
-	U.draw_text(self, f, pr.position + Vector2(496, 44), U.t("Рюкзак %d/%d") % [p.backpack.size(), Player.BACKPACK_SIZE], 18, Color(0.8, 0.8, 0.85))
+	U.draw_text(self, fb, pr.position + Vector2(24, 44), U.t("INVENTORY"), 26, Color.WHITE)
+	U.draw_text(self, f, pr.position + Vector2(496, 44), U.t("Backpack %d/%d") % [p.backpack.size(), Player.BACKPACK_SIZE], 18, Color(0.8, 0.8, 0.85))
 
 	for i in 4:
 		var r := _slot_rect(i)
@@ -340,7 +340,7 @@ func _draw() -> void:
 			draw_rect(r, Color(1, 1, 1, 0.9), false, 2.0)
 		U.draw_text(self, fb, r.position + Vector2(10, 22), str(i + 1), 16, Color(1, 1, 1, 0.6))
 		if g == null:
-			U.draw_text(self, f, r.position + Vector2(40, 58), U.t("пусто"), 16, Color(1, 1, 1, 0.3))
+			U.draw_text(self, f, r.position + Vector2(40, 58), U.t("empty"), 16, Color(1, 1, 1, 0.3))
 			continue
 		if is_src:
 			modulate_src(r)
@@ -350,8 +350,8 @@ func _draw() -> void:
 		var sc := clampf(130.0 / maxf(60.0, float(g.vis.get("len", 80.0))), 0.6, 1.5)
 		GunIcon.draw_gun(self, g, r.position + Vector2(95, 58), sc, 0.0, false, true)
 		draw_multiline_string(fb, r.position + Vector2(180, 30), g.gun_name, HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 190, 15, 2, rc)
-		U.draw_text(self, f, r.position + Vector2(180, 74), U.t("%s · ур. %d") % [g.type_name(), g.level], 13, Color(0.75, 0.75, 0.8))
-		U.draw_text(self, f, r.position + Vector2(180, 94), U.t("Урон/с: %s   Маг: %d/%d   Запас: %s") % [U.fmt(g.dps()), g.ammo, g.mag_size, "∞" if g.free_ammo else str(p.reserve_of(g.ammo_type()))], 13, Color(0.9, 0.9, 0.9))
+		U.draw_text(self, f, r.position + Vector2(180, 74), U.t("%s · lvl %d") % [g.type_name(), g.level], 13, Color(0.75, 0.75, 0.8))
+		U.draw_text(self, f, r.position + Vector2(180, 94), U.t("DPS: %s   Mag: %d/%d   Reserve: %s") % [U.fmt(g.dps()), g.ammo, g.mag_size, "∞" if g.free_ammo else str(p.reserve_of(g.ammo_type()))], 13, Color(0.9, 0.9, 0.9))
 
 	for i in Player.BACKPACK_SIZE:
 		var r := _bag_rect(i)
@@ -370,23 +370,23 @@ func _draw() -> void:
 			draw_rect(r, Color(rc, 0.85), false, 2.0)
 		var sc := clampf(100.0 / maxf(60.0, float(g.vis.get("len", 80.0))), 0.45, 1.2)
 		GunIcon.draw_gun(self, g, r.get_center() + Vector2(0, -10), sc, 0.0, false, true)
-		U.draw_text_c(self, f, r.get_center() + Vector2(0, 34), U.fmt(g.dps()) + U.t(" у/с"), 13, Color(0.9, 0.9, 0.9), 2)
+		U.draw_text_c(self, f, r.get_center() + Vector2(0, 34), U.fmt(g.dps()) + U.t(" dps"), 13, Color(0.9, 0.9, 0.9), 2)
 		if g.dps() > (p.gun().dps() if p.gun() != null else 0.0):
 			draw_colored_polygon(PackedVector2Array([r.end + Vector2(-16, -8), r.end + Vector2(-6, -8), r.end + Vector2(-11, -16)]),
 				Color(0.35, 1.0, 0.45))
 
 	# Зоны: выбросить / переработать
 	var preview: Gun = dg if dg != null else _hovered_gun()
-	_zone(_drop_rect(), U.t("Выбросить"), U.t("перетащи сюда или за окно"), Color(1.0, 0.75, 0.35),
+	_zone(_drop_rect(), U.t("Drop"), U.t("drag here or outside the window"), Color(1.0, 0.75, 0.35),
 		hover_kind in ["drop", "out"] and dg != null, f, fb)
-	var scrap_sub := U.t("перетащи сюда или нажми [X]")
+	var scrap_sub := U.t("drag here or press [X]")
 	if preview != null:
-		scrap_sub = U.t("+%d патр. (%s)") % [_scrap_preview(preview), preview.ammo_name()]
-	_zone(_scrap_rect(), U.t("Переработать"), scrap_sub, GunData.AMMO_COL.get(preview.ammo_type(), OK_COL) if preview != null else OK_COL,
+		scrap_sub = U.t("+%d rounds (%s)") % [_scrap_preview(preview), preview.ammo_name()]
+	_zone(_scrap_rect(), U.t("Recycle"), scrap_sub, GunData.ammo_color(preview.ammo_type()) if preview != null else OK_COL,
 		hover_kind == "scrap" and dg != null, f, fb)
 
 	U.draw_text_c(self, f, Vector2(pr.get_center().x, pr.end.y - 18),
-		U.t("Перетаскивай пушки мышью · ЛКМ — выбрать / взять в руки · ПКМ — слот ↔ рюкзак · X — переработать · Tab/Esc — закрыть"),
+		U.t("Drag guns with the mouse · LMB — select / equip · RMB — slot ↔ backpack · X — recycle · Tab/Esc — close"),
 		14, Color(0.75, 0.75, 0.8))
 
 	if dg != null:
@@ -397,10 +397,10 @@ func _draw() -> void:
 		var hint := ""
 		var hc := Color.WHITE
 		if hover_kind in ["drop", "out"]:
-			hint = U.t("выбросить")
+			hint = U.t("drop")
 			hc = Color(1.0, 0.75, 0.35)
 		elif hover_kind == "scrap":
-			hint = U.t("переработать")
+			hint = U.t("recycle")
 			hc = OK_COL
 		if hint != "":
 			U.draw_text_c(self, fb, m + Vector2(0, 34), hint, 15, hc, 3)

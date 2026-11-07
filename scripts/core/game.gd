@@ -9,7 +9,8 @@ const SAVE_PATH := "user://deviant.cfg"
 const DEFAULTS := {
 	"master": 1.0, "music_volume": 0.6, "music_muted": false, "sfx_volume": 0.8, "ui_volume": 0.7,
 	"fullscreen": true, "vsync": true, "shake": 1.0, "damage_numbers": true, "show_fps": false,
-	"language": "",   # "" — как в системе, иначе "ru"/"en"
+	"language": "",   # "" — как в системе, иначе код языка ("en", "ru", ...)
+	"mod_states": "",  # JSON {имя мода: вкл/выкл}, см. Mods
 }
 
 var rng := RandomNumberGenerator.new()
@@ -36,9 +37,9 @@ const RUN_DEFAULTS := {
 	"no_heal": false, "chaos": false, "arch": "", "maker": "", "seed": "",
 }
 const DIFFICULTY := [
-	{"n": "Легко", "hp": 0.8, "dmg": 0.5},
-	{"n": "Нормально", "hp": 1.0, "dmg": 1.0},
-	{"n": "Сложно", "hp": 1.2, "dmg": 1.2},
+	{"n": "Easy", "hp": 0.8, "dmg": 0.5},
+	{"n": "Normal", "hp": 1.0, "dmg": 1.0},
+	{"n": "Hard", "hp": 1.2, "dmg": 1.2},
 ]
 var run: Dictionary = RUN_DEFAULTS.duplicate()        # текущий забег
 var custom: Dictionary = RUN_DEFAULTS.duplicate()     # последний «настраиваемый старт» (сохраняется)
@@ -47,11 +48,11 @@ var seed_value: int = 0                               # фактический �
 ## Рейтинг = очки × множитель. Множитель = здоровье врагов × урон врагов × (1 + сумма бонусов).
 ## Бонус даётся, когда параметр забега равен указанному значению.
 const RATING_BONUS := [
-	["no_heal", true, 1.0, "хардкор"],
-	["no_normals", true, 0.5, "только элита"],
-	["chaos", true, 0.25, "хаос"],
-	["chests", false, 0.25, "без сундуков"],
-	["zone_heal", true, -0.5, "лечение между зонами"],
+	["no_heal", true, 1.0, "hardcore"],
+	["no_normals", true, 0.5, "elites only"],
+	["chaos", true, 0.25, "chaos"],
+	["chests", false, 0.25, "no chests"],
+	["zone_heal", true, -0.5, "heal between zones"],
 ]
 const POINTS_ZONE := 100     # за каждую пройденную зону
 const POINTS_KILL := 1
@@ -63,8 +64,27 @@ func _ready() -> void:
 	InputSetup.setup()
 	rng.randomize()
 	_load()
+	load_content()
 	for k in settings:
 		_apply_setting(str(k))
+
+
+## Данные игры и модов: таблицы пушек, имена, переводы. Повторный вызов — «применить моды».
+func load_content() -> void:
+	Mods.scan()
+	Mods.clear_cache()
+	GunData.load_data()
+	EnemyData.load_data()
+	I18n.load_all()
+	I18n.apply(str(setting("language")))
+
+
+## Перечитать всё после включения/выключения модов (из главного меню).
+func reload_content() -> void:
+	load_content()
+	if main != null:
+		main.sfx.rescan()
+		main.music.rescan()
 
 
 ## Сид из текста: число — как есть, любой другой текст — хэш. Пусто — случайный.

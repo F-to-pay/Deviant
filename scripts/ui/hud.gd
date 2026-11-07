@@ -3,7 +3,7 @@ extends CanvasLayer
 ## Интерфейс: держит состояние экранов (пауза, смерть, инвентарь) и сообщения.
 ## Работает и на паузе (PROCESS_MODE_ALWAYS).
 
-const DEATH_TITLES := ["ПОТРАЧЕНО", "ТЫ ПОГИБ. ОПЯТЬ.", "СКИЛЛ ИШЬЮ", "ПУШКИ БЫЛИ НЕ ТЕ", "НУ ТЫ ДАЁШЬ", "ВЫ ПОГИБЛИ (официально)"]
+const DEATH_TITLES := ["WASTED", "YOU DIED. AGAIN.", "SKILL ISSUE", "WRONG GUNS", "WELL, THAT HAPPENED", "YOU HAVE DIED (officially)"]
 
 var fade := 0.0
 var root: HudDraw
@@ -52,10 +52,10 @@ func on_run_start() -> void:
 
 func zone_banner(level: int, biome_name: String, boss_title: String) -> void:
 	if boss_title != "":
-		banner_text = U.t("ЗОНА %d — БОСС") % level
+		banner_text = U.t("ZONE %d — BOSS") % level
 		banner_sub = boss_title
 	else:
-		banner_text = U.t("ЗОНА %d") % level
+		banner_text = U.t("ZONE %d") % level
 		banner_sub = biome_name
 	banner_t = 3.2
 

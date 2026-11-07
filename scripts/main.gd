@@ -378,7 +378,7 @@ func player_scrap_near() -> void:
 		return
 	var it := near_item
 	player.scrap(it.gun)
-	fx.ring(it.position, 30.0, GunData.AMMO_COL[it.gun.ammo_type()], 0.3)
+	fx.ring(it.position, 30.0, GunData.ammo_color(it.gun.ammo_type()), 0.3)
 	_remove_item(it)
 
 
@@ -420,15 +420,15 @@ func player_interact(swap: bool) -> void:
 			_remove_item(it)
 			if old != null:
 				drop_gun(old, player.position + player.aim * 20.0, true)
-			Game.say(U.t("В руках: ") + g.gun_name, g.rarity_color())
+			Game.say(U.t("Equipped: ") + g.gun_name, g.rarity_color())
 			Sfx.ui("pickup/gun", -4.0)
 		else:
 			if player.add_gun(g):
 				_remove_item(it)
-				Game.say(U.t("Подобрано: ") + g.gun_name, g.rarity_color())
+				Game.say(U.t("Picked up: ") + g.gun_name, g.rarity_color())
 				Sfx.ui("pickup/gun", -4.0)
 			else:
-				Game.say(U.t("Рюкзак полон! [F] — заменить текущую, [X] — разобрать на патроны"), Color(1.0, 0.5, 0.4))
+				Game.say(U.t("Backpack full! [F] — swap with current, [X] — scrap for ammo"), Color(1.0, 0.5, 0.4))
 				Sfx.ui("ui/error", -6.0)
 				return
 		Game.note_gun(g)
@@ -487,7 +487,7 @@ func _boss_dead(b: Enemy) -> void:
 	var lvl: int = Game.zone_level
 	fx.explosion(b.position, 220.0, b.color, true)
 	fx.shake(18.0)
-	Game.say(U.t("Босс повержен: ") + b.title, Color(1.0, 0.85, 0.3))
+	Game.say(U.t("Boss defeated: ") + b.title, Color(1.0, 0.85, 0.3))
 	Sfx.ui("boss/death", -2.0)
 	Sfx.at("explosion_big", b.position, 0.0, 0.7, 0.05, 2, 0.1)
 	if not Game.is_boss_zone(lvl):

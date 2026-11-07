@@ -4,43 +4,57 @@ extends RefCounted
 
 ## sides: 0 — круг, иначе число сторон. lvl — с какой зоны появляется.
 const TYPES := {
-	"runner": {"n": "Бегун", "hp": 32.0, "dmg": 12.0, "speed": 185.0, "r": 13.0, "col": Color(0.92, 0.32, 0.3),
+	"runner": {"n": "Runner", "hp": 32.0, "dmg": 12.0, "speed": 185.0, "r": 13.0, "col": Color(0.92, 0.32, 0.3),
 		"lvl": 1, "sides": 3, "star": false, "w": 10.0},
-	"gunner": {"n": "Стрелок", "hp": 38.0, "dmg": 10.0, "speed": 120.0, "r": 14.0, "col": Color(0.95, 0.75, 0.25),
+	"gunner": {"n": "Gunner", "hp": 38.0, "dmg": 10.0, "speed": 120.0, "r": 14.0, "col": Color(0.95, 0.75, 0.25),
 		"lvl": 1, "sides": 4, "star": false, "w": 7.0},
-	"brute": {"n": "Громила", "hp": 150.0, "dmg": 28.0, "speed": 95.0, "r": 22.0, "col": Color(0.62, 0.36, 0.82),
+	"brute": {"n": "Brute", "hp": 150.0, "dmg": 28.0, "speed": 95.0, "r": 22.0, "col": Color(0.62, 0.36, 0.82),
 		"lvl": 2, "sides": 6, "star": false, "w": 4.0},
-	"bomber": {"n": "Камикадзе", "hp": 22.0, "dmg": 38.0, "speed": 220.0, "r": 12.0, "col": Color(1.0, 0.52, 0.12),
+	"bomber": {"n": "Kamikaze", "hp": 22.0, "dmg": 38.0, "speed": 220.0, "r": 12.0, "col": Color(1.0, 0.52, 0.12),
 		"lvl": 2, "sides": 0, "star": false, "w": 5.0},
-	"spreader": {"n": "Дробила", "hp": 60.0, "dmg": 9.0, "speed": 105.0, "r": 16.0, "col": Color(0.3, 0.82, 0.5),
+	"spreader": {"n": "Spreader", "hp": 60.0, "dmg": 9.0, "speed": 105.0, "r": 16.0, "col": Color(0.3, 0.82, 0.5),
 		"lvl": 3, "sides": 5, "star": false, "w": 5.0},
-	"charger": {"n": "Таран", "hp": 95.0, "dmg": 30.0, "speed": 125.0, "r": 18.0, "col": Color(0.88, 0.22, 0.56),
+	"charger": {"n": "Charger", "hp": 95.0, "dmg": 30.0, "speed": 125.0, "r": 18.0, "col": Color(0.88, 0.22, 0.56),
 		"lvl": 4, "sides": 4, "star": true, "w": 4.0},
-	"mortar": {"n": "Мортирщик", "hp": 50.0, "dmg": 32.0, "speed": 90.0, "r": 15.0, "col": Color(0.5, 0.62, 0.95),
+	"mortar": {"n": "Mortarman", "hp": 50.0, "dmg": 32.0, "speed": 90.0, "r": 15.0, "col": Color(0.5, 0.62, 0.95),
 		"lvl": 6, "sides": 8, "star": false, "w": 3.0},
-	"summoner": {"n": "Шаман", "hp": 75.0, "dmg": 8.0, "speed": 110.0, "r": 15.0, "col": Color(0.4, 0.95, 0.9),
+	"summoner": {"n": "Shaman", "hp": 75.0, "dmg": 8.0, "speed": 110.0, "r": 15.0, "col": Color(0.4, 0.95, 0.9),
 		"lvl": 8, "sides": 5, "star": true, "w": 2.0},
 }
 
 const AFFIXES := {
-	"fast": "Быстрый",
-	"tough": "Живучий",
-	"explosive": "Взрывной",
-	"teleport": "Телепортёр",
-	"multishot": "Многоствольный",
-	"shielded": "Щитоносец",
-	"regen": "Регенерация",
-	"frost": "Ледяная аура",
-	"orbit": "Орбиталы",
+	"fast": "Fast",
+	"tough": "Tough",
+	"explosive": "Explosive",
+	"teleport": "Teleporter",
+	"multishot": "Multishot",
+	"shielded": "Shielded",
+	"regen": "Regeneration",
+	"frost": "Frost Aura",
+	"orbit": "Orbitals",
 }
 
-const ELITE_PREFIX := ["Злобный", "Бешеный", "Древний", "Проклятый", "Матёрый", "Отбитый"]
-const RARE_FIRST := ["Гриша", "Валера", "Толик", "Зинаида", "Аркадий", "Жора", "Люся", "Эдуард", "Капитолина", "Борян", "Семёныч"]
-const RARE_LAST := ["Ломатель", "Неупокоенный", "Без Тормозов", "Пожиратель Патронов", "Из Подъезда", "Шестипалый",
-	"Неприятный", "Громкий", "Жадный", "Сквозняк", "Неуловимый"]
-const BOSS_TITLES := ["Неудержимый", "Великий", "Пухлый", "Почти Бессмертный", "Последний", "Ужасный", "Подозрительный"]
-const BOSS_NAMES := ["Генерал Баклажан", "Мясник Гоша", "Пылесос Апокалипсиса", "Тётя Валя", "Король Мусора",
-	"Матерь Ржавчины", "Прораб Вечности", "Кабан Кабаныч"]
+## Списки имён — из data/names.json (игра + моды): elite_prefixes, rare_first_names, rare_last_names,
+## boss_titles, boss_names. Порядок слов — шаблоны языка "elite", "rare", "boss".
+static var ELITE_PREFIX: Array = ["Vicious"]
+static var RARE_FIRST: Array = ["Grisha"]
+static var RARE_LAST: Array = ["the Breaker"]
+static var BOSS_TITLES: Array = ["Great"]
+static var BOSS_NAMES: Array = ["General Eggplant"]
+
+
+static func load_data() -> void:
+	var n := GunData.merge_names()
+	for pair in [["elite_prefixes", "ELITE_PREFIX"], ["rare_first_names", "RARE_FIRST"], ["rare_last_names", "RARE_LAST"],
+			["boss_titles", "BOSS_TITLES"], ["boss_names", "BOSS_NAMES"]]:
+		var v: Variant = n.get(pair[0], [])
+		if v is Array and not (v as Array).is_empty():
+			match str(pair[1]):
+				"ELITE_PREFIX": ELITE_PREFIX = v
+				"RARE_FIRST": RARE_FIRST = v
+				"RARE_LAST": RARE_LAST = v
+				"BOSS_TITLES": BOSS_TITLES = v
+				"BOSS_NAMES": BOSS_NAMES = v
 
 
 static func pick_type(level: int, rng: RandomNumberGenerator, exclude: Array = []) -> String:
@@ -103,13 +117,15 @@ static func roll_affixes(n: int, rng: RandomNumberGenerator) -> Array:
 
 
 static func elite_title(etype: String, elite: int, affixes: Array, rng: RandomNumberGenerator) -> String:
-	var base := U.t(TYPES[etype]["n"])
+	var tn := str(TYPES[etype]["n"])
+	var base := U.t(tn)
 	var head := ""
 	if elite == 1:
-		var pre := U.t(ELITE_PREFIX[rng.randi() % ELITE_PREFIX.size()])
-		head = "%s %s" % [pre, base if I18n.is_en() else base.to_lower()]
+		var pre := str(ELITE_PREFIX[rng.randi() % ELITE_PREFIX.size()])
+		head = I18n.tpl("elite", {"prefix": I18n.word(pre, "m"), "type": base, "type_l": I18n.word(tn, "lower")})
 	elif elite == 2:
-		head = "%s %s" % [U.t(RARE_FIRST[rng.randi() % RARE_FIRST.size()]), U.t(RARE_LAST[rng.randi() % RARE_LAST.size()])]
+		head = I18n.tpl("rare", {"first": U.t(str(RARE_FIRST[rng.randi() % RARE_FIRST.size()])),
+			"last": U.t(str(RARE_LAST[rng.randi() % RARE_LAST.size()]))})
 	else:
 		return base
 	var names: Array = []
@@ -121,6 +137,6 @@ static func elite_title(etype: String, elite: int, affixes: Array, rng: RandomNu
 
 
 static func boss_name(rng: RandomNumberGenerator) -> String:
-	var t1 := U.t(BOSS_TITLES[rng.randi() % BOSS_TITLES.size()])
-	var n1 := U.t(BOSS_NAMES[rng.randi() % BOSS_NAMES.size()])
-	return ("%s the %s" % [n1, t1]) if I18n.is_en() else ("%s %s" % [t1, n1])
+	var t1 := U.t(str(BOSS_TITLES[rng.randi() % BOSS_TITLES.size()]))
+	var n1 := U.t(str(BOSS_NAMES[rng.randi() % BOSS_NAMES.size()]))
+	return I18n.tpl("boss", {"title": t1, "name": n1})

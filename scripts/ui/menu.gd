@@ -55,6 +55,7 @@ func _build_ui() -> void:
 	_build_custom(root)
 	_build_settings(root)
 	_build_pause(root)
+	_build_mods(root)
 	cursor = CursorDraw.new()
 	cursor.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(cursor)
@@ -83,11 +84,14 @@ func _rebuild() -> void:
 
 
 func _lang_text() -> String:
-	return "Язык: Русский" if I18n.current() == "ru" else "Language: English"
+	return U.t("Language") + ": " + I18n.lang_name(I18n.current())
 
 
+## Следующий язык из найденных в lang/ (игра + моды).
 func _cycle_lang() -> void:
-	Game.set_setting("language", "en" if I18n.current() == "ru" else "ru")
+	var codes := I18n.available()
+	var i := codes.find(I18n.current())
+	Game.set_setting("language", str(codes[(i + 1) % codes.size()]))
 
 
 # --- Открытие / закрытие --------------------------------------------------------
@@ -152,25 +156,91 @@ func _unhandled_input(event: InputEvent) -> void:
 func _build_main(root: Control) -> void:
 	var box := _screen(root, "main")
 	box.add_child(_label("DEVIANT", 104, ACCENT, true))
-	box.add_child(_label(U.t("бесконечный диаблоид с абсурдными пушками"), 22, DIM))
+	box.add_child(_label(U.t("an endless diablo-like with absurd guns"), 22, DIM))
 	box.add_child(_gap(36))
-	var b := _button(U.t("Новая игра"), func() -> void: Game.main.start_game())
+	var b := _button(U.t("New game"), func() -> void: Game.main.start_game())
 	box.add_child(b)
 	_first_focus["main"] = b
-	box.add_child(_button(U.t("Настраиваемый старт"), func() -> void: show_screen("custom")))
-	box.add_child(_button(U.t("Настройки"), func() -> void: show_screen("settings")))
-	box.add_child(_button(U.t("Выход"), func() -> void: get_tree().quit()))
+	box.add_child(_button(U.t("Custom start"), func() -> void: show_screen("custom")))
+	box.add_child(_button(U.t("Settings"), func() -> void: show_screen("settings")))
+	box.add_child(_button(U.t("Mods") + " (%d)" % _mods_on(), func() -> void: show_screen("mods")))
+	box.add_child(_button(U.t("Quit"), func() -> void: get_tree().quit()))
 	box.add_child(_button(_lang_text(), _cycle_lang))
 	box.add_child(_gap(30))
 	records = _label("", 18, DIM)
 	box.add_child(records)
 
 
+# --- Моды ---------------------------------------------------------------------------
+
+func _mods_on() -> int:
+	var n := 0
+	for m in Mods.list:
+		if bool(m["enabled"]):
+			n += 1
+	return n
+
+
+## Список модов из папки Mods/ с переключателями. Изменения применяются сразу:
+## перечитываются данные, переводы, звуки и музыка.
+func _build_mods(root: Control) -> void:
+	var box := _screen(root, "mods")
+	box.add_child(_label(U.t("MODS"), 56, ACCENT, true))
+	box.add_child(_label(U.t("Folder: %s") % Mods.root(), 16, DIM))
+	box.add_child(_gap(12))
+	if Mods.list.is_empty():
+		box.add_child(_label(U.t("No mods found. Put a mod folder into the Mods folder and press Rescan."), 20, TEXT))
+	else:
+		var grid := GridContainer.new()
+		grid.columns = 2
+		grid.add_theme_constant_override("h_separation", 18)
+		grid.add_theme_constant_override("v_separation", 8)
+		box.add_child(grid)
+		for m in Mods.list:
+			var c := CheckButton.new()
+			c.button_pressed = bool(m["enabled"])
+			c.toggled.connect(_on_mod_toggled.bind(str(m["id"])))
+			grid.add_child(c)
+			var info: Dictionary = m["info"]
+			var line := str(m["name"])
+			if info.has("version"):
+				line += "  v" + str(info["version"])
+			if info.has("author"):
+				line += "  · " + str(info["author"])
+			var lb := _label(line, 22, TEXT, false, HORIZONTAL_ALIGNMENT_LEFT)
+			if info.has("description"):
+				lb.tooltip_text = str(info["description"])
+			grid.add_child(lb)
+	box.add_child(_gap(16))
+	box.add_child(_button(U.t("Open mods folder"), _open_mods_folder))
+	box.add_child(_button(U.t("Rescan"), _reload_mods))
+	var back := _button(U.t("Back"), func() -> void: show_screen(mode))
+	box.add_child(back)
+	_first_focus["mods"] = back
+
+
+func _on_mod_toggled(on: bool, id: String) -> void:
+	Mods.set_enabled(id, on)
+	_reload_mods()
+
+
+func _reload_mods() -> void:
+	Game.reload_content()
+	_rebuild.call_deferred()
+
+
+func _open_mods_folder() -> void:
+	var path := Mods.root()
+	if not DirAccess.dir_exists_absolute(path):
+		DirAccess.make_dir_recursive_absolute(path)
+	OS.shell_open(path)
+
+
 ## Настраиваемый старт: сложность, переключатели, стартовая пушка, сид.
 ## Значения правятся прямо в Game.custom и сохраняются при старте.
 func _build_custom(root: Control) -> void:
 	var box := _screen(root, "custom")
-	box.add_child(_label(U.t("НАСТРАИВАЕМЫЙ СТАРТ"), 52, ACCENT, true))
+	box.add_child(_label(U.t("CUSTOM START"), 52, ACCENT, true))
 	box.add_child(_gap(8))
 	var grid := GridContainer.new()
 	grid.columns = 3
@@ -179,7 +249,7 @@ func _build_custom(root: Control) -> void:
 	box.add_child(grid)
 
 	# Сложность: пресеты + ручные ползунки
-	grid.add_child(_label(U.t("Сложность"), 22, TEXT, false, HORIZONTAL_ALIGNMENT_RIGHT))
+	grid.add_child(_label(U.t("Difficulty"), 22, TEXT, false, HORIZONTAL_ALIGNMENT_RIGHT))
 	var presets := HBoxContainer.new()
 	presets.add_theme_constant_override("separation", 8)
 	for i in Game.DIFFICULTY.size():
@@ -192,48 +262,48 @@ func _build_custom(root: Control) -> void:
 	_custom_preset = _label("", 20, DIM, false, HORIZONTAL_ALIGNMENT_LEFT)
 	_custom_preset.custom_minimum_size = Vector2(130, 0)
 	grid.add_child(_custom_preset)
-	_custom_slider(grid, "hp", U.t("Здоровье врагов"))
-	_custom_slider(grid, "dmg", U.t("Урон врагов"))
+	_custom_slider(grid, "hp", U.t("Enemy health"))
+	_custom_slider(grid, "dmg", U.t("Enemy damage"))
 
-	_custom_check(grid, "zone_heal", U.t("Полное лечение при переходе в новую зону"))
-	_custom_check(grid, "no_normals", U.t("Нет обычных врагов (только элита)"))
-	_custom_check(grid, "chests", U.t("Сундуки"))
-	_custom_check(grid, "no_heal", U.t("Хардкор: без аптечек и вампиризма"))
-	_custom_check(grid, "chaos", U.t("Хаос: редкости пушек и типы врагов равновероятны"))
+	_custom_check(grid, "zone_heal", U.t("Full heal when entering a new zone"))
+	_custom_check(grid, "no_normals", U.t("No regular enemies (elites only)"))
+	_custom_check(grid, "chests", U.t("Chests"))
+	_custom_check(grid, "no_heal", U.t("Hardcore: no health orbs or lifesteal"))
+	_custom_check(grid, "chaos", U.t("Chaos: all gun rarities and enemy types equally likely"))
 
 	# Стартовая пушка
 	var arch_ids: Array = ["random"]
-	var arch_names: Array = [U.t("Случайная")]
+	var arch_names: Array = [U.t("Random")]
 	for k in GunData.ARCH:
 		arch_ids.append(k)
-		arch_names.append(U.t(str(GunData.ARCH[k]["n"])))
-	_custom_option(grid, "arch", U.t("Стартовая пушка: основа"), arch_ids, arch_names, "pistol")
+		arch_names.append(U.t(str(GunData.ARCH[k].get("name", k))))
+	_custom_option(grid, "arch", U.t("Starting gun: type"), arch_ids, arch_names, "pistol")
 	var mk_ids: Array = ["random"]
-	var mk_names: Array = [U.t("Случайная")]
+	var mk_names: Array = [U.t("Random")]
 	for k in GunData.MAKERS:
 		mk_ids.append(k)
-		mk_names.append(U.t(str(GunData.MAKERS[k]["n"])))
-	_custom_option(grid, "maker", U.t("Стартовая пушка: марка"), mk_ids, mk_names, "synergis")
+		mk_names.append(U.t(str(GunData.MAKERS[k].get("name", k))))
+	_custom_option(grid, "maker", U.t("Starting gun: brand"), mk_ids, mk_names, "synergis")
 
 	# Сид
-	grid.add_child(_label(U.t("Сид"), 22, TEXT, false, HORIZONTAL_ALIGNMENT_RIGHT))
+	grid.add_child(_label(U.t("Seed"), 22, TEXT, false, HORIZONTAL_ALIGNMENT_RIGHT))
 	_custom_seed = LineEdit.new()
-	_custom_seed.placeholder_text = U.t("пусто — случайный")
+	_custom_seed.placeholder_text = U.t("empty — random")
 	_custom_seed.custom_minimum_size = Vector2(340, 44)
 	_custom_seed.max_length = 40
 	_custom_seed.text_changed.connect(func(t: String) -> void: Game.custom["seed"] = t)
 	grid.add_child(_custom_seed)
-	grid.add_child(_label(U.t("число или текст"), 16, DIM, false, HORIZONTAL_ALIGNMENT_LEFT))
+	grid.add_child(_label(U.t("number or text"), 16, DIM, false, HORIZONTAL_ALIGNMENT_LEFT))
 
 	box.add_child(_gap(10))
 	_custom_rating = _label("", 24, ACCENT, true)
 	box.add_child(_custom_rating)
 	box.add_child(_gap(8))
-	var start := _button(U.t("Начать"), _start_custom)
+	var start := _button(U.t("Start"), _start_custom)
 	box.add_child(start)
 	_first_focus["custom"] = start
-	box.add_child(_button(U.t("Сбросить"), _reset_custom))
-	box.add_child(_button(U.t("Назад"), _back_custom))
+	box.add_child(_button(U.t("Reset"), _reset_custom))
+	box.add_child(_button(U.t("Back"), _back_custom))
 
 
 func _custom_slider(grid: GridContainer, key: String, title: String) -> void:
@@ -270,8 +340,8 @@ func _bonus_text(key: String) -> String:
 	for b in Game.RATING_BONUS:
 		if b[0] == key:
 			var v := float(b[2])
-			var when := "" if bool(b[1]) else U.t("если выкл. ")
-			return U.t("%sрейтинг %s%d%%") % [when, "+" if v > 0.0 else "−", roundi(absf(v) * 100.0)]
+			var when := "" if bool(b[1]) else U.t("if off: ")
+			return U.t("%srating %s%d%%") % [when, "+" if v > 0.0 else "−", roundi(absf(v) * 100.0)]
 	return ""
 
 
@@ -303,8 +373,8 @@ func _on_custom_slider(v: float, key: String, val: Label) -> void:
 
 func _update_preset_label() -> void:
 	if _custom_rating != null:
-		_custom_rating.text = U.t("Множитель рейтинга: ×%.2f") % Game.rating_mult(Game.custom)
-	var t := U.t("своя")
+		_custom_rating.text = U.t("Rating multiplier: ×%.2f") % Game.rating_mult(Game.custom)
+	var t := U.t("custom")
 	for d in Game.DIFFICULTY:
 		if is_equal_approx(float(d["hp"]), float(Game.custom["hp"])) and is_equal_approx(float(d["dmg"]), float(Game.custom["dmg"])):
 			t = U.t(str(d["n"])).to_lower()
@@ -345,51 +415,51 @@ func _start_custom() -> void:
 
 func _build_settings(root: Control) -> void:
 	var box := _screen(root, "settings")
-	box.add_child(_label(U.t("НАСТРОЙКИ"), 56, ACCENT, true))
+	box.add_child(_label(U.t("SETTINGS"), 56, ACCENT, true))
 	box.add_child(_gap(16))
 	var grid := GridContainer.new()
 	grid.columns = 3
 	grid.add_theme_constant_override("h_separation", 24)
 	grid.add_theme_constant_override("v_separation", 14)
 	box.add_child(grid)
-	_slider(grid, "master", U.t("Общая громкость"), 0.0, 1.0, 0.05, "pct")
-	_slider(grid, "music_volume", U.t("Музыка"), 0.0, 1.0, 0.05, "pct")
-	_check(grid, "music_muted", U.t("Музыка выключена"))
-	_slider(grid, "sfx_volume", U.t("Звуки игры"), 0.0, 1.0, 0.05, "pct")
-	_slider(grid, "ui_volume", U.t("Интерфейс"), 0.0, 1.0, 0.05, "pct")
-	_check(grid, "fullscreen", U.t("Полный экран"))
-	_check(grid, "vsync", U.t("Вертикальная синхронизация"))
-	_slider(grid, "shake", U.t("Тряска экрана"), 0.0, 1.5, 0.05, "pct")
-	_check(grid, "damage_numbers", U.t("Цифры урона"))
-	_check(grid, "show_fps", U.t("Показывать FPS"))
+	_slider(grid, "master", U.t("Master volume"), 0.0, 1.0, 0.05, "pct")
+	_slider(grid, "music_volume", U.t("Music"), 0.0, 1.0, 0.05, "pct")
+	_check(grid, "music_muted", U.t("Music muted"))
+	_slider(grid, "sfx_volume", U.t("Game sounds"), 0.0, 1.0, 0.05, "pct")
+	_slider(grid, "ui_volume", U.t("Interface"), 0.0, 1.0, 0.05, "pct")
+	_check(grid, "fullscreen", U.t("Fullscreen"))
+	_check(grid, "vsync", U.t("V-Sync"))
+	_slider(grid, "shake", U.t("Screen shake"), 0.0, 1.5, 0.05, "pct")
+	_check(grid, "damage_numbers", U.t("Damage numbers"))
+	_check(grid, "show_fps", U.t("Show FPS"))
 	box.add_child(_gap(20))
-	var back := _button(U.t("Назад"), func() -> void: show_screen(mode))
+	var back := _button(U.t("Back"), func() -> void: show_screen(mode))
 	box.add_child(back)
 	_first_focus["settings"] = back
 
 
 func _build_pause(root: Control) -> void:
 	var box := _screen(root, "pause")
-	box.add_child(_label(U.t("ПАУЗА"), 72, Color.WHITE, true))
+	box.add_child(_label(U.t("PAUSED"), 72, Color.WHITE, true))
 	box.add_child(_gap(20))
-	var b := _button(U.t("Продолжить"), func() -> void: Game.main.hud.toggle_pause())
+	var b := _button(U.t("Resume"), func() -> void: Game.main.hud.toggle_pause())
 	box.add_child(b)
 	_first_focus["pause"] = b
-	box.add_child(_button(U.t("Настройки"), func() -> void: show_screen("settings")))
-	box.add_child(_button(U.t("В главное меню"), func() -> void: Game.main.to_menu()))
+	box.add_child(_button(U.t("Settings"), func() -> void: show_screen("settings")))
+	box.add_child(_button(U.t("Main menu"), func() -> void: Game.main.to_menu()))
 	box.add_child(_gap(16))
 	_pause_info = _label("", 18, ACCENT)
 	box.add_child(_pause_info)
 	box.add_child(_gap(12))
 	for l in [
-		U.t("WASD — бег, мышь — прицел, ЛКМ — огонь"),
-		U.t("Пробел / Shift / ПКМ — перекат: КД 4 с, но 0.5 с, если реально увернулся"),
-		U.t("R — перезарядка · 1-4, колесо, Q — смена оружия"),
-		U.t("E — подобрать / открыть сундук · F — заменить текущую · X — разобрать на патроны"),
-		U.t("Tab / I — инвентарь · F3 — отладка · Esc — продолжить"),
-		U.t("− / + и M — музыка · [ / ] — звуки"),
+		U.t("WASD — move, mouse — aim, LMB — shoot"),
+		U.t("Space / Shift / RMB — dodge: 4 s cooldown, 0.5 s if you actually dodged something"),
+		U.t("R — reload · 1-4, wheel, Q — switch weapons"),
+		U.t("E — pick up / open chest · F — swap with current · X — scrap for ammo"),
+		U.t("Tab / I — inventory · F3 — debug · Esc — resume"),
+		U.t("− / + and M — music · [ / ] — sounds"),
 		"",
-		U.t("Регена нет. Хилки — максимум 2 за зону. Уровней нет — только пушки."),
+		U.t("No regen. Max 2 health orbs per zone. No levels — only guns."),
 	]:
 		box.add_child(_label(str(l), 17, DIM))
 
@@ -447,27 +517,27 @@ func _fmt(v: float, fmt: String) -> String:
 
 ## Строка о забеге: сид и отличия от обычной игры.
 static func run_info() -> String:
-	var parts := PackedStringArray([U.t("Сид: %d") % Game.seed_value, U.t("рейтинг ×%.2f") % Game.rating_mult()])
+	var parts := PackedStringArray([U.t("Seed: %d") % Game.seed_value, U.t("rating ×%.2f") % Game.rating_mult()])
 	var r := Game.run
 	if not (is_equal_approx(float(r["hp"]), 1.0) and is_equal_approx(float(r["dmg"]), 1.0)):
-		parts.append(U.t("враги: здоровье %d%%, урон %d%%") % [roundi(float(r["hp"]) * 100.0), roundi(float(r["dmg"]) * 100.0)])
+		parts.append(U.t("enemies: health %d%%, damage %d%%") % [roundi(float(r["hp"]) * 100.0), roundi(float(r["dmg"]) * 100.0)])
 	if bool(r["zone_heal"]):
-		parts.append(U.t("лечение между зонами"))
+		parts.append(U.t("heal between zones"))
 	if bool(r["no_normals"]):
-		parts.append(U.t("только элита"))
+		parts.append(U.t("elites only"))
 	if not bool(r["chests"]):
-		parts.append(U.t("без сундуков"))
+		parts.append(U.t("no chests"))
 	if bool(r["no_heal"]):
-		parts.append(U.t("хардкор"))
+		parts.append(U.t("hardcore"))
 	if bool(r["chaos"]):
-		parts.append(U.t("хаос"))
+		parts.append(U.t("chaos"))
 	return " · ".join(parts)
 
 
 func _records_text() -> String:
 	if Game.best_zone <= 0 and Game.best_rating <= 0:
-		return U.t("Рекордов пока нет")
-	return U.t("Рекорд: зона %d · убийств за забег: %d · лучший рейтинг: %s") % [
+		return U.t("No records yet")
+	return U.t("Best: zone %d · kills in a run: %d · best rating: %s") % [
 		Game.best_zone, Game.best_kills, U.fmt(float(Game.best_rating))]
 
 

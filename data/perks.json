@@ -1,0 +1,403 @@
+[
+	{
+		"id": "heavy",
+		"name": "Heavy",
+		"weight": 10.0,
+		"min_rarity": 1,
+		"group": "",
+		"tags": [],
+		"ops": [["mul", "damage", 1.35], ["mul", "fire_rate", 0.85]]
+	},
+	{
+		"id": "rapid",
+		"name": "Rapid",
+		"weight": 10.0,
+		"min_rarity": 1,
+		"group": "",
+		"tags": [],
+		"ops": [["mul", "fire_rate", 1.4], ["mul", "damage", 0.88]]
+	},
+	{
+		"id": "precise",
+		"name": "Precise",
+		"weight": 8.0,
+		"min_rarity": 1,
+		"group": "",
+		"tags": [],
+		"fits": [["spread", ">", 1.0]],
+		"ops": [["mul", "spread", 0.35], ["mul", "proj_speed", 1.2], ["add", "crit_chance", 0.03]]
+	},
+	{
+		"id": "drum",
+		"name": "Drum-Fed",
+		"weight": 7.0,
+		"min_rarity": 1,
+		"group": "",
+		"tags": [],
+		"fits": [["mag_size", "<", 80]],
+		"ops": [["mul", "mag_size", 1.9], ["add", "mag_size", 1], ["mul", "reload_time", 1.15]]
+	},
+	{
+		"id": "quick",
+		"name": "Nimble",
+		"weight": 7.0,
+		"min_rarity": 1,
+		"group": "",
+		"tags": [],
+		"ops": [["mul", "reload_time", 0.6]]
+	},
+	{
+		"id": "mean",
+		"name": "Mean",
+		"weight": 8.0,
+		"min_rarity": 1,
+		"group": "",
+		"tags": [],
+		"ops": [["add", "crit_chance", 0.1], ["add", "crit_mult", 0.75]]
+	},
+	{
+		"id": "long",
+		"name": "Long-Barreled",
+		"weight": 6.0,
+		"min_rarity": 1,
+		"group": "barrel",
+		"tags": ["no_shell"],
+		"ops": [["mul", "lifetime", 1.3], ["mul", "proj_speed", 1.3], ["mul", "damage", 1.1]]
+	},
+	{
+		"id": "sawn",
+		"name": "Sawn-Off",
+		"weight": 5.0,
+		"min_rarity": 1,
+		"group": "barrel",
+		"tags": ["no_shell"],
+		"ops": [["pellets", 2, 1.15], ["mul", "spread", 1.4], ["add", "spread", 6.0], ["mul", "lifetime", 0.7]]
+	},
+	{
+		"id": "double",
+		"name": "Double-Barreled",
+		"weight": 6.0,
+		"min_rarity": 1,
+		"group": "",
+		"tags": [],
+		"ops": [
+			["mul", "pellets", 2],
+			["mul", "ammo_per_shot", 2],
+			["mul", "spread", 1.3],
+			["add", "spread", 2.0],
+			["max", "mag_size", 2]
+		]
+	},
+	{
+		"id": "scatter",
+		"name": "Scattering",
+		"weight": 7.0,
+		"min_rarity": 1,
+		"group": "",
+		"tags": [],
+		"fits": [["pellets", "<", 12]],
+		"ops": [["pellets", 5, 1.3], ["add", "spread", 22.0], ["mul", "lifetime", 0.85]]
+	},
+	{
+		"id": "burst",
+		"name": "Volley",
+		"weight": 5.0,
+		"min_rarity": 1,
+		"group": "",
+		"tags": [],
+		"fits": [["fire_rate", ">=", 1.2]],
+		"ops": [["set", "burst", 3], ["mul", "damage", 1.05], ["max", "mag_size", 3]]
+	},
+	{
+		"id": "armored",
+		"name": "Armored",
+		"weight": 5.0,
+		"min_rarity": 1,
+		"group": "",
+		"tags": [],
+		"ops": [["add", "armor", 0.15], ["min", "armor", 0.5]]
+	},
+	{
+		"id": "light",
+		"name": "Light",
+		"weight": 5.0,
+		"min_rarity": 1,
+		"group": "",
+		"tags": [],
+		"ops": [["mul", "move_mult", 1.15]]
+	},
+	{
+		"id": "fire",
+		"name": "Fiery",
+		"weight": 6.0,
+		"min_rarity": 1,
+		"group": "el",
+		"tags": ["proc"],
+		"ops": [["set", "element", "fire"], ["add", "elem_chance", 0.45]]
+	},
+	{
+		"id": "shock",
+		"name": "Electric",
+		"weight": 6.0,
+		"min_rarity": 1,
+		"group": "el",
+		"tags": ["proc"],
+		"ops": [["set", "element", "shock"], ["add", "elem_chance", 0.45]]
+	},
+	{
+		"id": "acid",
+		"name": "Acidic",
+		"weight": 6.0,
+		"min_rarity": 1,
+		"group": "el",
+		"tags": ["proc"],
+		"ops": [["set", "element", "acid"], ["add", "elem_chance", 0.45]]
+	},
+	{
+		"id": "cryo",
+		"name": "Icy",
+		"weight": 6.0,
+		"min_rarity": 1,
+		"group": "el",
+		"tags": ["proc"],
+		"ops": [["set", "element", "cryo"], ["add", "elem_chance", 0.45]]
+	},
+	{
+		"id": "curse",
+		"name": "Cursed",
+		"weight": 6.0,
+		"min_rarity": 1,
+		"group": "el",
+		"tags": ["proc"],
+		"ops": [["set", "element", "curse"], ["add", "elem_chance", 0.45]]
+	},
+	{"id": "slug", "name": "Slug", "weight": 0.0, "min_rarity": 99, "group": "", "tags": [], "ops": []},
+	{
+		"id": "ricochet",
+		"name": "Ricochet",
+		"weight": 7.0,
+		"min_rarity": 1,
+		"group": "",
+		"tags": ["proc", "no_shell"],
+		"ops": [["add", "bounces", 3]]
+	},
+	{
+		"id": "pierce",
+		"name": "Armor-Piercing",
+		"weight": 1.5,
+		"min_rarity": 3,
+		"group": "",
+		"tags": ["proc", "no_shell"],
+		"ops": [["add", "pierce", 2]]
+	},
+	{
+		"id": "vamp",
+		"name": "Vampiric",
+		"weight": 1.5,
+		"min_rarity": 3,
+		"group": "",
+		"tags": ["proc", "heal"],
+		"ops": [["add", "leech", 0.02]]
+	},
+	{
+		"id": "blast",
+		"name": "Explosive",
+		"weight": 5.0,
+		"min_rarity": 1,
+		"group": "",
+		"tags": ["proc", "explosive"],
+		"ops": [
+			[
+				"if",
+				["explode_r", "<=", 0],
+				[["set", "explode_r", 50.0], ["set", "explode_chance", 0.25]],
+				[
+					[
+						"if",
+						["explode_chance", "<", 1.0],
+						[["add", "explode_chance", 0.2], ["min", "explode_chance", 1.0]],
+						[["mul", "explode_r", 1.25]]
+					]
+				]
+			]
+		]
+	},
+	{
+		"id": "grenade",
+		"name": "Grenade",
+		"weight": 6.0,
+		"min_rarity": 2,
+		"group": "kind",
+		"tags": ["explosive", "no_shell"],
+		"fits": [["proj_kind", "!=", "grenade"]],
+		"ops": [
+			["set", "proj_kind", "grenade"],
+			["max", "explode_r", 70.0],
+			["set", "explode_chance", 1.0],
+			["set", "explode_on_expire", true],
+			["add", "bounces", 2],
+			["set", "drag", 1.4],
+			["mul", "lifetime", 1.2],
+			["max", "lifetime", 0.8],
+			["min", "lifetime", 1.4],
+			["mul", "proj_speed", 0.65],
+			["mul", "damage", 1.25],
+			["mul", "fire_rate", 0.75],
+			["max", "proj_size", 4.0],
+			["set", "pierce", 0]
+		]
+	},
+	{
+		"id": "rocket",
+		"name": "Rocket-Propelled",
+		"weight": 5.0,
+		"min_rarity": 2,
+		"group": "kind",
+		"tags": ["explosive", "no_shell"],
+		"fits": [["proj_kind", "!=", "rocket"]],
+		"ops": [
+			["set", "proj_kind", "rocket"],
+			["max", "explode_r", 60.0],
+			["set", "explode_chance", 1.0],
+			["set", "accel", 2.8],
+			["mul", "proj_speed", 0.45],
+			["max", "lifetime", 1.2],
+			["mul", "damage", 1.3],
+			["mul", "fire_rate", 0.72],
+			["set", "pierce", 0]
+		]
+	},
+	{
+		"id": "split",
+		"name": "Splitting",
+		"weight": 6.0,
+		"min_rarity": 2,
+		"group": "split",
+		"tags": ["proc", "no_shell"],
+		"ops": [["set", "split_n", 3], ["max", "split_depth", 1]]
+	},
+	{
+		"id": "homing",
+		"name": "Homing",
+		"weight": 2.0,
+		"min_rarity": 3,
+		"group": "",
+		"tags": ["proc", "no_shell"],
+		"fits": [["homing", "<", 2.0]],
+		"ops": [["add", "homing", 4.0], ["mul", "proj_speed", 0.9]]
+	},
+	{
+		"id": "boomerang",
+		"name": "Boomerang",
+		"weight": 4.0,
+		"min_rarity": 2,
+		"group": "",
+		"tags": ["proc", "no_shell"],
+		"ops": [["set", "boomerang", true], ["mul", "lifetime", 1.3]]
+	},
+	{
+		"id": "wave",
+		"name": "Wavy",
+		"weight": 4.0,
+		"min_rarity": 2,
+		"group": "",
+		"tags": ["proc", "no_shell"],
+		"ops": [["set", "sine", 9.0]]
+	},
+	{
+		"id": "chain",
+		"name": "Chain",
+		"weight": 5.0,
+		"min_rarity": 2,
+		"group": "",
+		"tags": ["proc"],
+		"ops": [
+			["add", "chain_n", 3],
+			["if", ["element", "==", "none"], [["set", "element", "shock"]]],
+			["add", "elem_chance", 0.1]
+		]
+	},
+	{
+		"id": "cluster",
+		"name": "Cluster",
+		"weight": 4.0,
+		"min_rarity": 2,
+		"group": "",
+		"tags": ["proc", "explosive"],
+		"ops": [
+			["add", "cluster_n", 4],
+			["if", ["explode_r", "<=", 0], [["set", "explode_r", 45.0], ["max", "explode_chance", 0.35]]]
+		]
+	},
+	{
+		"id": "gravity",
+		"name": "Gravity",
+		"weight": 1.2,
+		"min_rarity": 3,
+		"group": "",
+		"tags": ["proc"],
+		"ops": [["add", "vortex", 0.25]]
+	},
+	{
+		"id": "seeder",
+		"name": "Seeding",
+		"weight": 3.0,
+		"min_rarity": 3,
+		"group": "",
+		"tags": ["proc", "no_shell"],
+		"ops": [["set", "seeder", 0.15]]
+	},
+	{
+		"id": "fractal",
+		"name": "Fractal",
+		"weight": 2.5,
+		"min_rarity": 3,
+		"group": "split",
+		"tags": ["proc", "no_shell"],
+		"ops": [["set", "split_n", 2], ["set", "split_depth", 3]]
+	},
+	{
+		"id": "big",
+		"name": "Orb",
+		"weight": 1.5,
+		"min_rarity": 3,
+		"group": "kind",
+		"tags": ["no_shell"],
+		"fits": [["proj_kind", "!=", "orb"]],
+		"ops": [
+			["set", "proj_kind", "orb"],
+			["mul", "proj_size", 4.0],
+			["max", "proj_size", 12.0],
+			["mul", "proj_speed", 0.35],
+			["add", "pierce", 99],
+			["mul", "damage", 2.2],
+			["mul", "fire_rate", 0.4],
+			["mul", "lifetime", 2.5],
+			["add", "bounces", 1]
+		]
+	},
+	{
+		"id": "nuke",
+		"name": "Nuclear",
+		"weight": 1.5,
+		"min_rarity": 3,
+		"group": "",
+		"tags": ["proc", "explosive"],
+		"ops": [
+			["if", ["explode_r", "<=", 0], [["set", "explode_r", 60.0], ["max", "explode_chance", 0.35]]],
+			["mul", "explode_r", 3.0],
+			["mul", "fire_rate", 0.5],
+			["mul", "damage", 1.5],
+			["add", "shake", 6.0]
+		]
+	},
+	{
+		"id": "quantum",
+		"name": "Quantum",
+		"weight": 2.0,
+		"min_rarity": 3,
+		"group": "",
+		"tags": ["proc", "no_shell"],
+		"ops": [["set", "teleport", 0.35]]
+	}
+]

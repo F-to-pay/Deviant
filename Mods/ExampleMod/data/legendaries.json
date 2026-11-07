@@ -1,0 +1,12 @@
+[
+	{
+		"id": "example_duck",
+		"name": "Rubber Duck",
+		"flavor": "Squeaks menacingly.",
+		"arch": "pistol",
+		"arch2": "",
+		"perks": ["example_bouncy"],
+		"special": "ring",
+		"ops": [["set", "element", "cryo"], ["set", "elem_chance", 0.6]]
+	}
+]

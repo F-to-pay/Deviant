@@ -1,29 +1,16 @@
 class_name Sfx
 extends Node
-## Звуковые эффекты. Сам сканирует res://sfx/: каждая папка — «банк», из которого
-## берётся случайный файл (sfx/guns/pistol/*.wav -> ключ "guns/pistol"), а каждый файл
-## доступен и по своему пути без расширения ("reload/pistol").
+## Звуковые эффекты. Сканирует sfx/ игры и включённых модов (Mods/<мод>/sfx/): каждая папка — «банк»,
+## из которого берётся случайный файл (sfx/guns/pistol/*.wav -> ключ "guns/pistol"), а каждый файл
+## доступен и по своему пути без расширения ("reload/pistol"). Файлы модов добавляются в банки;
+## чтобы заменить банк целиком — "replace_sfx": ["guns/pistol"] в mod.json.
+## Звук выстрела основы — sfx/guns/<id основы>/, громкость/питч/перезарядка — поле "sound" в archetypes.json,
+## поправка марки — "sound" в makers.json.
 ## Пул голосов с кражей самого старого, лимит одинаковых звуков и минимальный интервал —
 ## чтобы пулемёт и кассетные бомбы не превращали звук в кашу.
 
-const ROOT := "res://sfx/"
-const EXTS := ["wav", "ogg", "mp3"]
 const VOICES_2D := 28
 const VOL_STEP := 0.1
-
-## Громкость (дБ) и высота тона по основам. ПП/пулемёт тише — стреляют чаще.
-const GUN_VOL := {
-	"pistol": -6.0, "revolver": -3.0, "smg": -9.0, "ar": -7.0, "lmg": -7.0,
-	"shotgun": -4.0, "sniper": -2.0, "rocket": -7.0, "launcher": -5.0, "mortar": -3.0,
-}
-const GUN_PITCH := {"smg": 1.05, "lmg": 0.85, "rocket": 1.1}
-const MAKER_PITCH := {"godforce": 0.72, "hypernova": 0.9, "liven": 1.08, "abordage": 1.12}
-const MAKER_VOL := {"godforce": 3.0, "hypernova": 1.0}
-const RELOAD_KEY := {
-	"pistol": "reload/pistol", "revolver": "reload/pistol_2", "smg": "reload/rifle", "ar": "reload/rifle",
-	"lmg": "reload/rifle", "sniper": "reload/rifle", "shotgun": "reload/shotgun",
-	"rocket": "reload/launcher", "launcher": "reload/launcher", "mortar": "reload/launcher",
-}
 
 var banks := {}               # ключ -> Array[AudioStream]
 
@@ -62,7 +49,7 @@ func _ready() -> void:
 	_reload.bus = "SFX"
 	_reload.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(_reload)
-	_scan(ROOT)
+	rescan()
 	_apply_volume()
 	Game.settings_changed.connect(_on_setting)
 
@@ -142,20 +129,29 @@ static func ui(key: String, vol_db: float = 0.0, pitch: float = 1.0, min_gap: fl
 
 # --- Игровые события -----------------------------------------------------------
 
+## Звуки «чужого» снаряда поверх выстрела (гибриды, моды «Реактивный», «Гранатный»).
+const KIND_LAYER := {GunData.K_ROCKET: "guns/rocket", GunData.K_GRENADE: "guns/launcher", GunData.K_SHELL: "guns/mortar"}
+
+
+static func _arch_sound(arch: String) -> Dictionary:
+	var s: Variant = GunData.ARCH.get(arch, {}).get("sound", {})
+	return s if s is Dictionary else {}
+
+
 func gun_shot(g: Gun, pos: Vector2) -> void:
 	var arch := g.archetype
-	var vol := float(GUN_VOL.get(arch, -6.0)) + float(MAKER_VOL.get(g.maker, 0.0))
-	var pitch := float(GUN_PITCH.get(arch, 1.0)) * float(MAKER_PITCH.get(g.maker, 1.0))
+	var snd := _arch_sound(arch)
+	var mk: Variant = GunData.MAKERS.get(g.maker, {}).get("sound", {})
+	var msnd: Dictionary = mk if mk is Dictionary else {}
+	var vol := float(snd.get("vol", -6.0)) + float(msnd.get("vol", 0.0))
+	var pitch := float(snd.get("pitch", 1.0)) * float(msnd.get("pitch", 1.0))
 	# чем выше скорострельность, тем тише каждый выстрел
 	vol -= clampf(log(maxf(g.fire_rate, 1.0) / 4.0) / log(2.0) * 2.0, 0.0, 6.0)
 	play_at("guns/" + arch, pos, vol, pitch, 0.05, 4, 0.025)
 	# гибриды и моды: снаряд другого типа добавляет свой звук поверх
-	if g.proj_kind == GunData.K_ROCKET and arch != "rocket":
-		play_at("guns/rocket", pos, vol - 6.0, 1.2, 0.05, 2, 0.06)
-	elif g.proj_kind == GunData.K_GRENADE and arch != "launcher":
-		play_at("guns/launcher", pos, vol - 5.0, 1.0, 0.05, 2, 0.06)
-	elif g.proj_kind == GunData.K_SHELL and arch != "mortar":
-		play_at("guns/mortar", pos, vol - 5.0, 1.1, 0.05, 2, 0.06)
+	var own_kind := int(GunData.ARCH.get(arch, {}).get("kind", 0))
+	if g.proj_kind != own_kind and KIND_LAYER.has(g.proj_kind):
+		play_at(str(KIND_LAYER[g.proj_kind]), pos, vol - 5.0, 1.1, 0.05, 2, 0.06)
 
 
 func explosion(pos: Vector2, r: float, big: bool) -> void:
@@ -167,7 +163,7 @@ func explosion(pos: Vector2, r: float, big: bool) -> void:
 
 ## Перезарядка: звук ускоряется, если перезарядка короче записи (Шабаш).
 func reload_start(g: Gun) -> void:
-	var s := _pick(str(RELOAD_KEY.get(g.archetype, "reload/rifle")))
+	var s := _pick(str(_arch_sound(g.archetype).get("reload", "reload/rifle")))
 	if s == null:
 		return
 	_reload.stream = s
@@ -179,7 +175,7 @@ func reload_start(g: Gun) -> void:
 
 func reload_done(g: Gun) -> void:
 	_reload.stop()
-	var key := "reload/shotgun_done" if g.archetype == "shotgun" else "reload/done"
+	var key := str(_arch_sound(g.archetype).get("reload_done", "reload/done"))
 	play_ui(key, -6.0, randf_range(0.95, 1.05))
 
 
@@ -206,7 +202,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	else:
 		return
 	get_viewport().set_input_as_handled()
-	Game.say(U.t("Звуки: ") + volume_text(), Color(0.75, 0.9, 1.0))
+	Game.say(U.t("Sounds: ") + volume_text(), Color(0.75, 0.9, 1.0))
 
 
 func _on_setting(key: String) -> void:
@@ -256,20 +252,29 @@ func _pick(key: String) -> AudioStream:
 	return arr[randi() % arr.size()]
 
 
-func _scan(dir: String) -> void:
-	for n in ResourceLoader.list_directory(dir):
-		var fname := str(n)
-		if fname.ends_with("/"):
-			_scan(dir + fname)
-			continue
-		if not EXTS.has(fname.get_extension().to_lower()):
-			continue
-		var s := load(dir + fname) as AudioStream
+## Перечитать звуки игры и модов (при старте и после включения/выключения модов).
+func rescan() -> void:
+	banks.clear()
+	var replace := {}       # корень мода -> ключи банков, которые он заменяет
+	for m in Mods.list:
+		if bool(m["enabled"]):
+			var info: Dictionary = m["info"]
+			var rl: Variant = info.get("replace_sfx", [])
+			replace[str(m["path"])] = rl if rl is Array else []
+	var cleared := {}
+	for f in Mods.files("sfx", Mods.AUDIO_EXTS, true):
+		var rel := str(f[0])
+		var full := str(f[1])
+		var key := rel.get_base_dir()
+		for root in replace:
+			if full.begins_with(str(root)) and (replace[root] as Array).has(key) and not cleared.has(root + key):
+				cleared[root + key] = true
+				banks.erase(key)
+		var s := Mods.load_audio(full)
 		if s == null:
 			continue
-		var rel := (dir + fname).trim_prefix(ROOT)
-		_add(rel.get_base_dir(), s)                 # банк папки
-		_add(rel.get_basename(), s)                 # конкретный файл
+		_add(key, s)                       # банк папки
+		_add(rel.get_basename(), s)        # конкретный файл
 
 
 func _add(key: String, s: AudioStream) -> void:

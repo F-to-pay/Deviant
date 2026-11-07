@@ -1,0 +1,112 @@
+[
+	{
+		"id": "babushka",
+		"name": "Granny's Surprise",
+		"flavor": "Pies. Filled with shrapnel.",
+		"arch": "shotgun",
+		"arch2": "launcher",
+		"perks": ["cluster"],
+		"special": ""
+	},
+	{
+		"id": "diplomacy",
+		"name": "Diplomacy",
+		"flavor": "The last argument of kings. And the second-to-last.",
+		"arch": "rocket",
+		"arch2": "",
+		"perks": ["homing", "split"],
+		"special": ""
+	},
+	{
+		"id": "swarm",
+		"name": "Bee Swarm",
+		"flavor": "Bzzz — not without reason.",
+		"arch": "smg",
+		"arch2": "",
+		"perks": ["homing", "scatter"],
+		"special": ""
+	},
+	{
+		"id": "expert",
+		"name": "Expert Opinion",
+		"flavor": "Nobody asked. It spoke up anyway.",
+		"arch": "sniper",
+		"arch2": "",
+		"perks": ["chain", "pierce"],
+		"special": "expert",
+		"ops": [["max", "chain_n", 8], ["set", "element", "shock"], ["set", "elem_chance", 1.0]]
+	},
+	{
+		"id": "lastword",
+		"name": "Last Word",
+		"flavor": "Builds up rage. Then — an unprintable word.",
+		"arch": "lmg",
+		"arch2": "",
+		"perks": ["drum"],
+		"special": "nuke10"
+	},
+	{
+		"id": "toaster",
+		"name": "Toaster of Fate",
+		"flavor": "Bread not included.",
+		"arch": "pistol",
+		"arch2": "",
+		"perks": ["fire"],
+		"special": "ring"
+	},
+	{
+		"id": "schrodinger",
+		"name": "Schrödinger's Cat",
+		"flavor": "Hit and missed at the same time.",
+		"arch": "ar",
+		"arch2": "",
+		"perks": ["quantum"],
+		"special": "chaos"
+	},
+	{
+		"id": "boomer",
+		"name": "Boomer",
+		"flavor": "Always comes back. Like the tax office.",
+		"arch": "launcher",
+		"arch2": "",
+		"perks": ["boomerang", "cluster"],
+		"special": ""
+	},
+	{
+		"id": "singularity",
+		"name": "Pocket Singularity",
+		"flavor": "Do not point at self. Seriously.",
+		"arch": "pistol",
+		"arch2": "",
+		"perks": ["big", "gravity"],
+		"special": "singularity",
+		"ops": [["set", "vortex", 1.0]]
+	},
+	{
+		"id": "monday",
+		"name": "Monday",
+		"flavor": "Kills slowly and inevitably.",
+		"arch": "shotgun",
+		"arch2": "sniper",
+		"perks": ["cryo", "pierce"],
+		"special": ""
+	},
+	{
+		"id": "neighbor",
+		"name": "Neighbor with a Hammer Drill",
+		"flavor": "Saturday, 8 AM. Let's begin.",
+		"arch": "lmg",
+		"arch2": "",
+		"perks": ["ricochet", "rapid"],
+		"special": ""
+	},
+	{
+		"id": "hedgehog",
+		"name": "Hedgehog in the Fog",
+		"flavor": "There was a little horse around here somewhere...",
+		"arch": "launcher",
+		"arch2": "smg",
+		"perks": ["seeder"],
+		"special": ""
+	}
+]

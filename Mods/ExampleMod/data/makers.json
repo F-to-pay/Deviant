@@ -1,0 +1,13 @@
+{
+	"example_corp": {
+		"name": "Example Corp",
+		"motto": "Your example. Our responsibility.",
+		"color": "#e0c040",
+		"dark": "#3a3010",
+		"projectile_color": "#fff090",
+		"weight": 6,
+		"legendary": true,
+		"ops": [["mul", "fire_rate", 1.2], ["mul", "damage", 0.9], ["add", "pierce", 1]],
+		"sound": {"pitch": 1.15}
+	}
+}
