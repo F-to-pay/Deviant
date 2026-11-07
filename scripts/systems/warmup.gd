@@ -1,6 +1,7 @@
 class_name Warmup
 extends Node
-## Прогрев перед главным меню — один раз за запуск, под экраном загрузки.
+## Прогрев под экраном загрузки: при запуске (перед главным меню) и после каждого перескана модов
+## (включил/выключил мод, «Обновить», команда reload) — Main.warmup().
 ## Всё, что иначе грузилось или компилировалось бы впервые посреди боя и давало фриз:
 ##  1. Скрипты модов — собираются заранее, а не на первой выпавшей пушке с таким перком.
 ##  2. Музыка — по следующему треку каждой категории грузится в фоне (Music.prepare_all);
@@ -8,10 +9,13 @@ extends Node
 ##  3. Шрифты — все буквы (латиница, кириллица, норвежские, символы) во всех размерах и обводках,
 ##     которыми рисуют HUD, инвентарь, карточки и цифры урона: иначе первый крит или первое
 ##     сообщение растеризует глифы прямо в бою.
+##     Набор букв собирается из всех загруженных переводов и данных — буквы из модов тоже.
 ##  4. Графика — по разу каждый вид отрисовки (круги, дуги, линии, полилинии, прямоугольники,
-##     полигоны, текстуры, сглаживание, трансформы) плюс настоящие иконки и карточка пушек:
-##     Vulkan собирает вариант шейдера при первом использовании — пусть это будет здесь.
-##     Собранное драйвер кладёт в кэш на диске, следующие запуски прогреваются быстрее.
+##     полигоны, текстуры, сглаживание, трансформы): Vulkan собирает вариант шейдера при первом
+##     использовании — пусть это будет здесь. Собранное драйвер кладёт в кэш на диске.
+##  5. Пушки — все объекты игры и модов хотя бы раз: пушка каждого типа, каждого производителя,
+##     с каждым перком, каждая легендарка. Генерация гоняет их операции и скрипты, а иконка и
+##     карточка рисуются по-настоящему (с переводами имён и строк перков).
 ## Прогрев рисуется на слое под экраном загрузки, игрок его не видит. Ввод пока глушится.
 
 signal finished
@@ -23,7 +27,8 @@ const ACCENT := Color(1.0, 0.55, 0.2)
 const DIM := Color(0.6, 0.6, 0.68)
 const MUSIC_TIMEOUT_MS := 20000
 const FONT_JOBS_PER_FRAME := 3
-const GRAPHICS_FRAMES := 3
+const GRAPHICS_FRAMES := 2
+const GUNS_PER_FRAME := 8
 
 ## [размер, обводка] — ровно те сочетания, которыми рисует игра (U.draw_text*, draw_multiline_string).
 ## Добавил в коде новый текст другого размера — допиши сюда.
@@ -31,7 +36,7 @@ const REGULAR := [[12, 0], [12, 2], [13, 0], [13, 2], [13, 3], [14, 0], [14, 3],
 	[16, 0], [18, 0], [18, 3], [22, 3], [22, 4]]
 const BOLD := [[13, 3], [14, 0], [14, 2], [14, 4], [15, 0], [15, 3], [15, 4], [16, 0], [16, 3], [16, 4],
 	[17, 0], [17, 3], [17, 4], [18, 4], [20, 3], [22, 4], [24, 4], [26, 0], [28, 4], [48, 6], [60, 7]]
-## Все символы, что встречаются в игре (английский, русский, норвежский мод, значки).
+## Базовый набор символов; к нему добавляются все буквы из переводов и данных (с модами).
 const CHARSET := " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~" \
 	+ "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя" \
 	+ "ÆØÅæøåÄÖÜäöüáéëř«»±·×–—•№→←↔−∞○●♪⚠✖…"
@@ -47,11 +52,15 @@ var _jobs: Array = []         # [шрифт, размер, обводка] на 
 var _graphics := false
 var _lines := PackedStringArray()
 var _tex: ImageTexture
-var _guns: Array = []
+var _guns: Array = []         # пушки на этот кадр
+var _was_paused := false
+var _glyphs := 0
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_was_paused = get_tree().paused
+	get_tree().paused = true
 	var lw := CanvasLayer.new()
 	lw.layer = LAYER_WARM
 	add_child(lw)
@@ -68,8 +77,10 @@ func _ready() -> void:
 	_screen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_screen.draw.connect(_draw_screen)
 
-	for i in range(0, CHARSET.length(), 40):
-		_lines.append(CHARSET.substr(i, 40))
+	var chars := charset()
+	_glyphs = chars.length()
+	for i in range(0, chars.length(), 40):
+		_lines.append(chars.substr(i, 40))
 	var img := Image.create_empty(8, 8, false, Image.FORMAT_RGBA8)
 	img.fill(Color(1, 1, 1, 0.5))
 	_tex = ImageTexture.create_from_image(img)
@@ -129,22 +140,32 @@ func _run() -> void:
 		_progress = 0.35 + 0.45 * float(mini(i, jobs.size())) / float(jobs.size())
 	_jobs = []
 
-	_step_to("Warming up shaders", 0.8)
-	_make_guns()
+	_step_to("Warming up shaders", 0.65)
 	_graphics = true
 	for k in GRAPHICS_FRAMES:
 		_warm.queue_redraw()
 		await get_tree().process_frame
-		_progress = 0.8 + 0.2 * float(k + 1) / float(GRAPHICS_FRAMES)
 	_graphics = false
-	_guns.clear()
+
+	_step_to("Trying out every gun", 0.7)
+	await get_tree().process_frame
+	var guns := make_guns()
+	i = 0
+	while i < guns.size():
+		_guns = guns.slice(i, i + GUNS_PER_FRAME)
+		i += GUNS_PER_FRAME
+		_warm.queue_redraw()
+		await get_tree().process_frame
+		_progress = 0.7 + 0.3 * float(mini(i, guns.size())) / float(guns.size())
+	_guns = []
 	_warm.queue_redraw()
 
 	_step_to("Ready", 1.0)
-	DebugLog.info("warmup: %d ms" % (Time.get_ticks_msec() - t0), "warmup")
+	DebugLog.info("warmup: %d ms, %d glyphs, %d guns" % [Time.get_ticks_msec() - t0, _glyphs, guns.size()], "warmup")
 	await get_tree().process_frame
 	_done = true
 	_screen.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	get_tree().paused = _was_paused
 	finished.emit()
 
 
@@ -158,14 +179,66 @@ static func compile_scripts() -> void:
 			Mods.script_instance(str(d.get("_root", "res://")), rel)
 
 
-## По пушке каждого типа (эпические — с перками, гибридами и всеми деталями иконки).
-func _make_guns() -> void:
+## Все объекты игры и модов: пушка каждого типа, каждого производителя, с каждым перком
+## и каждая легендарка. Генерация прогоняет их операции и скрипты.
+static func make_guns() -> Array:
+	var out: Array = []
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 1342
 	for k in GunData.ARCH:
-		_guns.append(GunGen.generate(1, rng, 0.0, 0, GunData.R_EPIC, str(k)))
-	if not GunData.LEGENDARIES.is_empty():
-		_guns.append(GunGen.generate(1, rng, 0.0, 0, GunData.R_LEGENDARY))
+		out.append(GunGen.generate(1, rng, 0.0, 0, GunData.R_EPIC, str(k)))
+	for k in GunData.MAKERS:
+		out.append(GunGen.generate(1, rng, 0.0, 0, GunData.R_RARE, "", str(k)))
+	for l in GunData.LEGENDARIES:
+		GunGen.force_legendary = str(l["id"])
+		out.append(GunGen.generate(1, rng, 0.0, 0, GunData.R_LEGENDARY))
+	GunGen.force_legendary = ""
+	for p in GunData.MODS:
+		var id := str(p["id"])
+		var g := GunGen.generate(1, rng, 0.0, 0, GunData.R_UNCOMMON)
+		if not (id in g.mods):
+			GunGen._add_mod(g, id, rng)
+			GunGen._finalize(g, rng, {})     # пересобрать иконку и имя уже с этим перком
+		out.append(g)
+	return out
+
+
+## Символы для прогрева шрифтов: базовый набор + всё, что есть в переводах (все языки, с модами),
+## в именах пушек, перков, производителей, легендарок и в списках имён.
+static func charset() -> String:
+	var texts := PackedStringArray([CHARSET])
+	for code in I18n.langs:
+		var L: Dictionary = I18n.langs[code]
+		for k in L.get("strings", {}):
+			texts.append(str(k))
+			var v: Variant = L["strings"][k]
+			if v is Dictionary:
+				for form in v:
+					texts.append(str(v[form]))
+			else:
+				texts.append(str(v))
+		for k in L.get("templates", {}):
+			texts.append(str(L["templates"][k]))
+	for k in GunData.ARCH:
+		texts.append(str(GunData.ARCH[k].get("name", "")) + str(GunData.ARCH[k].get("ammo_name", "")))
+	for k in GunData.MAKERS:
+		texts.append(str(GunData.MAKERS[k].get("name", "")) + str(GunData.MAKERS[k].get("motto", "")))
+	for p in GunData.MODS:
+		texts.append(str(p.get("name", "")))
+	for l in GunData.LEGENDARIES:
+		texts.append(str(l.get("name", "")) + str(l.get("flavor", "")))
+	for arr in [GunData.NICKNAMES, GunData.ABSURD_FLAVOR, EnemyData.ELITE_PREFIX, EnemyData.RARE_FIRST,
+			EnemyData.RARE_LAST, EnemyData.BOSS_TITLES, EnemyData.BOSS_NAMES]:
+		for v in arr:
+			texts.append(str(v))
+	var seen := {}
+	var out := ""
+	for t in texts:
+		for ch in t:
+			if not seen.has(ch) and ch != "\n" and ch != "\t":
+				seen[ch] = true
+				out += ch
+	return out
 
 
 # --- Отрисовка ----------------------------------------------------------------------
@@ -193,12 +266,12 @@ func _draw_warm() -> void:
 			y += float(fs) + 4.0
 	if _graphics:
 		_draw_primitives(c, Vector2(80.0, 420.0))
-		var x := 80.0
-		for g in _guns:
-			GunIcon.draw_gun(c, g, Vector2(x, 520.0), 1.5)
-			x += 130.0
-		if not _guns.is_empty():
-			GunCard.draw_card(c, _guns[0], Vector2(80.0, 600.0), _guns[_guns.size() - 1])
+	var x := 40.0
+	for k in _guns.size():
+		var g: Gun = _guns[k]
+		GunIcon.draw_gun(c, g, Vector2(x + 60.0, 120.0), 1.5)
+		GunCard.draw_card(c, g, Vector2(x, 180.0), _guns[(k + 1) % _guns.size()])
+		x += 240.0
 
 
 ## Каждый вид рисования, которым пользуется игра, — с толщиной -1 (тонкие линии),

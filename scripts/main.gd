@@ -32,6 +32,7 @@ var transitioning := false
 var zone_time := 0.0
 var orbs_spawned := 0
 
+var _warmup: Warmup = null
 var _flow_t := 0.0
 var _wake_t := 0.0
 var _explore_t := 0.0
@@ -69,12 +70,21 @@ func _ready() -> void:
 	menu = Menu.new()
 	add_child(menu)
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
-	# сначала прогрев под экраном загрузки (шрифты, шейдеры, музыка, скрипты модов), потом меню
+	# сначала прогрев под экраном загрузки (шрифты, шейдеры, музыка, скрипты и пушки модов), потом меню
 	hud.visible = false
 	get_tree().paused = true
-	var w := Warmup.new()
-	w.finished.connect(to_menu)
-	add_child(w)
+	warmup(to_menu)
+
+
+## Прогрев под экраном загрузки: при запуске и после каждого перескана модов (Game.reload_content).
+## done — что сделать, когда экран загрузки начнёт гаснуть.
+func warmup(done: Callable = Callable()) -> void:
+	if _warmup != null and is_instance_valid(_warmup):
+		return
+	_warmup = Warmup.new()
+	if done.is_valid():
+		_warmup.finished.connect(done)
+	add_child(_warmup)
 
 
 ## Главное меню: мир выгружен и стоит на паузе, HUD спрятан.
