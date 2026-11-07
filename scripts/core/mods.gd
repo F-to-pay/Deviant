@@ -81,7 +81,7 @@ static func read_json(path: String) -> Variant:
 	var txt := FileAccess.get_file_as_string(path)
 	var j := JSON.new()
 	if j.parse(txt) != OK:
-		push_warning("Mods: ошибка в %s, строка %d: %s" % [path, j.get_error_line(), j.get_error_message()])
+		DebugLog.error("JSON error in %s, line %d: %s" % [path, j.get_error_line(), j.get_error_message()], source_of(path))
 		return null
 	return j.data
 
@@ -163,9 +163,9 @@ static func script_instance(mod_root: String, rel: String) -> Object:
 		if s.reload() == OK:
 			inst = s.new()
 		else:
-			push_warning("Mods: скрипт %s не собрался" % path)
+			DebugLog.error("script failed to compile: %s" % path, source_of(path))
 	else:
-		push_warning("Mods: нет скрипта %s" % path)
+		DebugLog.error("script not found: %s" % path, source_of(path))
 	_scripts[path] = inst
 	return inst
 
@@ -182,3 +182,136 @@ static func run_entry_script(entry: Dictionary, g: Gun, rng: RandomNumberGenerat
 
 static func clear_cache() -> void:
 	_scripts.clear()
+
+
+# --- Отладчик модов: откуда запись и проверка данных ------------------------------
+
+## Имя мода (или "game") по пути файла или корню слоя.
+static func source_of(path: String) -> String:
+	if path.begins_with("res://"):
+		return "game"
+	for m in list:
+		if path.begins_with(str(m["path"])):
+			return str(m["id"])
+	return "?"
+
+
+static func _src(entry: Dictionary) -> String:
+	return source_of(str(entry.get("_root", "res://")))
+
+
+const KNOWN_TAGS := ["proc", "explosive", "heal", "no_shell"]
+const KNOWN_SPECIALS := ["", "ring", "nuke10", "chaos", "expert", "singularity"]
+const KNOWN_TEMPLATES := ["gun_plain", "gun_adj", "gun_nick", "gun_nick2", "gun_legendary", "type_hybrid", "elite", "rare", "boss"]
+
+
+## Полная проверка загруженных данных. Пишет в DebugLog; вызывается отладчиком при старте
+## и командой validate. Ничего не меняет.
+static func validate() -> void:
+	DebugLog.info("--- validate: mods folder %s" % root(), "mods")
+	if list.is_empty():
+		DebugLog.info("no mods found", "mods")
+	for m in list:
+		var info: Dictionary = m["info"]
+		DebugLog.info("%s %s %s" % ["[on] " if bool(m["enabled"]) else "[off]", str(m["name"]),
+			("v" + str(info["version"])) if info.has("version") else ""], str(m["id"]))
+		if not FileAccess.file_exists(str(m["path"]).path_join("mod.json")):
+			DebugLog.info("no mod.json (optional)", str(m["id"]))
+	DebugLog.info("loaded: %d archetypes, %d makers, %d perks, %d legendaries, %d nicknames; languages: %s" % [
+		GunData.ARCH.size(), GunData.MAKERS.size(), GunData.MODS.size(), GunData.LEGENDARIES.size(),
+		GunData.NICKNAMES.size(), ", ".join(PackedStringArray(I18n.available()))], "mods")
+	var banks: Dictionary = {}
+	if Game.main != null and Game.main.sfx != null:
+		banks = Game.main.sfx.banks
+	for k in GunData.ARCH:
+		var a: Dictionary = GunData.ARCH[k]
+		var src := _src(a)
+		for f in ["damage", "fire_rate", "mag", "reload", "speed", "lifetime"]:
+			if not a.has(f):
+				DebugLog.warn("archetype '%s' has no '%s' — default used" % [k, f], src)
+		if not banks.is_empty() and not banks.has("guns/" + str(k)):
+			DebugLog.info("archetype '%s' has no shot sounds (sfx/guns/%s/)" % [k, k], src)
+		var snd: Dictionary = a.get("sound", {})
+		for key in ["reload", "reload_done"]:
+			if snd.has(key) and not banks.is_empty() and not banks.has(str(snd[key])):
+				DebugLog.warn("archetype '%s': sound.%s '%s' — no such sound" % [k, key, str(snd[key])], src)
+	for k in GunData.MAKERS:
+		var mk: Dictionary = GunData.MAKERS[k]
+		var src := _src(mk)
+		_check_ops(mk, "maker '%s'" % k, src)
+		for p in mk.get("perks", []):
+			if GunData.perk(str(p)).is_empty():
+				DebugLog.warn("maker '%s': unknown perk '%s'" % [k, str(p)], src)
+		var pa := str(mk.get("projectile_arch", ""))
+		if pa != "" and not GunData.ARCH.has(pa):
+			DebugLog.warn("maker '%s': projectile_arch '%s' — no such archetype" % [k, pa], src)
+	for p in GunData.MODS:
+		var src := _src(p)
+		var id := str(p.get("id", "?"))
+		_check_ops(p, "perk '%s'" % id, src)
+		for t in p.get("tags", []):
+			if not (str(t) in KNOWN_TAGS):
+				DebugLog.warn("perk '%s': unknown tag '%s' (known: %s)" % [id, str(t), ", ".join(PackedStringArray(KNOWN_TAGS))], src)
+		for c in p.get("fits", []):
+			for prob in GunOps.cond_problems(c):
+				DebugLog.warn("perk '%s' fits: %s" % [id, prob], src)
+	for l in GunData.LEGENDARIES:
+		var src := _src(l)
+		var id := str(l.get("id", "?"))
+		_check_ops(l, "legendary '%s'" % id, src)
+		for key in ["arch", "arch2"]:
+			var a := str(l.get(key, ""))
+			if a != "" and not GunData.ARCH.has(a):
+				DebugLog.warn("legendary '%s': %s '%s' — no such archetype" % [id, key, a], src)
+		for m in l.get("perks", []):
+			if GunData.perk(str(m)).is_empty():
+				DebugLog.warn("legendary '%s': unknown perk '%s'" % [id, str(m)], src)
+		if not (str(l.get("special", "")) in KNOWN_SPECIALS):
+			DebugLog.warn("legendary '%s': unknown special '%s' (known: %s)" % [id, str(l["special"]),
+				", ".join(PackedStringArray(KNOWN_SPECIALS))], src)
+	_check_translations()
+	DebugLog.info("--- validate done: %d warnings, %d errors" % [DebugLog.warns, DebugLog.errors], "mods")
+
+
+static func _check_ops(entry: Dictionary, what: String, src: String) -> void:
+	for prob in GunOps.problems(entry.get("ops", [])):
+		DebugLog.warn("%s: %s" % [what, prob], src)
+	var rel := str(entry.get("script", ""))
+	if rel != "":
+		var inst := script_instance(str(entry.get("_root", "res://")), rel)
+		if inst == null:
+			DebugLog.error("%s: script '%s' not loaded" % [what, rel], src)
+		elif not inst.has_method("apply"):
+			DebugLog.warn("%s: script '%s' has no apply(gun, rng)" % [what, rel], src)
+
+
+## Какие названия из данных не переведены в каждом языке.
+static func _check_translations() -> void:
+	var names: Array = []
+	for k in GunData.ARCH:
+		names.append(str(GunData.ARCH[k].get("name", k)))
+		if GunData.ARCH[k].has("ammo_name"):
+			names.append(str(GunData.ARCH[k]["ammo_name"]))
+	for k in GunData.MAKERS:
+		names.append(str(GunData.MAKERS[k].get("name", k)))
+		names.append(str(GunData.MAKERS[k].get("motto", "")))
+	for p in GunData.MODS:
+		names.append(str(p.get("name", "")))
+	for l in GunData.LEGENDARIES:
+		names.append(str(l.get("name", "")))
+		names.append(str(l.get("flavor", "")))
+	names.append_array(GunData.NICKNAMES)
+	for code in I18n.available():
+		if code == "en":
+			continue
+		var st: Dictionary = I18n.langs[code]["strings"]
+		var miss: Array = []
+		for n in names:
+			if str(n) != "" and not st.has(str(n)) and not miss.has(str(n)):
+				miss.append(str(n))
+		if not miss.is_empty():
+			DebugLog.warn("[%s] %d data names untranslated: %s%s" % [code, miss.size(),
+				", ".join(PackedStringArray(miss.slice(0, 12))), " ..." if miss.size() > 12 else ""], "i18n")
+		for t in I18n.langs[code]["templates"]:
+			if not (str(t) in KNOWN_TEMPLATES):
+				DebugLog.warn("[%s] unknown template '%s'" % [code, str(t)], "i18n")

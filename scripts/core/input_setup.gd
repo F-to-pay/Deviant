@@ -32,6 +32,7 @@ static func setup() -> void:
 	_key("music_mute", [KEY_M])
 	_key("sfx_down", [KEY_BRACKETLEFT])
 	_key("sfx_up", [KEY_BRACKETRIGHT])
+	_key("mod_console", [KEY_F8])
 
 
 static func _ensure(action: String) -> void:

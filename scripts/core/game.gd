@@ -11,6 +11,7 @@ const DEFAULTS := {
 	"fullscreen": true, "vsync": true, "shake": 1.0, "damage_numbers": true, "show_fps": false,
 	"language": "",   # "" — как в системе, иначе код языка ("en", "ru", ...)
 	"mod_states": "",  # JSON {имя мода: вкл/выкл}, см. Mods
+	"mod_debug": false,  # отладчик модов (F8); применяется после перезапуска
 }
 
 var rng := RandomNumberGenerator.new()
@@ -64,9 +65,35 @@ func _ready() -> void:
 	InputSetup.setup()
 	rng.randomize()
 	_load()
+	# отладчик модов включается только при запуске, чтобы просто так ничего не грузить
+	if bool(setting("mod_debug")):
+		_start_debugger()
 	load_content()
 	for k in settings:
 		_apply_setting(str(k))
+
+
+var debug_console: DebugConsole = null
+
+
+func _start_debugger() -> void:
+	DebugLog.enabled = true
+	# перехват ошибок движка (Godot 4.5+): ошибки скриптов модов, push_warning, print
+	if ClassDB.class_exists("Logger"):
+		var scr: Script = load("res://scripts/core/debug_logger.gd")
+		if scr != null:
+			OS.call("add_logger", scr.new())
+			DebugLog.logger_active = true
+	debug_console = DebugConsole.new()
+	add_child.call_deferred(debug_console)
+	# полная проверка — когда поднимется main (нужны загруженные звуки)
+	(func() -> void: Mods.validate()).call_deferred()
+
+
+## Перезапуск игры (нужен, чтобы включить/выключить отладчик модов).
+func restart() -> void:
+	OS.set_restart_on_exit(true, OS.get_cmdline_args())
+	get_tree().quit()
 
 
 ## Данные игры и модов: таблицы пушек, имена, переводы. Повторный вызов — «применить моды».

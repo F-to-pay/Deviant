@@ -7,6 +7,9 @@ extends RefCounted
 
 const CURSE_DMG := 0.8   # проклятая пушка бьёт на 20% слабее
 
+## Отладчик: следующая легендарка будет именно этой (id), "" — случайная.
+static var force_legendary := ""
+
 
 static func roll_rarity(level: int, rng: RandomNumberGenerator, bonus: float) -> int:
 	if bool(Game.run["chaos"]):
@@ -45,6 +48,9 @@ static func generate(level: int, rng: RandomNumberGenerator, bonus: float = 0.0,
 	var leg: Dictionary = {}
 	if g.rarity == GunData.R_LEGENDARY and not GunData.LEGENDARIES.is_empty():
 		leg = GunData.LEGENDARIES[rng.randi() % GunData.LEGENDARIES.size()]
+		for l in GunData.LEGENDARIES:
+			if force_legendary != "" and str(l["id"]) == force_legendary:
+				leg = l
 		# марка без взрывов (Синергис) не достаётся взрывной легендарке
 		var guard_m := 0
 		while bool(_maker(g).get("no_explosive", false)) and _leg_explosive(leg) and guard_m < 20:

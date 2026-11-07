@@ -99,6 +99,8 @@ static func t(s: String) -> String:
 		return e
 	if e is Dictionary:
 		return str(e.get("text", e.get("m", s)))
+	if DebugLog.enabled and lang != "en" and s != "":
+		DebugLog.missing(lang, s)
 	return s
 
 

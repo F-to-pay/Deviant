@@ -62,12 +62,12 @@ static func run(g: Gun, ops: Variant, rng: RandomNumberGenerator) -> void:
 				if o.size() >= 3:
 					_stat(g, kind, str(o[1]), o[2], rng)
 			_:
-				push_warning("GunOps: неизвестная операция %s" % str(o))
+				DebugLog.warn("unknown operation %s" % str(o), "ops")
 
 
 static func _stat(g: Gun, kind: String, stat: String, v: Variant, rng: RandomNumberGenerator) -> void:
 	if not (stat in g):
-		push_warning("GunOps: у пушки нет свойства %s" % stat)
+		DebugLog.warn("gun has no stat '%s'" % stat, "ops")
 		return
 	var cur: Variant = g.get(stat)
 	var val: Variant = _value(stat, v, rng)
@@ -129,7 +129,7 @@ static func check(g: Gun, cond: Variant, rng: RandomNumberGenerator = null) -> b
 		cur = g.get(head)
 		val = _value(head, val, rng)
 	else:
-		push_warning("GunOps: неизвестное условие %s" % str(c))
+		DebugLog.warn("unknown condition %s" % str(c), "ops")
 		return true
 	if (cur is int or cur is float or cur is bool) and (val is int or val is float or val is bool):
 		var a := float(cur)
@@ -146,3 +146,75 @@ static func check(g: Gun, cond: Variant, rng: RandomNumberGenerator = null) -> b
 			"==": return str(cur) == str(val)
 			"!=": return str(cur) != str(val)
 	return false
+
+
+# --- Проверка (для отладчика модов) -------------------------------------------------
+
+const OPS := ["set", "add", "mul", "min", "max", "pellets", "if"]
+const CMPS := ["==", "!=", "<", "<=", ">", ">="]
+static var _probe: Gun = null
+
+
+static func _has_stat(stat: String) -> bool:
+	if _probe == null:
+		_probe = Gun.new()
+	return stat in _probe
+
+
+## Список проблем в операциях (пусто — всё хорошо).
+static func problems(ops: Variant) -> Array:
+	var out: Array = []
+	if ops == null:
+		return out
+	if not (ops is Array):
+		out.append("'ops' must be an array, got %s" % str(ops))
+		return out
+	for op in ops:
+		if not (op is Array) or (op as Array).is_empty():
+			out.append("operation must be a non-empty array: %s" % str(op))
+			continue
+		var o: Array = op
+		var kind := str(o[0])
+		if not (kind in OPS):
+			out.append("unknown operation '%s' in %s" % [kind, str(o)])
+		elif kind == "if":
+			if o.size() < 3:
+				out.append("'if' needs [\"if\", condition, [ops], [else ops]]: %s" % str(o))
+			else:
+				out.append_array(cond_problems(o[1]))
+				out.append_array(problems(o[2]))
+				if o.size() >= 4:
+					out.append_array(problems(o[3]))
+		elif kind == "pellets":
+			if o.size() < 2 or not (o[1] is float or o[1] is int):
+				out.append("'pellets' needs [\"pellets\", count, damage_keep]: %s" % str(o))
+		else:
+			if o.size() < 3:
+				out.append("'%s' needs [\"%s\", stat, value]: %s" % [kind, kind, str(o)])
+			elif not _has_stat(str(o[1])):
+				out.append("unknown stat '%s' in %s" % [str(o[1]), str(o)])
+			elif str(o[1]) == "proj_kind" and o[2] is String and not KINDS.has(o[2]):
+				out.append("unknown projectile kind '%s' (use %s)" % [str(o[2]), ", ".join(PackedStringArray(KINDS.keys()))])
+			elif str(o[1]) == "element" and o[2] is String and not ELEMENTS.has(o[2]) and o[2] != "random":
+				out.append("unknown element '%s' (use %s, random)" % [str(o[2]), ", ".join(PackedStringArray(ELEMENTS.keys()))])
+	return out
+
+
+static func cond_problems(cond: Variant) -> Array:
+	var out: Array = []
+	if not (cond is Array) or (cond as Array).is_empty():
+		out.append("condition must be a non-empty array: %s" % str(cond))
+		return out
+	var c: Array = cond
+	var head := str(c[0])
+	if head in ["and", "or", "not"]:
+		for i in range(1, c.size()):
+			out.append_array(cond_problems(c[i]))
+		return out
+	if c.size() < 3:
+		out.append("condition needs [stat, comparison, value]: %s" % str(c))
+	elif not (str(c[1]) in CMPS):
+		out.append("unknown comparison '%s' in %s (use %s)" % [str(c[1]), str(c), " ".join(PackedStringArray(CMPS))])
+	elif not (head in ["arch", "arch2", "maker", "rarity"]) and not _has_stat(head):
+		out.append("unknown stat '%s' in condition %s" % [head, str(c)])
+	return out

@@ -212,11 +212,31 @@ func _build_mods(root: Control) -> void:
 				lb.tooltip_text = str(info["description"])
 			grid.add_child(lb)
 	box.add_child(_gap(16))
+	# отладчик модов: включается только перезапуском, чтобы в обычной игре ничего лишнего не грузилось
+	var dbg := CheckButton.new()
+	dbg.text = U.t("Mod debugger (F8)")
+	dbg.button_pressed = bool(Game.setting("mod_debug"))
+	dbg.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	dbg.add_theme_font_size_override("font_size", 22)
+	dbg.toggled.connect(_on_debug_toggled)
+	box.add_child(dbg)
+	var pending := bool(Game.setting("mod_debug")) != DebugLog.enabled
+	var note := _label(U.t("Takes effect after restart"), 16, ACCENT)
+	note.visible = pending
+	box.add_child(note)
+	var rb := _button(U.t("Restart now"), Game.restart)
+	rb.visible = pending
+	box.add_child(rb)
 	box.add_child(_button(U.t("Open mods folder"), _open_mods_folder))
 	box.add_child(_button(U.t("Rescan"), _reload_mods))
 	var back := _button(U.t("Back"), func() -> void: show_screen(mode))
 	box.add_child(back)
 	_first_focus["mods"] = back
+
+
+func _on_debug_toggled(on: bool) -> void:
+	Game.set_setting("mod_debug", on)
+	_rebuild.call_deferred()
 
 
 func _on_mod_toggled(on: bool, id: String) -> void:
