@@ -27,6 +27,11 @@ var contact_cd: float = 0.0
 var los_t: float = 0.0
 var has_los: bool = false
 var move_los: bool = false
+var _path := PackedVector2Array()   # путь A* к игроку (Zone.find_path)
+var _path_i := 0
+var _repath_t := 0.0
+var _stuck_t := 0.0
+var _last_pos := Vector2.ZERO
 var strafe: float = 1.0
 var charge_dir: Vector2 = Vector2.RIGHT
 var tele_cd: float = 3.0
@@ -196,7 +201,7 @@ func _physics_process(delta: float) -> void:
 	if los_t <= 0.0:
 		los_t = randf_range(0.18, 0.3)
 		has_los = main.zone.ray_clear(position, player.position)
-		move_los = has_los and main.zone.ray_clear(position, player.position, true)
+		move_los = has_los and main.zone.ray_clear(position, player.position, true, radius)
 	_tick_affixes(d2, player, dist)
 	_behave(d2, player, to_p, dist)
 	if dead:
@@ -248,15 +253,35 @@ func _behave(delta: float, player: Player, to_p: Vector2, dist: float) -> void:
 			_chase(delta, player, speed)
 
 
+## Видно и проходимо телом — бежим напрямую; иначе — по пути A* с учётом своего размера.
 func _chase(delta: float, player: Player, spd: float) -> void:
 	var dir: Vector2
 	if move_los:
 		dir = (player.position - position).normalized()
+		_path = PackedVector2Array()
 	else:
-		dir = Game.main.zone.flow_dir(position)
-		if dir == Vector2.ZERO:
-			dir = (player.position - position).normalized()
+		dir = _path_dir(player.position, delta)
 	_move(dir * spd, delta)
+
+
+func _path_dir(target: Vector2, delta: float) -> Vector2:
+	_repath_t -= delta
+	# почти не сдвинулся — упёрся во что-то: пересчитать путь сразу
+	if position.distance_squared_to(_last_pos) < 1.0:
+		_stuck_t += delta
+	else:
+		_stuck_t = 0.0
+	_last_pos = position
+	if _repath_t <= 0.0 or _path_i >= _path.size() or _stuck_t > 0.5:
+		_repath_t = randf_range(0.45, 0.75)   # вразнобой, чтобы стая не считала пути в один кадр
+		_stuck_t = 0.0
+		_path = Game.main.zone.find_path(position, target, radius)
+		_path_i = 1 if _path.size() > 1 else 0
+	while _path_i < _path.size() and position.distance_to(_path[_path_i]) < Zone.T * 0.45:
+		_path_i += 1
+	if _path_i >= _path.size():
+		return (target - position).normalized()
+	return (_path[_path_i] - position).normalized()
 
 
 ## Держим дистанцию, стрейфим.

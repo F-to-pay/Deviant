@@ -35,7 +35,6 @@ var zone_time := 0.0
 var orbs_spawned := 0
 
 var _warmup: Warmup = null
-var _flow_t := 0.0
 var _wake_t := 0.0
 var _explore_t := 0.0
 
@@ -208,7 +207,6 @@ func load_zone(level: int) -> void:
 		for c in (data["chests"] if bool(Game.run["chests"]) else []):
 			_spawn_chest(zone.cell_center(c), rng.randf() < 0.12 + float(level) * 0.004)
 		_spawn_portal(zone.cell_center(data["portal"]), level + 1)
-	zone.update_flow(player.position)
 	zone.explore(player.position, 11)
 	_update_wake()
 	music.on_zone(boss != null)
@@ -551,11 +549,6 @@ func _physics_process(delta: float) -> void:
 		var e: Enemy = o
 		if e.awake and not e.dead:
 			grid_hash.insert(e)
-	_flow_t -= delta
-	if _flow_t <= 0.0:
-		_flow_t = 0.25
-		if not player.dead:
-			zone.update_flow(player.position)
 	_wake_t -= delta
 	if _wake_t <= 0.0:
 		_wake_t = 0.3

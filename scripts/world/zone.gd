@@ -15,8 +15,7 @@ var h: int = 0
 var level: int = 1
 var grid: PackedByteArray
 var explored: PackedByteArray
-var flow: PackedInt32Array
-var _flow_touched: PackedInt32Array
+var _astar := {}             # класс размера -> AStarGrid2D (см. find_path)
 var biome: Dictionary = {}
 var decor: Array = []
 var chunks: Array = []
@@ -35,10 +34,7 @@ func setup(data: Dictionary) -> void:
 	explored = PackedByteArray()
 	explored.resize(w * h)
 	explored.fill(0)
-	flow = PackedInt32Array()
-	flow.resize(w * h)
-	flow.fill(-1)
-	_flow_touched = PackedInt32Array()
+	_build_paths()
 	for c in chunks:
 		c.queue_free()
 	chunks.clear()
@@ -145,11 +141,16 @@ func move_circle(p: Vector2, motion: Vector2, r: float) -> Vector2:
 
 
 ## Прямая видимость. for_move = ещё и пропасти считаются преградой.
-func ray_clear(a: Vector2, b: Vector2, for_move: bool = false) -> bool:
+## r > 0 (для движения): «толстый» луч — ещё два по краям тела, чтобы не тереться об углы.
+func ray_clear(a: Vector2, b: Vector2, for_move: bool = false, r: float = 0.0) -> bool:
 	var d := b - a
 	var dist := d.length()
 	if dist < 1.0:
 		return true
+	if r > 0.0:
+		var side := d.orthogonal().normalized() * r * 0.9
+		if not ray_clear(a + side, b + side, for_move) or not ray_clear(a - side, b - side, for_move):
+			return false
 	var n := ceili(dist / (T * 0.5))
 	for i in range(1, n):
 		var p := a + d * (float(i) / float(n))
@@ -168,80 +169,78 @@ func random_free_near(p: Vector2, rmin: float, rmax: float) -> Vector2:
 	return p
 
 
-# --- Поле потока (BFS от игрока) ---------------------------------------------------
+# --- Поиск пути (AStarGrid2D) -------------------------------------------------------
+## Враги ходят по A* (движок, C++). Сетки — по «размеру» врага: класс k = сколько клеток в ширину
+## ему нужно (тело диаметром до k·T). Для класса k клетка проходима, если свободен блок k×k,
+## начинающийся с неё; центр врага на пути — центр этого блока. Так громила не лезет в щель в 1 клетку.
+## Класс 1 и 2 строятся при загрузке зоны, 3 (босс) — при первом запросе.
 
-@warning_ignore("integer_division")
-func update_flow(target: Vector2, max_dist: int = 32) -> void:
-	for i in _flow_touched:
-		flow[i] = -1
-	_flow_touched.resize(0)
-	var c := cell_at(target)
-	if not in_bounds(c.x, c.y):
-		return
-	var start := idx(c.x, c.y)
-	var queue := PackedInt32Array([start])
-	flow[start] = 0
-	_flow_touched.append(start)
-	var head := 0
-	while head < queue.size():
-		var cur := queue[head]
-		head += 1
-		var d := flow[cur]
-		if d >= max_dist:
-			continue
-		var cx := cur % w
-		var cy := cur / w
-		for k in 4:
-			var nx := cx
-			var ny := cy
-			if k == 0:
-				nx += 1
-			elif k == 1:
-				nx -= 1
-			elif k == 2:
-				ny += 1
-			else:
-				ny -= 1
-			if nx < 0 or ny < 0 or nx >= w or ny >= h:
-				continue
-			var ni := ny * w + nx
-			if flow[ni] != -1:
-				continue
-			var v := grid[ni]
-			if v == ROCK or v == PIT:
-				continue
-			flow[ni] = d + 1
-			queue.append(ni)
-			_flow_touched.append(ni)
+const PATH_CLASS_MAX := 3
 
 
-## Направление «вниз по полю» к игроку. ZERO — если вне поля.
-func flow_dir(p: Vector2) -> Vector2:
-	var c := cell_at(p)
-	if not in_bounds(c.x, c.y):
-		return Vector2.ZERO
-	var cur := flow[idx(c.x, c.y)]
-	if cur < 0:
-		return Vector2.ZERO
-	var best := cur
-	var best_c := c
-	for dy in range(-1, 2):
-		for dx in range(-1, 2):
-			if dx == 0 and dy == 0:
-				continue
-			var nx := c.x + dx
-			var ny := c.y + dy
-			if not in_bounds(nx, ny) or blocks_move_cell(nx, ny):
-				continue
-			if dx != 0 and dy != 0 and (blocks_move_cell(c.x + dx, c.y) or blocks_move_cell(c.x, c.y + dy)):
-				continue
-			var v := flow[idx(nx, ny)]
-			if v >= 0 and v < best:
-				best = v
-				best_c = Vector2i(nx, ny)
-	if best_c == c:
-		return Vector2.ZERO
-	return (cell_center(best_c) - p).normalized()
+## Класс размера по радиусу: сколько клеток нужно телу в ширину.
+static func size_class(r: float) -> int:
+	return clampi(ceili((r * 2.0 + 2.0) / T), 1, PATH_CLASS_MAX)
+
+
+func _build_paths() -> void:
+	_astar.clear()
+	for k in [1, 2]:
+		_astar[k] = _make_astar(k)
+
+
+func _make_astar(k: int) -> AStarGrid2D:
+	var g := AStarGrid2D.new()
+	g.region = Rect2i(0, 0, w, h)
+	g.cell_size = Vector2(T, T)
+	g.offset = Vector2(T * 0.5 * float(k), T * 0.5 * float(k))
+	g.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_ONLY_IF_NO_OBSTACLES
+	g.default_compute_heuristic = AStarGrid2D.HEURISTIC_OCTILE
+	g.default_estimate_heuristic = AStarGrid2D.HEURISTIC_OCTILE
+	g.update()
+	for cy in h:
+		for cx in w:
+			if not _block_free(cx, cy, k):
+				g.set_point_solid(Vector2i(cx, cy), true)
+	return g
+
+
+func _block_free(cx: int, cy: int, k: int) -> bool:
+	if cx + k > w or cy + k > h:
+		return false
+	for dy in k:
+		for dx in k:
+			if blocks_move_cell(cx + dx, cy + dy):
+				return false
+	return true
+
+
+## Ближайшая проходимая клетка сетки k к точке (поиск по расширяющимся кольцам).
+func _nearest_open(g: AStarGrid2D, p: Vector2, k: int) -> Vector2i:
+	var c := cell_at(p - Vector2(T * 0.5 * float(k - 1), T * 0.5 * float(k - 1)))
+	for r in 4:
+		for dy in range(-r, r + 1):
+			for dx in range(-r, r + 1):
+				if maxi(absi(dx), absi(dy)) != r:
+					continue
+				var q := Vector2i(c.x + dx, c.y + dy)
+				if g.is_in_boundsv(q) and not g.is_point_solid(q):
+					return q
+	return Vector2i(-1, -1)
+
+
+## Путь из точки from к точке to для тела радиусом r: точки центров (мировые координаты),
+## первая — где стоишь. Цель недостижима — путь до ближайшего к ней места. Пусто — пути нет.
+func find_path(from: Vector2, to: Vector2, r: float) -> PackedVector2Array:
+	var k := size_class(r)
+	if not _astar.has(k):
+		_astar[k] = _make_astar(k)
+	var g: AStarGrid2D = _astar[k]
+	var a := _nearest_open(g, from, k)
+	var b := _nearest_open(g, to, k)
+	if a.x < 0 or b.x < 0:
+		return PackedVector2Array()
+	return g.get_point_path(a, b, true)
 
 
 # --- Миникарта ----------------------------------------------------------------------
