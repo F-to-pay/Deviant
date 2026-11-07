@@ -102,6 +102,7 @@ func load_content() -> void:
 	Mods.clear_cache()
 	GunData.load_data()
 	EnemyData.load_data()
+	Codex.load_data()
 	I18n.load_all()
 	I18n.apply(str(setting("language")))
 

@@ -23,6 +23,18 @@ var _custom_seed: LineEdit
 var _custom_rating: Label
 var _pause_info: Label
 var _root: Control
+var _codex_page := ""
+var _codex_text: RichTextLabel
+var _codex_actions: HBoxContainer
+var _codex_status: Label
+var _codex_buttons := {}  # id страницы -> кнопка в списке
+
+## Кнопки, которые страница справочника может попросить в "actions" (data/codex.json).
+const CODEX_ACTIONS := {
+	"write_guide": ["Create modding guide", "_codex_write_guide"],
+	"open_mods_folder": ["Open mods folder", "_open_mods_folder"],
+	"open_game_folder": ["Open game folder", "_open_game_folder"],
+}
 
 
 func _ready() -> void:
@@ -56,6 +68,7 @@ func _build_ui() -> void:
 	_build_settings(root)
 	_build_pause(root)
 	_build_mods(root)
+	_build_codex(root)
 	cursor = CursorDraw.new()
 	cursor.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(cursor)
@@ -75,6 +88,7 @@ func _rebuild() -> void:
 	_settings_ui.clear()
 	_first_focus.clear()
 	_custom_ui.clear()
+	_codex_buttons.clear()
 	_build_ui()
 	bg.visible = mode == "main"
 	dim.visible = mode == "pause"
@@ -126,6 +140,8 @@ func show_screen(sname: String) -> void:
 		_refresh_settings()
 	elif sname == "custom":
 		_refresh_custom()
+	elif sname == "codex":
+		_codex_open(_codex_page)
 	var b: Control = _first_focus.get(sname)
 	if b != null:
 		b.grab_focus.call_deferred()
@@ -162,6 +178,7 @@ func _build_main(root: Control) -> void:
 	box.add_child(b)
 	_first_focus["main"] = b
 	box.add_child(_button(U.t("Custom start"), func() -> void: show_screen("custom")))
+	box.add_child(_button(U.t("Codex"), func() -> void: show_screen("codex")))
 	box.add_child(_button(U.t("Settings"), func() -> void: show_screen("settings")))
 	box.add_child(_button(U.t("Mods") + " (%d)" % _mods_on(), func() -> void: show_screen("mods")))
 	box.add_child(_button(U.t("Quit"), func() -> void: get_tree().quit()))
@@ -227,6 +244,7 @@ func _build_mods(root: Control) -> void:
 	var rb := _button(U.t("Restart now"), Game.restart)
 	rb.visible = pending
 	box.add_child(rb)
+	box.add_child(_button(U.t("How to make mods"), _codex_show.bind("modding")))
 	box.add_child(_button(U.t("Open mods folder"), _open_mods_folder))
 	box.add_child(_button(U.t("Rescan"), _reload_mods))
 	var back := _button(U.t("Back"), func() -> void: show_screen(mode))
@@ -253,6 +271,147 @@ func _open_mods_folder() -> void:
 	var path := Mods.root()
 	if not DirAccess.dir_exists_absolute(path):
 		DirAccess.make_dir_recursive_absolute(path)
+	OS.shell_open(path)
+
+
+func _open_game_folder() -> void:
+	OS.shell_open(Mods.base_dir())
+
+
+# --- Справочник -----------------------------------------------------------------------
+
+## Окно справочника: слева разделы и страницы (data/codex.json игры и модов), справа текст.
+func _build_codex(root: Control) -> void:
+	var holder := MarginContainer.new()
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for side in ["left", "right", "top", "bottom"]:
+		holder.add_theme_constant_override("margin_" + side, 40)
+	root.add_child(holder)
+	holder.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	screens["codex"] = holder
+	var panel := PanelContainer.new()
+	var sb := _box(Color(0.035, 0.035, 0.06, 0.95), Color(0.3, 0.3, 0.42))
+	sb.set_content_margin_all(18)
+	panel.add_theme_stylebox_override("panel", sb)
+	holder.add_child(panel)
+	var vb := VBoxContainer.new()
+	vb.add_theme_constant_override("separation", 12)
+	panel.add_child(vb)
+
+	var top := HBoxContainer.new()
+	top.add_theme_constant_override("separation", 12)
+	vb.add_child(top)
+	var title := _label(U.t("CODEX"), 40, ACCENT, true, HORIZONTAL_ALIGNMENT_LEFT)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top.add_child(title)
+	var back := _button(U.t("Back"), func() -> void: show_screen(mode))
+	back.custom_minimum_size = Vector2(200, 48)
+	top.add_child(back)
+	_first_focus["codex"] = back
+
+	var hb := HBoxContainer.new()
+	hb.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	hb.add_theme_constant_override("separation", 18)
+	vb.add_child(hb)
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(320, 0)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	hb.add_child(scroll)
+	var list := VBoxContainer.new()
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list.add_theme_constant_override("separation", 4)
+	scroll.add_child(list)
+	var group := ButtonGroup.new()
+	for sec in Codex.sections:
+		var pg := Codex.pages_of(str(sec["id"]))
+		if pg.is_empty():
+			continue
+		if list.get_child_count() > 0:
+			list.add_child(_gap(6))
+		list.add_child(_label(Codex.loc(sec.get("title", sec["id"])).to_upper(), 16, DIM, true, HORIZONTAL_ALIGNMENT_LEFT))
+		for p in pg:
+			var id := str(p["id"])
+			var b := Button.new()
+			b.text = Codex.loc(p.get("title", id))
+			b.toggle_mode = true
+			b.button_group = group
+			b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+			b.custom_minimum_size = Vector2(300, 40)
+			b.add_theme_font_size_override("font_size", 19)
+			b.pressed.connect(_codex_open.bind(id))
+			b.pressed.connect(func() -> void: Sfx.ui("ui/click", -8.0))
+			b.mouse_entered.connect(_on_hover.bind(b))
+			list.add_child(b)
+			_codex_buttons[id] = b
+			if _codex_page == "":
+				_codex_page = id
+
+	var right := VBoxContainer.new()
+	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	right.add_theme_constant_override("separation", 10)
+	hb.add_child(right)
+	_codex_text = RichTextLabel.new()
+	_codex_text.bbcode_enabled = true
+	_codex_text.selection_enabled = true
+	_codex_text.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_codex_text.add_theme_font_override("normal_font", U.font())
+	_codex_text.add_theme_font_override("bold_font", U.font_bold())
+	for k in ["normal_font_size", "bold_font_size", "italics_font_size", "mono_font_size"]:
+		_codex_text.add_theme_font_size_override(k, 19)
+	_codex_text.add_theme_color_override("default_color", TEXT)
+	_codex_text.add_theme_constant_override("line_separation", 3)
+	_codex_text.add_theme_constant_override("table_h_separation", 4)
+	_codex_text.add_theme_constant_override("table_v_separation", 2)
+	right.add_child(_codex_text)
+	_codex_actions = HBoxContainer.new()
+	_codex_actions.add_theme_constant_override("separation", 12)
+	right.add_child(_codex_actions)
+	_codex_status = _label("", 16, ACCENT, false, HORIZONTAL_ALIGNMENT_LEFT)
+	_codex_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	right.add_child(_codex_status)
+
+
+func _codex_show(id: String) -> void:
+	_codex_page = id
+	show_screen("codex")
+
+
+func _codex_open(id: String) -> void:
+	var p := Codex.page(id)
+	if p.is_empty():
+		if Codex.pages.is_empty():
+			_codex_text.text = U.t("The codex is empty.")
+			return
+		p = Codex.pages[0]
+		id = str(p["id"])
+	_codex_page = id
+	for k in _codex_buttons:
+		(_codex_buttons[k] as Button).set_pressed_no_signal(k == id)
+	_codex_text.text = Codex.page_text(p)
+	_codex_text.scroll_to_line(0)
+	for c in _codex_actions.get_children():
+		_codex_actions.remove_child(c)
+		c.queue_free()
+	_codex_status.text = ""
+	for a in p.get("actions", []):
+		var spec: Array = CODEX_ACTIONS.get(str(a), [])
+		if spec.is_empty():
+			continue
+		var b := _button(U.t(str(spec[0])), Callable(self, str(spec[1])))
+		b.custom_minimum_size = Vector2(0, 48)
+		b.add_theme_font_size_override("font_size", 20)
+		_codex_actions.add_child(b)
+	_codex_actions.visible = _codex_actions.get_child_count() > 0
+
+
+func _codex_write_guide() -> void:
+	var path := Codex.write_guide()
+	if path == "":
+		_codex_status.text = U.t("Could not write the guide. Is the game folder read-only?")
+		_codex_status.add_theme_color_override("font_color", Color(1.0, 0.45, 0.4))
+		return
+	_codex_status.text = U.t("Guide saved: %s") % path
+	_codex_status.add_theme_color_override("font_color", Color(0.5, 1.0, 0.6))
 	OS.shell_open(path)
 
 
@@ -466,6 +625,7 @@ func _build_pause(root: Control) -> void:
 	box.add_child(b)
 	_first_focus["pause"] = b
 	box.add_child(_button(U.t("Settings"), func() -> void: show_screen("settings")))
+	box.add_child(_button(U.t("Codex"), func() -> void: show_screen("codex")))
 	box.add_child(_button(U.t("Main menu"), func() -> void: Game.main.to_menu()))
 	box.add_child(_gap(16))
 	_pause_info = _label("", 18, ACCENT)

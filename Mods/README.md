@@ -13,6 +13,8 @@ Mods/MyMod/
   data/legendaries.json легендарки
   data/rarities.json    редкости (правка по индексу, их всегда 6)
   data/names.json       прозвища, флейвор, имена элиток и боссов
+  data/codex.json       страницы и описания для справочника
+  data/guide.json       своя глава в гайде по моддингу
   lang/ru.json          перевод (дополняет русский) — или lang/de.json для нового языка
   sfx/...               звуки — те же папки-банки, что у игры (sfx/guns/pistol/*.wav)
   music/...             музыка — zone_/boss_/calm_/death_/menu_ по префиксу файла или по имени папки
@@ -20,6 +22,8 @@ Mods/MyMod/
 ```
 
 Базовые файлы игры для образца — `data/*.json` и `lang/ru.json` в корне проекта. Готовый пример — `Mods/ExampleMod/` (выключен по умолчанию, включается в меню «Моды»).
+
+**Полный гайд** — в игре: «Справочник» → «Как делать моды» → «Создать гайд по моддингу». Игра кладёт рядом с exe `гайд_по_модам.txt` (или `modding_guide.txt` на английском): все файлы и поля плюс справка по всем id, загруженным прямо сейчас — с учётом твоих модов. Текст гайда — `data/guide.json`.
 
 ## Отладчик модов
 
@@ -214,6 +218,35 @@ func apply(g, rng) -> void:
 `apply(gun, rng)` вызывается, когда пушка получает этот перк, марку или легендарку — после операций `ops`.
 
 Скрипт мода — обычный код с полными правами. Ставь моды только из источников, которым доверяешь.
+
+## Справочник (data/codex.json)
+
+Справочник в игре (главное меню или пауза → «Справочник») собирается из `data/codex.json` игры и модов.
+
+```json
+{
+	"sections": [{"id": "mymod", "order": 60, "title": {"en": "My Mod", "ru": "Мой мод"}}],
+	"pages": [
+		{"id": "nailguns", "section": "weapons", "order": 15,
+		 "title": {"en": "Nailguns", "ru": "Гвоздомёты"},
+		 "text": {"en": ["[b]Nails[/b] go through everyone."], "ru": ["[b]Гвозди[/b] прошивают всех."]}},
+		{"id": "character", "title": {"de": "Charakter"}, "text": {"de": ["Ein einsamer Schütze..."]}}
+	],
+	"archetypes": {"nailgun": {"en": "Pins enemies to walls.", "ru": "Прибивает врагов к стенам."}},
+	"perks": {"bouncy": {"en": "Bounces a lot."}}
+}
+```
+
+- **Разделы игры:** `basics` 10, `weapons` 20, `enemies` 30, `rating` 40, `modding` 50. Страница с неизвестным разделом попадает в «Другое».
+- **Страницы игры:** `character`, `combat`, `world`, `archetypes`, `makers`, `generation`, `perks`, `legendaries`, `enemies`, `elites`, `bosses`, `rating`, `modding`. Существующий id сливается вглубь — можно добавить только перевод (вторая страница в примере).
+- **`title` / `text`** — по языкам, строка или массив строк, BBCode. Нет текущего языка — показывается английский. Символ `[` пишется как `[lb]`.
+- **`auto`** — таблица из текущих данных со всеми модами: `archetypes`, `makers`, `rarities`, `perks`, `legendaries`, `enemies`, `elites`, `bosses`, `rating`, `mods`.
+- **`actions`** — кнопки под страницей: `write_guide`, `open_mods_folder`, `open_game_folder`.
+- **Описания для автотаблиц:** `archetypes`, `makers`, `perks`, `legendaries`, `enemies`, `affixes` — `{id: {язык: текст}}`; `bosses` — `{паттерн: {"name": {...}, "text": {...}}}`.
+
+Новые типы, перки и производители появляются в таблицах сами — `codex.json` только добавляет слова.
+
+Своя глава в гайде — `data/guide.json`: `{"en": ["строки"], "ru": ["строки"]}`, дописывается после текста игры.
 
 ## Переводы (lang/<код>.json)
 

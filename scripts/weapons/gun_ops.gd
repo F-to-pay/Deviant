@@ -218,3 +218,172 @@ static func cond_problems(cond: Variant) -> Array:
 	elif not (head in ["arch", "arch2", "maker", "rarity"]) and not _has_stat(head):
 		out.append("unknown stat '%s' in condition %s" % [head, str(c)])
 	return out
+
+
+# --- Описание словами (справочник) --------------------------------------------------
+
+## Короткие названия статов (английский — ключ перевода). Порядок — как в справке гайда.
+const STAT_LABELS := {
+	"damage": "damage",
+	"fire_rate": "fire rate",
+	"pellets": "pellets",
+	"spread": "spread",
+	"proj_speed": "projectile speed",
+	"lifetime": "range",
+	"mag_size": "magazine",
+	"reload_time": "reload time",
+	"crit_chance": "crit chance",
+	"crit_mult": "crit damage",
+	"element": "element",
+	"elem_chance": "element chance",
+	"elem_mult": "element chance multiplier",
+	"burst": "burst",
+	"ammo_per_shot": "rounds per shot",
+	"knock": "knockback",
+	"proj_kind": "projectile kind",
+	"proj_size": "projectile size",
+	"pierce": "pierce",
+	"bounces": "ricochets",
+	"explode_r": "explosion radius",
+	"explode_chance": "explosion chance",
+	"explode_on_expire": "explodes at end of flight",
+	"homing": "homing",
+	"accel": "acceleration",
+	"drag": "drag",
+	"sine": "wave flight",
+	"boomerang": "boomerang",
+	"split_n": "split",
+	"split_depth": "split depth",
+	"chain_n": "chain lightning",
+	"cluster_n": "cluster bomblets",
+	"leech": "lifesteal",
+	"vortex": "black holes",
+	"seeder": "side shots",
+	"teleport": "projectile teleport",
+	"armor": "armor",
+	"free_ammo": "doesn't use reserve ammo",
+	"proc_mult": "effect chance",
+	"move_mult": "move speed",
+	"shake": "screen shake",
+}
+## Эти статы — доли (0.15 = 15%).
+const PERCENT_STATS := ["crit_chance", "elem_chance", "explode_chance", "leech", "armor"]
+
+
+static func _lbl(stat: String) -> String:
+	return U.t(str(STAT_LABELS.get(stat, stat)))
+
+
+static func _num(stat: String, v: float, signed: bool) -> String:
+	var s := ""
+	if stat in PERCENT_STATS:
+		s = "%d%%" % roundi(absf(v) * 100.0)
+	elif is_equal_approx(v, roundf(v)):
+		s = str(roundi(absf(v)))
+	else:
+		s = ("%.2f" % absf(v)).rstrip("0").rstrip(".")
+	if signed:
+		return ("+" if v >= 0.0 else "−") + s
+	return ("−" if v < 0.0 else "") + s
+
+
+static func _word(stat: String, v: Variant) -> String:
+	if stat == "element":
+		if v is String:
+			if v == "random":
+				return U.t("random")
+			v = ELEMENTS.get(v, -1)
+		return U.t("none") if int(v) < 0 else U.el_name(int(v))
+	if stat == "proj_kind":
+		var k := kind_id(v)
+		for n in KINDS:
+			if int(KINDS[n]) == k:
+				return U.t(str(n))
+	return str(v)
+
+
+## Операции → строки вида «damage +35%», «pierce +2», «element: Fire».
+static func describe(ops: Variant) -> Array:
+	var out: Array = []
+	if not (ops is Array):
+		return out
+	for op in ops:
+		if not (op is Array) or (op as Array).is_empty():
+			continue
+		var o: Array = op
+		var kind := str(o[0])
+		match kind:
+			"if":
+				if o.size() >= 3:
+					var s := U.t("if %s: %s") % [describe_cond(o[1]), ", ".join(PackedStringArray(describe(o[2])))]
+					if o.size() >= 4 and o[3] is Array and not (o[3] as Array).is_empty():
+						s += "; " + U.t("otherwise: %s") % ", ".join(PackedStringArray(describe(o[3])))
+					out.append("(" + s + ")")
+			"pellets":
+				var s := "%s %s" % [_lbl("pellets"), _num("pellets", float(o[1]), true)]
+				if o.size() >= 3 and not is_equal_approx(float(o[2]), 1.0):
+					s += " (" + U.t("volley damage ×%s") % _num("", float(o[2]), false) + ")"
+				out.append(s)
+			"mul":
+				if o.size() >= 3:
+					var v := float(o[2])
+					if v >= 2.0 or v <= 0.0:
+						out.append("%s ×%s" % [_lbl(str(o[1])), _num("", v, false)])
+					else:
+						out.append("%s %s%d%%" % [_lbl(str(o[1])), "+" if v >= 1.0 else "−", roundi(absf(v - 1.0) * 100.0)])
+			"add":
+				if o.size() >= 3:
+					out.append("%s %s" % [_lbl(str(o[1])), _num(str(o[1]), float(o[2]), true)])
+			"set":
+				if o.size() >= 3:
+					var stat := str(o[1])
+					var v: Variant = o[2]
+					if v is bool:
+						out.append(_lbl(stat) if v else U.t("no %s") % _lbl(stat))
+					elif stat in ["element", "proj_kind"]:
+						out.append("%s: %s" % [_lbl(stat), _word(stat, v)])
+					else:
+						out.append("%s: %s" % [_lbl(stat), _num(stat, float(v), false)])
+			"min":
+				if o.size() >= 3:
+					out.append(U.t("%s at most %s") % [_lbl(str(o[1])), _num(str(o[1]), float(o[2]), false)])
+			"max":
+				if o.size() >= 3:
+					out.append(U.t("%s at least %s") % [_lbl(str(o[1])), _num(str(o[1]), float(o[2]), false)])
+	return out
+
+
+## Условие словами: «element is none», «spread > 1».
+static func describe_cond(cond: Variant) -> String:
+	if not (cond is Array) or (cond as Array).is_empty():
+		return "?"
+	var c: Array = cond
+	var head := str(c[0])
+	if head == "not":
+		return U.t("not (%s)") % (describe_cond(c[1]) if c.size() > 1 else "?")
+	if head in ["and", "or"]:
+		var parts := PackedStringArray()
+		for i in range(1, c.size()):
+			parts.append(describe_cond(c[i]))
+		return (" %s " % U.t(head)).join(parts)
+	if c.size() < 3:
+		return "?"
+	var val := ""
+	match head:
+		"arch", "arch2":
+			val = U.t(str(GunData.ARCH.get(str(c[2]), {}).get("name", c[2])))
+			head = U.t("type") if head == "arch" else U.t("second type")
+		"maker":
+			val = U.t(str(GunData.MAKERS.get(str(c[2]), {}).get("name", c[2])))
+			head = U.t("maker")
+		"rarity":
+			var r := clampi(int(c[2]), 0, GunData.RARITIES.size() - 1)
+			val = U.t(str(GunData.RARITIES[r]["name"])) if not GunData.RARITIES.is_empty() else str(c[2])
+			head = U.t("rarity")
+		"element", "proj_kind":
+			val = _word(head, c[2])
+			head = _lbl(head)
+		_:
+			val = _num(head, float(c[2]), false) if (c[2] is float or c[2] is int) else str(c[2])
+			head = _lbl(head)
+	return "%s %s %s" % [head, str(c[1]), val]

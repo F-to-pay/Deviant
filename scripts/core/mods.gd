@@ -24,6 +24,13 @@ static func root() -> String:
 	return OS.get_executable_path().get_base_dir().path_join("Mods")
 
 
+## Папка рядом с exe (в редакторе — папка проекта). Сюда кладётся гайд по моддингу.
+static func base_dir() -> String:
+	if OS.has_feature("editor"):
+		return ProjectSettings.globalize_path("res://").rstrip("/")
+	return OS.get_executable_path().get_base_dir()
+
+
 ## Найти моды и прочитать, какие включены. Вызывается при старте и при «Применить» в меню модов.
 static func scan() -> void:
 	list.clear()
@@ -269,6 +276,19 @@ static func validate() -> void:
 		if not (str(l.get("special", "")) in KNOWN_SPECIALS):
 			DebugLog.warn("legendary '%s': unknown special '%s' (known: %s)" % [id, str(l["special"]),
 				", ".join(PackedStringArray(KNOWN_SPECIALS))], src)
+	for p in Codex.pages:
+		var pid := str(p.get("id", "?"))
+		var auto := str(p.get("auto", ""))
+		if auto != "" and not (auto in Codex.AUTO_KINDS):
+			DebugLog.warn("codex page '%s': unknown auto '%s' (known: %s)" % [pid, auto,
+				", ".join(PackedStringArray(Codex.AUTO_KINDS))], "codex")
+		var acts: Variant = p.get("actions", [])
+		for act in (acts if acts is Array else []):
+			if not (str(act) in Codex.ACTIONS):
+				DebugLog.warn("codex page '%s': unknown action '%s' (known: %s)" % [pid, str(act),
+					", ".join(PackedStringArray(Codex.ACTIONS))], "codex")
+		if not p.has("title"):
+			DebugLog.warn("codex page '%s' has no title" % pid, "codex")
 	_check_translations()
 	DebugLog.info("--- validate done: %d warnings, %d errors" % [DebugLog.warns, DebugLog.errors], "mods")
 

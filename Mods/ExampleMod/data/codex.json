@@ -1,0 +1,43 @@
+{
+	"_comment": "Пример: мод добавляет свой раздел и страницу в справочник, описывает свои перки, марку и легендарку и дописывает свойство элиток.",
+	"sections": [
+		{"id": "example", "order": 60, "title": {"en": "Example Mod", "ru": "Пример мода"}}
+	],
+	"pages": [
+		{
+			"id": "example_about",
+			"section": "example",
+			"title": {"en": "What this mod adds", "ru": "Что добавляет мод"},
+			"text": {
+				"en": [
+					"This page comes from [b]Mods/ExampleMod/data/codex.json[/b].",
+					"",
+					"• Perk [b]Bouncy[/b] — pure data (ops).",
+					"• Perk [b]Lucky[/b] — a script: [i]scripts/lucky.gd[/i].",
+					"• Maker [color=#e0c040][b]Example Corp[/b][/color] and the legendary [b]\"Rubber Duck\"[/b].",
+					"",
+					"Open Weapons → Perks or Makers: the new entries are already in the tables, with descriptions from this file."
+				],
+				"ru": [
+					"Эта страница — из [b]Mods/ExampleMod/data/codex.json[/b].",
+					"",
+					"• Перк [b]Прыгучий[/b] — только данные (ops).",
+					"• Перк [b]Везучий[/b] — скрипт: [i]scripts/lucky.gd[/i].",
+					"• Производитель [color=#e0c040][b]Пример Корп[/b][/color] и легендарка [b]«Резиновая Уточка»[/b].",
+					"",
+					"Загляни в «Оружие» → «Перки» или «Производители»: новые записи уже в таблицах, с описаниями из этого файла."
+				]
+			}
+		}
+	],
+	"perks": {
+		"example_bouncy": {"en": "Projectiles bounce off walls five times.", "ru": "Снаряды пять раз отскакивают от стен."},
+		"example_lucky": {"en": "A script adds a random crit bonus.", "ru": "Скрипт добавляет случайную прибавку к криту."}
+	},
+	"makers": {
+		"example_corp": {"en": "Faster, weaker, and every bullet pierces one enemy.", "ru": "Быстрее, слабее, и каждая пуля прошивает одного врага."}
+	},
+	"legendaries": {
+		"example_duck": {"en": "A frozen bouncy pistol that shoots rings.", "ru": "Ледяной прыгучий пистолет, стреляющий кольцами."}
+	}
+}

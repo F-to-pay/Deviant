@@ -1,0 +1,557 @@
+{
+	"_comment": "Справочник. Мод может положить свой data/codex.json: новые sections/pages (по id; поля-словари сливаются, так что можно добавить только перевод: {\"id\": \"character\", \"text\": {\"de\": [...]}}) и описания к автотаблицам: archetypes, makers, perks, legendaries, enemies, affixes, bosses. Текст — BBCode, строка или массив строк по языкам. auto: archetypes, makers, rarities, perks, legendaries, enemies, elites, bosses, rating, mods. actions: write_guide, open_mods_folder, open_game_folder.",
+	"sections": [
+		{"id": "basics", "order": 10, "title": {"en": "Basics", "ru": "Основы"}},
+		{"id": "weapons", "order": 20, "title": {"en": "Weapons", "ru": "Оружие"}},
+		{"id": "enemies", "order": 30, "title": {"en": "Enemies", "ru": "Противники"}},
+		{"id": "rating", "order": 40, "title": {"en": "Rating", "ru": "Рейтинг"}},
+		{"id": "modding", "order": 50, "title": {"en": "Modding", "ru": "Моддинг"}}
+	],
+	"pages": [
+		{
+			"id": "character",
+			"section": "basics",
+			"order": 10,
+			"title": {"en": "Character", "ru": "Персонаж"},
+			"text": {
+				"en": [
+					"A lone gunner with [b]100 health[/b] and no levels. All your power is the guns you carry.",
+					"",
+					"[color=#ff9a40][b]Movement[/b][/color]",
+					"• Run speed 265. Heavy guns slow you down a little (machine gun −12%, rocket launcher −8%, mortar −10%), the [i]Light[/i] perk speeds you up.",
+					"• [b]Dodge[/b] (Space / Shift / RMB) — a 0.32 s dash with invulnerability. Cooldown 4 s, but only [b]0.5 s[/b] if you actually dodged something (perfect dodge, \"DODGED!\").",
+					"• After any hit you are invulnerable for 0.4 s.",
+					"",
+					"[color=#ff9a40][b]Health[/b][/color]",
+					"• [b]No regeneration.[/b] Health orbs heal 10, and a zone gives at most 2 of them.",
+					"• Orbs drop from normal enemies (3%), elites (25%), chests (25%) and bosses (always).",
+					"• Lifesteal from guns heals at most 4 health per second.",
+					"• Armor (perk of the gun in your hands) cuts incoming damage by 15%, 50% at most.",
+					"• Your own explosions deal you only 10% of their damage.",
+					"• Acid and lava pools burn for 4 damage every 0.5 s (more in deeper zones). An enemy frost aura slows you by 35%.",
+					"",
+					"[color=#ff9a40][b]Guns and ammo[/b][/color]",
+					"• 4 weapon slots (1-4, mouse wheel, Q) and a backpack for 12 more.",
+					"• [b]Tab / I[/b] — inventory: drag guns between slots and the backpack, drop them on the floor or into the recycler.",
+					"• Every gun type uses its own ammo; the reserve holds 4 full magazines of each type. Guns from the floor come with an empty magazine.",
+					"• [b]Scrap[/b] (X) destroys a gun and turns it into ammo of its type — the rarer the gun, the more ammo.",
+					"• Ammo drops: normal enemies 15% (half a magazine), champions 60% (a magazine), leaders 2 magazines, bosses 4.",
+					"",
+					"[color=#ff9a40][b]Controls[/b][/color]",
+					"WASD — move · mouse — aim · LMB — shoot · R — reload",
+					"E — pick up / open a chest · F — swap with the current gun · X — scrap",
+					"Tab / I — inventory · Esc — pause · F3 — debug info",
+					"− / + and M — music · [lb] / ] — sounds"
+				],
+				"ru": [
+					"Одинокий стрелок: [b]100 здоровья[/b] и никаких уровней. Вся сила — в пушках, которые ты таскаешь.",
+					"",
+					"[color=#ff9a40][b]Движение[/b][/color]",
+					"• Скорость бега 265. Тяжёлые пушки немного замедляют (пулемёт −12%, ракетница −8%, миномёт −10%), перк [i]Лёгкий[/i] ускоряет.",
+					"• [b]Рывок[/b] (Пробел / Shift / ПКМ) — 0,32 с неуязвимого броска. Перезарядка 4 с, но всего [b]0,5 с[/b], если ты действительно от чего-то увернулся (идеальный рывок, «УКЛОН!»).",
+					"• После любого попадания 0,4 с неуязвимости.",
+					"",
+					"[color=#ff9a40][b]Здоровье[/b][/color]",
+					"• [b]Регенерации нет.[/b] Сфера здоровья лечит 10, за зону их выпадает не больше двух.",
+					"• Сферы падают с обычных врагов (3%), элиток (25%), из сундуков (25%) и с боссов (всегда).",
+					"• Вампиризм пушек лечит не больше 4 здоровья в секунду.",
+					"• Броня (перк пушки в руках) срезает 15% входящего урона, максимум 50%.",
+					"• Свои взрывы бьют по тебе всего на 10% урона.",
+					"• Лужи кислоты и лавы жгут на 4 урона каждые 0,5 с (глубже — больнее). Морозная аура врага замедляет на 35%.",
+					"",
+					"[color=#ff9a40][b]Пушки и патроны[/b][/color]",
+					"• 4 слота оружия (1-4, колесо мыши, Q) и рюкзак ещё на 12.",
+					"• [b]Tab / I[/b] — инвентарь: таскай пушки между слотами и рюкзаком, выкидывай на пол или в переработку.",
+					"• У каждого типа пушек свои патроны, в запасе — 4 полных магазина каждого типа. Пушки с пола приходят с пустым магазином.",
+					"• [b]Переработка[/b] (X) уничтожает пушку и даёт патроны её типа — чем реже пушка, тем больше.",
+					"• Патроны падают: обычные враги 15% (полмагазина), чемпионы 60% (магазин), вожаки 2 магазина, боссы 4.",
+					"",
+					"[color=#ff9a40][b]Управление[/b][/color]",
+					"WASD — бег · мышь — прицел · ЛКМ — огонь · R — перезарядка",
+					"E — подобрать / открыть сундук · F — заменить текущую · X — переработать",
+					"Tab / I — инвентарь · Esc — пауза · F3 — отладка",
+					"− / + и M — музыка · [lb] / ] — звуки"
+				]
+			}
+		},
+		{
+			"id": "combat",
+			"section": "basics",
+			"order": 20,
+			"title": {"en": "Damage and elements", "ru": "Урон и стихии"},
+			"text": {
+				"en": [
+					"[color=#ff9a40][b]Damage[/b][/color]",
+					"• [b]Crits[/b]: every gun has a crit chance and a crit multiplier (usually ×2).",
+					"• [b]Range[/b]: after its effective range a projectile loses damage fast: +33% distance — 37% damage, double distance — 5%.",
+					"• [b]Ricochets[/b] cut 30% of the damage each (grenades roll without losing any).",
+					"• [b]Explosions[/b]: full damage in the center, 20% at the edge.",
+					"• Damage grows ×1.14 for each zone the gun was found in.",
+					"",
+					"[color=#ff9a40][b]Effect chance[/b][/color]",
+					"Elements, explosions by chance, chain lightning and other effects trigger more often from heavy projectiles: chance × (hit damage without zone growth / 40), from 8% to 100%. A sniper rifle procs on almost every hit, a machine gun — rarely. That is also why effect perks often fail to roll on fast-firing guns.",
+					"",
+					"[color=#ff9a40][b]Elements[/b][/color]",
+					"[color=#ff731f][b]Fire[/b][/color] — burning: 45% of the hit damage per second for 3 s. Stronger hits replace weaker burns.",
+					"[color=#73bfff][b]Shock[/b][/color] — jumps to 2 nearby enemies for 35% damage and stuns for 0.5 s, then the target is immune to stun for a second.",
+					"[color=#99ff33][b]Acid[/b][/color] — corrosion: every second of hits adds +10% damage taken, up to +50%. Wears off 3 s after the last hit.",
+					"[color=#b8f2ff][b]Cryo[/b][/color] — slows by 10% per second of hits, up to 40%; at 50% the target freezes solid for 1.3 s.",
+					"[color=#b340f2][b]Curse[/b][/color] — the curse bar fills at +40% per second of hits; when full, it deals 30% of the target's [i]missing[/i] health. Cursed guns deal 20% less damage.",
+					"",
+					"[color=#9aa0b0]Elites and bosses resist statuses: the build-up, stun and curse damage are divided by their resistance (champions 1.5, leaders 2, bosses 3).[/color]"
+				],
+				"ru": [
+					"[color=#ff9a40][b]Урон[/b][/color]",
+					"• [b]Криты[/b]: у каждой пушки свой шанс и множитель крита (обычно ×2).",
+					"• [b]Дальность[/b]: за эффективной дальностью снаряд быстро теряет урон: +33% расстояния — 37% урона, вдвое дальше — 5%.",
+					"• [b]Рикошет[/b] срезает 30% урона за каждый отскок (гранаты катятся без потерь).",
+					"• [b]Взрывы[/b]: полный урон в центре, 20% на краю.",
+					"• Урон пушки растёт ×1,14 за каждую зону, в которой она найдена.",
+					"",
+					"[color=#ff9a40][b]Шанс эффектов[/b][/color]",
+					"Стихии, взрывы по шансу, цепные молнии и прочие эффекты чаще срабатывают от тяжёлых снарядов: шанс × (урон попадания без роста по зонам / 40), от 8% до 100%. Снайперка срабатывает почти каждым выстрелом, пулемёт — редко. Поэтому и перки-эффекты на скорострельных пушках часто не выпадают.",
+					"",
+					"[color=#ff9a40][b]Стихии[/b][/color]",
+					"[color=#ff731f][b]Огонь[/b][/color] — горение: 45% урона попадания в секунду, 3 с. Сильное попадание заменяет слабое горение.",
+					"[color=#73bfff][b]Электричество[/b][/color] — бьёт ещё 2 соседей на 35% урона и оглушает на 0,5 с, после чего цель секунду не оглушается.",
+					"[color=#99ff33][b]Кислота[/b][/color] — разъедание: каждая секунда попаданий даёт +10% к получаемому урону, до +50%. Спадает через 3 с после последнего попадания.",
+					"[color=#b8f2ff][b]Холод[/b][/color] — замедляет на 10% за секунду попаданий, до 40%; на 50% цель замерзает на 1,3 с.",
+					"[color=#b340f2][b]Проклятие[/b][/color] — шкала растёт на 40% за секунду попаданий; заполнилась — удар на 30% [i]потерянного[/i] здоровья цели. Проклятые пушки бьют на 20% слабее.",
+					"",
+					"[color=#9aa0b0]Элитки и боссы сопротивляются статусам: набор, оглушение и урон проклятия делятся на сопротивление (чемпионы 1,5, вожаки 2, боссы 3).[/color]"
+				]
+			}
+		},
+		{
+			"id": "world",
+			"section": "basics",
+			"order": 30,
+			"title": {"en": "Zones and loot", "ru": "Зоны и добыча"},
+			"text": {
+				"en": [
+					"[color=#ff9a40][b]Zones[/b][/color]",
+					"• The world is an endless chain of zones. Every zone has a [b]rift[/b] to the next one — step into it and you fall deeper. You don't have to kill everyone.",
+					"• Every 5th zone is a [b]boss arena[/b]: one boss, and the rift appears only after it dies.",
+					"• Biomes change every zone: wasteland, toxic swamps, frozen plains, lava fields, neon ruins, junkyard. Swamps and lava have hazardous pools; chasms and water block movement but not bullets.",
+					"",
+					"[color=#ff9a40][b]Scaling[/b][/color]",
+					"• Enemy health ×1.15 per zone, enemy damage +10% per zone.",
+					"• Gun damage ×1.14 per zone — a gun from zone 20 is ~12 times stronger than one from zone 1, so keep looting.",
+					"",
+					"[color=#ff9a40][b]Loot[/b][/color]",
+					"• Guns drop from normal enemies (5.5%), champions (40%, better rarity) and leaders (always, 50% for a second one).",
+					"• [b]Chests[/b]: 2–3 guns, at least Uncommon. A [color=#ffd24c]golden chest[/color] (12% + 0.4% per zone) gives one more gun, at least Rare, with much better odds.",
+					"• [b]Boss[/b]: a Legendary (40%) or Epic gun from the next zone, two Rare guns, 2 health orbs and 4 magazines."
+				],
+				"ru": [
+					"[color=#ff9a40][b]Зоны[/b][/color]",
+					"• Мир — бесконечная цепочка зон. В каждой есть [b]разлом[/b] в следующую — шагнул, и ты провалился глубже. Убивать всех не обязательно.",
+					"• Каждая 5-я зона — [b]арена босса[/b]: один босс, разлом появляется только после его смерти.",
+					"• Биомы меняются каждую зону: пустошь, токсичные болота, ледяные равнины, лавовые поля, неоновые руины, свалка. В болотах и на лаве — опасные лужи; пропасти и вода не пускают тебя, но пропускают пули.",
+					"",
+					"[color=#ff9a40][b]Рост сложности[/b][/color]",
+					"• Здоровье врагов ×1,15 за зону, урон врагов +10% за зону.",
+					"• Урон пушек ×1,14 за зону — пушка из 20-й зоны примерно в 12 раз сильнее пушки из 1-й, так что не забывай лутаться.",
+					"",
+					"[color=#ff9a40][b]Добыча[/b][/color]",
+					"• Пушки падают с обычных врагов (5,5%), чемпионов (40%, редкость лучше) и вожаков (всегда, и 50% на вторую).",
+					"• [b]Сундуки[/b]: 2–3 пушки, не хуже необычной. [color=#ffd24c]Золотой сундук[/color] (12% + 0,4% за зону) — на пушку больше, не хуже редкой и с куда лучшими шансами.",
+					"• [b]Босс[/b]: легендарка (40%) или эпическая пушка уровнем выше, две редкие пушки, 2 сферы здоровья и 4 магазина."
+				]
+			}
+		},
+		{
+			"id": "archetypes",
+			"section": "weapons",
+			"order": 10,
+			"title": {"en": "Gun types", "ru": "Типы оружия"},
+			"text": {
+				"en": [
+					"The type sets the base: damage, fire rate, pellets, magazine, projectile and ammo. Numbers below are for a Common gun from zone 1 before the ±10% random spread.",
+					"A [b]hybrid[/b] (\"Shotgun-Rocket Launcher\") takes the firing pattern — fire rate, pellets, spread, magazine — from the first type and the projectile from the second; its damage is evened out between the two."
+				],
+				"ru": [
+					"Тип задаёт основу: урон, скорострельность, дробь, магазин, снаряд и патроны. Цифры ниже — для обычной пушки из 1-й зоны, до случайного разброса ±10%.",
+					"[b]Гибрид[/b] («Дробовик-Ракетница») берёт узор стрельбы — скорострельность, дробь, разброс, магазин — у первого типа, а снаряд у второго; урон усредняется между ними."
+				]
+			},
+			"auto": "archetypes"
+		},
+		{
+			"id": "makers",
+			"section": "weapons",
+			"order": 20,
+			"title": {"en": "Makers", "ru": "Производители"},
+			"text": {
+				"en": [
+					"Every gun has a maker. The maker colors the gun and adds a signature effect on top of the type. The number in the name (\"Hypernova-512\") is just a serial number."
+				],
+				"ru": [
+					"У каждой пушки есть производитель. Он красит пушку и добавляет фирменный эффект поверх типа. Число в имени («Гипернова-512») — просто серийный номер."
+				]
+			},
+			"auto": "makers"
+		},
+		{
+			"id": "generation",
+			"section": "weapons",
+			"order": 30,
+			"title": {"en": "How guns are made", "ru": "Как собираются пушки"},
+			"text": {
+				"en": [
+					"Every gun is generated from scratch, step by step:",
+					"",
+					"[b]1. Rarity.[/b] Rolled by weight (table below). The deeper the zone and the better the source (champion, leader, chest, boss), the more the odds shift to rare guns. [color=#ff4cb8]Absurd[/color] guns don't drop before zone 8 — except from bosses.",
+					"[b]2. Maker[/b] — by weight. Some makers never appear on Legendaries.",
+					"[b]3. Type.[/b] A Legendary has a fixed type. Otherwise random, and with the rarity's hybrid chance — two types at once.",
+					"[b]4. Base stats[/b] of the type, then the [b]maker's effect[/b].",
+					"[b]5. Perks.[/b] As many as the rarity allows. Perks of the same group don't stack (two elements, two projectile kinds), and a perk only appears where it makes sense — Absurd guns ignore all of that.",
+					"    Stat perks go first; effect perks (elements, explosions, ricochets...) are checked against the final fire rate: their chance to stay is 4 / (shots per second × pellets). A failed effect perk is replaced by a stat perk.",
+					"[b]6. Legendary effect[/b] on top of everything.",
+					"[b]7. Random spread[/b]: damage, fire rate, spread, projectile speed, reload and magazine are each ×0.9–1.1. A shotgun has a 30% chance to become a [b]slug gun[/b] — all pellets in one accurate round.",
+					"[b]8. Zone scaling[/b] ×1.14 per zone and the rarity damage multiplier. Then limits: fire rate 0.25–30/s, up to 40 pellets, reload 0.35–6 s, crit chance up to 75%.",
+					"[b]9. Name[/b] from the maker, perks and a random nickname."
+				],
+				"ru": [
+					"Каждая пушка собирается с нуля, по шагам:",
+					"",
+					"[b]1. Редкость.[/b] Бросается по весам (таблица ниже). Чем глубже зона и лучше источник (чемпион, вожак, сундук, босс), тем сильнее шансы сдвигаются к редким. [color=#ff4cb8]Абсурдные[/color] не падают раньше 8-й зоны — разве что с боссов.",
+					"[b]2. Производитель[/b] — по весам. Некоторые не встречаются на легендарках.",
+					"[b]3. Тип.[/b] У легендарки он свой. Иначе случайный, а с шансом гибрида редкости — сразу два типа.",
+					"[b]4. Базовые статы[/b] типа, затем [b]эффект производителя[/b].",
+					"[b]5. Перки.[/b] Сколько позволяет редкость. Перки одной группы не сочетаются (две стихии, два вида снаряда), и перк выпадает только там, где он имеет смысл — абсурдным пушкам на всё это плевать.",
+					"    Сначала ставятся перки статов; перки-эффекты (стихии, взрывы, рикошеты...) проверяются по итоговой скорострельности: шанс остаться — 4 / (выстрелов в секунду × дробин). Не прошёл — на его место встаёт перк статов.",
+					"[b]6. Легендарная фишка[/b] — поверх всего.",
+					"[b]7. Разброс[/b]: урон, скорострельность, разброс, скорость снаряда, перезарядка и магазин — каждый ×0,9–1,1. Дробовик с шансом 30% становится [b]пулевым[/b] — вся дробь в одном точном снаряде.",
+					"[b]8. Рост по зоне[/b] ×1,14 за зону и множитель урона редкости. Затем пределы: скорострельность 0,25–30/с, до 40 дробин, перезарядка 0,35–6 с, шанс крита до 75%.",
+					"[b]9. Имя[/b] из производителя, перков и случайного прозвища."
+				]
+			},
+			"auto": "rarities"
+		},
+		{
+			"id": "perks",
+			"section": "weapons",
+			"order": 40,
+			"title": {"en": "Perks", "ru": "Перки"},
+			"text": {
+				"en": [
+					"Perks are what makes a gun special. Uncommon guns get 1, Rare 2, Epic 3, Absurd 5. Legendaries get their own fixed perks plus one random.",
+					"[color=#9aa0b0]\"effect\" — an effect perk: its chance to stay drops on fast-firing guns (see How guns are made).[/color]"
+				],
+				"ru": [
+					"Перки — то, что делает пушку особенной. У необычных 1, у редких 2, у эпических 3, у абсурдных 5. У легендарок — свои постоянные и ещё один случайный.",
+					"[color=#9aa0b0]«эффект» — перк-эффект: его шанс остаться падает у скорострельных пушек (см. «Как собираются пушки»).[/color]"
+				]
+			},
+			"auto": "perks"
+		},
+		{
+			"id": "legendaries",
+			"section": "weapons",
+			"order": 50,
+			"title": {"en": "Legendaries", "ru": "Легендарки"},
+			"text": {
+				"en": [
+					"Unique guns with a fixed type, perks and an effect of their own. Bosses drop them with a 40% chance."
+				],
+				"ru": ["Уникальные пушки со своим типом, перками и фишкой. С босса падают с шансом 40%."]
+			},
+			"auto": "legendaries"
+		},
+		{
+			"id": "enemies",
+			"section": "enemies",
+			"order": 10,
+			"title": {"en": "Enemy types", "ru": "Виды противников"},
+			"text": {
+				"en": [
+					"Enemies come in packs of 4–6 (more in deeper zones), made of one or two types. A pack sleeps until you come close.",
+					"Contact damage: half of the listed damage every 0.8 s (runners deal the full amount)."
+				],
+				"ru": [
+					"Враги ходят стаями по 4–6 (глубже — больше), из одного-двух видов. Стая спит, пока не подойдёшь.",
+					"Урон касанием — половина указанного урона каждые 0,8 с (бегуны бьют полным)."
+				]
+			},
+			"auto": "enemies"
+		},
+		{
+			"id": "elites",
+			"section": "enemies",
+			"order": 20,
+			"title": {"en": "Elites", "ru": "Элитные враги"},
+			"text": {
+				"en": [
+					"[color=#ff9a40][b]Champions[/b][/color]",
+					"A whole pack of up to 5 champions with the same affixes. ×3 health, ×1.25 damage, status resistance 1.5. One affix, two from zone 10.",
+					"Chance per pack: 14% + 1.2% per zone, up to 35%.",
+					"",
+					"[color=#ff9a40][b]Leaders[/b][/color]",
+					"A rare elite with its own name, leading a normal pack. ×5 health, ×1.35 damage, status resistance 2. Two affixes, three from zone 15. Always drops a gun.",
+					"Chance per pack: 7% + 1% per zone (from zone 2), up to 25%.",
+					"",
+					"[color=#ff9a40][b]Affixes[/b][/color]"
+				],
+				"ru": [
+					"[color=#ff9a40][b]Чемпионы[/b][/color]",
+					"Целая стая до 5 чемпионов с одинаковыми свойствами. ×3 здоровья, ×1,25 урона, сопротивление статусам 1,5. Одно свойство, с 10-й зоны — два.",
+					"Шанс на стаю: 14% + 1,2% за зону, максимум 35%.",
+					"",
+					"[color=#ff9a40][b]Вожаки[/b][/color]",
+					"Редкая элитка со своим именем во главе обычной стаи. ×5 здоровья, ×1,35 урона, сопротивление 2. Два свойства, с 15-й зоны — три. Всегда роняет пушку.",
+					"Шанс на стаю: 7% + 1% за зону (со 2-й зоны), максимум 25%.",
+					"",
+					"[color=#ff9a40][b]Свойства[/b][/color]"
+				]
+			},
+			"auto": "elites"
+		},
+		{
+			"id": "bosses",
+			"section": "enemies",
+			"order": 30,
+			"title": {"en": "Bosses", "ru": "Боссы"},
+			"text": {
+				"en": [
+					"Every 5th zone is a boss arena. A boss has 3200 health and 16 damage at zone 1 (both grow like normal enemies), status resistance 3, and a random set of attack patterns: 3, plus one more every 10 zones. Charge is always in the set.",
+					"At half health the boss [b]enrages[/b]: attacks 35% faster and with more bullets.",
+					"In [b]Chaos[/b] mode a boss can also replace any pack — it sleeps until you come close, and no rift appears for it.",
+					"",
+					"[color=#ff9a40][b]Attack patterns[/b][/color]"
+				],
+				"ru": [
+					"Каждая 5-я зона — арена босса. У босса 3200 здоровья и 16 урона в 1-й зоне (растут как у обычных врагов), сопротивление статусам 3 и случайный набор атак: 3, и ещё одна каждые 10 зон. Таран есть всегда.",
+					"На половине здоровья босс [b]звереет[/b]: атакует на 35% быстрее и плотнее.",
+					"В режиме [b]Хаос[/b] босс может встретиться и вместо обычной стаи — он спит, пока не подойдёшь, и разлом за него не появляется.",
+					"",
+					"[color=#ff9a40][b]Атаки[/b][/color]"
+				]
+			},
+			"auto": "bosses"
+		},
+		{
+			"id": "rating",
+			"section": "rating",
+			"order": 10,
+			"title": {"en": "Rating", "ru": "Рейтинг"},
+			"text": {
+				"en": [
+					"Rating = points × multiplier. The best rating is saved for any run. Best zone and kills count only in standard runs (New game, or Custom start with default settings).",
+					"The multiplier comes from the difficulty (enemy health × enemy damage from Custom start) and the run options below. The current multiplier is shown in Custom start and in the pause menu."
+				],
+				"ru": [
+					"Рейтинг = очки × множитель. Лучший рейтинг сохраняется в любом забеге. Рекорды зоны и убийств — только в стандартных (Новая игра или «Настраиваемый старт» без изменений).",
+					"Множитель складывается из сложности (здоровье × урон врагов в «Настраиваемом старте») и опций забега ниже. Текущий множитель видно в «Настраиваемом старте» и в меню паузы."
+				]
+			},
+			"auto": "rating"
+		},
+		{
+			"id": "modding",
+			"section": "modding",
+			"order": 10,
+			"title": {"en": "How to make mods", "ru": "Как делать моды"},
+			"text": {
+				"en": [
+					"Everything on these pages — guns, makers, perks, legendaries, names, translations, sounds, music and this codex — can be changed or extended by mods without touching the code.",
+					"",
+					"• A mod is a folder [b]Mods/<ModName>/[/b] next to the game's exe. Inside it repeats the game's own layout: [b]data/[/b], [b]lang/[/b], [b]sfx/[/b], [b]music/[/b], [b]scripts/[/b] — all optional.",
+					"• Enable and disable mods in the main menu → Mods. Changes apply at once.",
+					"• Turn on the [b]mod debugger[/b] there (F8 in game): it checks your files and shows every mistake with the file and line.",
+					"• [b]Create modding guide[/b] writes a full text guide next to the exe: every file, every field, every operation, plus a reference of all ids currently loaded (game + your mods). It is much easier to read in a text editor than here.",
+					"",
+					"[color=#ff9a40][b]Add to this codex[/b][/color]",
+					"Put [b]data/codex.json[/b] into your mod: new pages, new sections, descriptions for your guns, makers and perks — or a translation of existing pages. Details are in the guide."
+				],
+				"ru": [
+					"Всё на этих страницах — пушки, производители, перки, легендарки, имена, переводы, звуки, музыка и сам справочник — можно поменять или дополнить модами, не трогая код.",
+					"",
+					"• Мод — папка [b]Mods/<ИмяМода>/[/b] рядом с exe игры. Внутри она повторяет устройство игры: [b]data/[/b], [b]lang/[/b], [b]sfx/[/b], [b]music/[/b], [b]scripts/[/b] — всё необязательно.",
+					"• Моды включаются и выключаются в главном меню → «Моды». Изменения применяются сразу.",
+					"• Там же включается [b]отладчик модов[/b] (F8 в игре): он проверяет файлы и показывает каждую ошибку с файлом и строкой.",
+					"• [b]Создать гайд по моддингу[/b] — кладёт рядом с exe полный текстовый гайд: все файлы, все поля, все операции и справку по всем id, загруженным сейчас (игра + твои моды). В блокноте его читать куда удобнее, чем здесь.",
+					"",
+					"[color=#ff9a40][b]Дополнить справочник[/b][/color]",
+					"Положи в мод [b]data/codex.json[/b]: новые страницы и разделы, описания своих пушек, производителей и перков — или перевод существующих страниц. Подробности — в гайде."
+				]
+			},
+			"auto": "mods",
+			"actions": ["write_guide", "open_mods_folder", "open_game_folder"]
+		}
+	],
+	"archetypes": {
+		"shotgun": {
+			"en": "Pellets spread in a cone and fall off quickly with distance. 30% of shotguns are born as slug guns.",
+			"ru": "Дробь летит конусом и быстро слабеет с расстоянием. 30% дробовиков рождаются пулевыми."
+		},
+		"sniper": {
+			"en": "Huge single hits — the best gun for effects and crits.",
+			"ru": "Огромный урон одним выстрелом — лучшая пушка для эффектов и критов."
+		},
+		"rocket": {
+			"en": "Accelerating rockets that explode on impact.",
+			"ru": "Разгоняющиеся ракеты, взрываются при попадании."
+		},
+		"launcher": {
+			"en": "Grenades bounce off walls and explode on impact or at the end of their flight.",
+			"ru": "Гранаты отскакивают от стен и взрываются от удара или в конце полёта."
+		},
+		"mortar": {
+			"en": "Shells fly over walls and land exactly at the aim point after 1 s. Spread is how far from the point they land. Uses grenade launcher ammo.",
+			"ru": "Мины летят над стенами и через 1 с падают точно в точку прицела. Разброс — насколько далеко от точки. Ест патроны гранатомёта."
+		},
+		"lmg": {
+			"en": "A 90-round belt and a long reload. Effects proc rarely.",
+			"ru": "Лента на 90 патронов и долгая перезарядка. Эффекты срабатывают редко."
+		}
+	},
+	"makers": {
+		"synergis": {
+			"en": "Never explosive: rockets and grenades turn into bullets.",
+			"ru": "Никаких взрывов: ракеты и гранаты превращаются в пули."
+		},
+		"hypernova": {
+			"en": "Every type keeps its firing pattern, but shoots rockets.",
+			"ru": "Любой тип сохраняет свой узор стрельбы, но стреляет ракетами."
+		},
+		"chaos": {"en": "Gets the effect of a random legendary.", "ru": "Получает фишку случайной легендарки."},
+		"erosion": {
+			"en": "Always has an element, and procs it twice as often.",
+			"ru": "Всегда со стихией и срабатывает ею вдвое чаще."
+		},
+		"noname": {"en": "Nothing special. Literally.", "ru": "Ничего особенного. Буквально."}
+	},
+	"perks": {
+		"blast": {
+			"en": "Bullets explode by chance. On guns that already explode — more chance or a bigger blast.",
+			"ru": "Пули взрываются по шансу. Если пушка уже взрывается — шанс выше или взрыв больше."
+		},
+		"grenade": {"en": "Turns projectiles into bouncing grenades.", "ru": "Превращает снаряды в прыгающие гранаты."},
+		"rocket": {
+			"en": "Turns projectiles into accelerating rockets.",
+			"ru": "Превращает снаряды в разгоняющиеся ракеты."
+		},
+		"big": {"en": "Huge slow orbs that pierce everything.", "ru": "Огромные медленные шары, прошивают всех."},
+		"split": {"en": "A projectile splits into 3 on hit.", "ru": "Снаряд при попадании делится на 3."},
+		"fractal": {
+			"en": "Splits into 2, and those split again — three times.",
+			"ru": "Делится на 2, а те снова — три раза подряд."
+		},
+		"gravity": {
+			"en": "A chance to open a black hole that pulls enemies in.",
+			"ru": "Шанс открыть чёрную дыру, которая затягивает врагов."
+		},
+		"seeder": {
+			"en": "Projectiles shoot small bullets sideways mid-flight.",
+			"ru": "Снаряды в полёте стреляют вбок мелкими пулями."
+		},
+		"quantum": {"en": "Projectiles teleport forward in jumps.", "ru": "Снаряды прыгают вперёд телепортом."},
+		"nuke": {"en": "Three times the blast radius.", "ru": "Взрыв втрое шире."},
+		"chain": {
+			"en": "Hits jump to 3 more enemies as lightning.",
+			"ru": "Попадание перескакивает молнией ещё на 3 врагов."
+		},
+		"cluster": {"en": "Explosions scatter 4 bomblets.", "ru": "Взрыв разбрасывает 4 бомбочки."},
+		"double": {"en": "Two shots at once for double ammo.", "ru": "Два выстрела разом за двойной расход патронов."}
+	},
+	"enemies": {
+		"runner": {
+			"en": "Fast and fragile, rushes you and hits on contact.",
+			"ru": "Быстрый и хрупкий, бежит на тебя и бьёт касанием."
+		},
+		"gunner": {
+			"en": "Keeps distance and shoots every 1.3 s from up to 650 away.",
+			"ru": "Держит дистанцию и стреляет раз в 1,3 с с расстояния до 650."
+		},
+		"brute": {
+			"en": "Slow and tough. Raises its fists for 0.55 s, then slams an area around itself.",
+			"ru": "Медленный и толстый. 0,55 с замахивается, затем бьёт по площади вокруг себя."
+		},
+		"bomber": {
+			"en": "Runs up, flashes and blows itself up. Dodge when it starts blinking.",
+			"ru": "Подбегает, мигает и взрывается. Уходи рывком, как замигал."
+		},
+		"spreader": {"en": "Fires a 5-bullet fan every 1.9 s.", "ru": "Раз в 1,9 с стреляет веером из 5 пуль."},
+		"charger": {
+			"en": "Winds up for 0.7 s and dashes at 4× speed. Step aside.",
+			"ru": "0,7 с готовится и бросается на учетверённой скорости. Отойди в сторону."
+		},
+		"mortar": {
+			"en": "Lobs shells at where you are going to be, every 2.5 s, from up to 720 away. Keep moving.",
+			"ru": "Раз в 2,5 с кидает мины туда, где ты будешь, с расстояния до 720. Не стой на месте."
+		},
+		"summoner": {
+			"en": "Summons runners (up to 6 at once). Kill it first.",
+			"ru": "Призывает бегунов (до 6 разом). Убивай первым."
+		}
+	},
+	"affixes": {
+		"fast": {"en": "×1.4 speed and faster attacks.", "ru": "×1,4 скорости и быстрее атакует."},
+		"tough": {"en": "×1.8 health.", "ru": "×1,8 здоровья."},
+		"explosive": {
+			"en": "Explodes on death and releases a ring of 12 bullets.",
+			"ru": "При смерти взрывается и выпускает кольцо из 12 пуль."
+		},
+		"teleport": {
+			"en": "Every 4–5.5 s blinks next to you if you are far. Where it will appear is marked 0.9 s in advance.",
+			"ru": "Каждые 4–5,5 с прыгает к тебе, если ты далеко. Место появления видно за 0,9 с."
+		},
+		"multishot": {
+			"en": "More bullets per attack. Melee enemies fire a ring of 6 bullets every 3.2 s.",
+			"ru": "Больше пуль за атаку. Ближники раз в 3,2 с выпускают кольцо из 6 пуль."
+		},
+		"shielded": {
+			"en": "Every 7 s becomes invulnerable for 1.8 s.",
+			"ru": "Каждые 7 с становится неуязвимым на 1,8 с."
+		},
+		"regen": {"en": "Restores 2% of its health per second.", "ru": "Восстанавливает 2% здоровья в секунду."},
+		"frost": {
+			"en": "A cold aura (radius 170) that slows you by 35%.",
+			"ru": "Морозная аура (радиус 170), замедляет тебя на 35%."
+		},
+		"orbit": {
+			"en": "Three orbs circle around it and hurt on contact.",
+			"ru": "Вокруг кружат три сферы, которые бьют при касании."
+		}
+	},
+	"bosses": {
+		"radial": {
+			"name": {"en": "Ring", "ru": "Кольцо"},
+			"text": {"en": "Rings of 16 bullets (24 when enraged).", "ru": "Кольца из 16 пуль (24 в ярости)."}
+		},
+		"spiral": {
+			"name": {"en": "Spiral", "ru": "Спираль"},
+			"text": {
+				"en": "A rotating spiral of 2 arms (3 when enraged).",
+				"ru": "Вращающаяся спираль из 2 рукавов (3 в ярости)."
+			}
+		},
+		"shotgun": {
+			"name": {"en": "Shotgun", "ru": "Дробовик"},
+			"text": {"en": "Aimed bursts of 11 + 7 bullets.", "ru": "Прицельные залпы из 11 + 7 пуль."}
+		},
+		"charge": {
+			"name": {"en": "Charge", "ru": "Таран"},
+			"text": {
+				"en": "3 charges at you (4 when enraged). Always in the set.",
+				"ru": "3 броска на тебя (4 в ярости). Есть всегда."
+			}
+		},
+		"summon": {
+			"name": {"en": "Summon", "ru": "Призыв"},
+			"text": {"en": "Calls 4 enemies (6 when enraged).", "ru": "Зовёт 4 врагов (6 в ярости)."}
+		},
+		"mortar": {
+			"name": {"en": "Bombardment", "ru": "Бомбёжка"},
+			"text": {"en": "Shells rain around you every 0.3 s.", "ru": "Каждые 0,3 с вокруг тебя падают мины."}
+		},
+		"wall": {
+			"name": {"en": "Wall", "ru": "Стена"},
+			"text": {
+				"en": "Walls of bullets with a gap every 1.1 s — find the gap.",
+				"ru": "Стены пуль с просветом каждые 1,1 с — ищи просвет."
+			}
+		}
+	}
+}
