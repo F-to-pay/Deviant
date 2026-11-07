@@ -3,6 +3,11 @@
 An endless Diablo-like arcade shooter with Borderlands-style guns pushed into the absurd.
 Top-down, twin-stick. The hero has no levels — all progression lives in the guns and the enemies.
 
+![Deviant](docs/screenshot.png)
+
+**Download:** [latest release](https://github.com/F-to-pay/Deviant/releases/latest) · **License:** code and data — [MIT](LICENSE);
+sound effects — CC0, music — public domain / CC0 (see `sfx/SOURCES.txt`, `music/SOURCES.txt`).
+
 ## Running
 
 1. Godot **4.4+** (written against 4.4–4.7 syntax). Renderer: Mobile (Vulkan); the web build falls back to Compatibility automatically.
