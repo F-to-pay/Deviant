@@ -1,237 +1,259 @@
 # Deviant
 
-Бесконечный диаблоид с пушками в духе Borderlands, доведёнными до абсурда.
-Вид сверху, twin-stick. Уровней у героя нет — вся прогрессия в пушках и врагах.
+An endless Diablo-like arcade shooter with Borderlands-style guns pushed into the absurd.
+Top-down, twin-stick. The hero has no levels — all progression lives in the guns and the enemies.
 
-## Запуск
+## Running
 
-1. Godot **4.4+** (проверялось под синтаксис 4.4–4.7). Рендер — Mobile (Vulkan); web-сборка сама уходит в Compatibility.
-2. `Import` → выбрать `project.godot` → F5.
-3. Экспорт: папки `data/` и `lang/` (JSON) должны попасть в сборку — если их нет, добавь `data/*, lang/*`
-   в «Filters to export non-resource files». Папку `Mods/` положи рядом с exe (в сборку она не входит).
+1. Godot **4.4+** (written against 4.4–4.7 syntax). Renderer: Mobile (Vulkan); the web build falls back to Compatibility automatically.
+2. `Import` → pick `project.godot` → F5.
+3. Export: the `data/` and `lang/` folders (JSON) must end up in the build — if they don't, add `data/*, lang/*`
+   to "Filters to export non-resource files". Put the `Mods/` folder next to the exe (it is not packed into the build).
+4. Android: JDK 17 + Android SDK (`platform-tools`, `build-tools`, `platforms`), paths in Editor Settings → Export → Android,
+   and a release keystore in the Android preset (or export with "Export With Debug").
 
-При запуске — экран загрузки (`systems/warmup.gd`): один раз прогревает всё, что иначе давало бы фризы
-посреди боя — собирает скрипты модов, грузит в фоне музыку, растеризует все буквы во всех размерах/обводках,
-которыми рисует игра, и прогоняет каждый вид отрисовки, чтобы Vulkan скомпилировал шейдеры заранее.
-Новый размер текста в коде — допиши его в `Warmup.REGULAR` / `Warmup.BOLD`.
+On start there is a loading screen (`systems/warmup.gd`). It warms up everything once that would otherwise
+stutter mid-fight: compiles mod scripts, loads music in the background, rasterizes every glyph in every size/outline
+the game draws, draws each kind of primitive so Vulkan compiles its shaders up front, and generates and draws one gun
+of every type, maker, perk and legendary. It runs again after mods are toggled or rescanned.
+New text size in code → add it to `Warmup.REGULAR` / `Warmup.BOLD`.
 
-Проект под git: `git log` — история, тег `pre-refactor` — состояние до выноса данных/перевода/модов.
+The project is under git: `git log` for history, tag `pre-refactor` — the state before data/translation/mods were split out.
 
-Графических ассетов нет: всё — геометрия, процедурные иконки пушек и шрифт системы.
-Из ассетов — только звук: музыка в `music/` (классика с Wikimedia Commons, public domain / CC0, список — `music/SOURCES.txt`)
-и эффекты в `sfx/` (CC0: Free Firearm Sound Library, Kenney, OpenGameArt — `sfx/SOURCES.txt`).
+There are no graphics assets: everything is geometry, procedural gun icons and the system font.
+The only assets are audio: music in `music/` (classical recordings from Wikimedia Commons, public domain / CC0, list in
+`music/SOURCES.txt`) and effects in `sfx/` (CC0: Free Firearm Sound Library, Kenney, OpenGameArt — `sfx/SOURCES.txt`).
 
-## Управление
+## Controls
 
-| Что | Клавиатура и мышь | Геймпад |
+| Action | Keyboard & mouse | Gamepad |
 |---|---|---|
-| Бег / прицел / огонь | WASD, мышь, ЛКМ | левый стик (или крестовина), правый стик, RT |
-| Перекат (неуязвимость, КД 4 с; 0.5 с, если реально увернулся) | Пробел / Shift / ПКМ | A / LT |
-| Перезарядка | R | X |
-| Смена оружия | 1–4, колесо, Q — прошлое | LB / RB, нажатие левого стика — прошлое |
-| Подобрать в рюкзак / открыть сундук | E | Y |
-| Заменить текущую пушку лежащей | F | нажатие правого стика |
-| Разобрать лежащую пушку на патроны | X | B |
-| Инвентарь (пауза) | Tab / I | Back (стик водит указатель, A — взять/тащить, Y — слот ↔ рюкзак) |
-| Пауза (меню паузы) / отладка | Esc / F3 | Start |
-| Громкость музыки / выкл | − и + (или на нампаде) / M |
-| Громкость звуков | [ и ] |
-| Отладчик модов (если включён в меню «Моды») | F8 | |
+| Move / aim / shoot | WASD, mouse, LMB | left stick (or D-pad), right stick, RT |
+| Dodge (invulnerable, 4 s cooldown; 0.5 s if you actually dodged something) | Space / Shift / RMB | A / LT |
+| Reload | R | X |
+| Switch weapon | 1–4, wheel, Q — last one | LB / RB, left stick click — last one |
+| Pick up to backpack / open chest | E | Y |
+| Swap current gun with the one on the ground | F | right stick click |
+| Scrap the gun on the ground for ammo | X | B |
+| Inventory (pauses) | Tab / I | Back (stick moves a pointer, A — take/drag, Y — slot ↔ backpack) |
+| Pause menu / debug overlay | Esc / F3 | Start |
+| Music volume / mute | − and + (or numpad) / M | |
+| Sound volume | [ and ] | |
+| Mod debugger (if enabled in the Mods menu) | F8 | |
 
-Всё, кроме музыки/звуков/отладки, переназначается: «Настройки» → «Управление» (клавиатура и геймпад отдельно,
-хранится в настройке `binds`, `core/input_setup.gd`). Игра сама понимает, чем ты играешь (`systems/controls.gd`),
-и подстраивает подсказки, прицел и курсор.
+Everything except music/sound/debug keys can be rebound: Settings → Controls (keyboard and gamepad columns,
+stored in the `binds` setting, `core/input_setup.gd`). Menus are navigable with A / B / D-pad / left stick.
+The game detects what you are playing with (`systems/controls.gd`) and adapts hints, aiming and the cursor.
 
-**Сенсор** (`ui/touch_controls.gd`): слева — плавающий стик бега, справа — стик прицела (отклонил — стреляешь),
-кнопки рывка, перезарядки, смены пушки, рюкзака и паузы; у пушки на земле и у сундука — свои кнопки.
-**Автоприцел** (в «Управлении»): на сенсоре правый стик стреляет сразу и сам целится в ближайшего врага,
-на геймпаде — то же, если жмёшь RT, не трогая правый стик. Экранные кнопки: «Авто» (когда играешь пальцем) /
-«Всегда» / «Выкл.», размер настраивается. Проверить на ПК без сенсора: в Project Settings включить
-`input_devices/pointing/emulate_touch_from_mouse` и поставить экранные кнопки «Всегда».
+**Touch** (`ui/touch_controls.gd`): a move stick on the left, an aim stick on the right (tilt it to shoot), buttons for
+dodge, reload, weapon switch, backpack and pause; Take / Swap / Scrap next to a gun on the ground, Open next to a chest.
+Options in Settings → Controls:
+- **Layout editor** — drag every control, change the size of each one (− / + next to the selected control);
+  stored in `touch_layout`. Plus a global size slider.
+- **Fixed sticks** — sticks stay in place instead of following the finger.
+- **Tap to shoot** — instead of the right stick, a finger on the right side shoots at the point under it.
+- **Auto-aim** (touch and gamepad) — shooting without manual aim targets the nearest enemy.
+- **Auto-fire at visible enemies** (touch and gamepad) — shoots on its own while an enemy is on screen and in line of sight.
+- Touch controls: Auto (when playing with fingers) / Always / Off.
 
-## Меню и настройки
+To try touch on a PC without a touchscreen: enable `input_devices/pointing/emulate_touch_from_mouse` in Project Settings
+and set touch controls to "Always".
 
-Игра стартует в главном меню: «Новая игра», «Настраиваемый старт», «Настройки», «Выход».
-Фон — парад случайных пушек из настоящего генератора (`ui/menu_bg.gd`); потом его заменит демо с ИИ-игроком.
-**Настраиваемый старт** (`Game.RUN_DEFAULTS` / `Game.custom`, последний выбор сохраняется в `[custom]`):
-- сложность: пресеты Легко (здоровье врагов 80%, урон 50%) / Нормально / Сложно (120% / 120%) и ручные ползунки 10–200%;
-- полное лечение при переходе в новую зону; нет обычных врагов (обычные паки → чемпионы, свита вожака — тоже);
-- сундуки вкл/выкл; хардкор — без аптечек и мода «Вампирский» (у легендарок вампиризм обнуляется);
-- хаос — все редкости пушек равновероятны, все типы врагов доступны с 1-й зоны и равновероятны,
-  а каждая стая с шансом 1/4 — обычные / чемпионы / вожак / **босс** (бродячий: спит, пока не подойдёшь,
-  лут скромнее, без портала);
-- стартовая пушка: основа и марка (или случайно); сид — число или любой текст, пусто — случайный.
-**Рейтинг** (любой забег) = очки × множитель. Очки = (зона − 1) × 100 + убийства + боссы × 250.
-Множитель = здоровье врагов × урон врагов × (1 + бонусы): хардкор +100%, только элита +50%, хаос +25%,
-без сундуков +25%, лечение между зонами −50% (`Game.RATING_BONUS`, `POINTS_*`). Легко ×0.4, Нормально ×1, Сложно ×1.44.
-Множитель виден на экране настраиваемого старта, в паузе; рейтинг и лучший — на экране смерти и в главном меню.
+## Menus and settings
 
-Сид и отличия от обычной игры видны в паузе и на экране смерти; R повторяет забег с теми же параметрами
-(заданный сид — тот же мир и лут). Рекорд засчитывается только при обычной сложности и переключателях.
+The game starts in the main menu: New game, Custom start, Codex, Settings, Mods, Quit, language switch.
+The background is a parade of random guns from the real generator (`ui/menu_bg.gd`); later it will be replaced by a demo with an AI player.
 
-Esc в игре — меню паузы (продолжить / настройки / в главное меню), на экране смерти Esc — в главное меню.
+**Custom start** (`Game.RUN_DEFAULTS` / `Game.custom`, the last choice is saved in `[custom]`):
+- difficulty: presets Easy (enemy health 80%, damage 50%) / Normal / Hard (120% / 120%) and manual sliders 10–200%;
+- full heal on entering a new zone; no regular enemies (regular packs → champions, leader escorts too);
+- chests on/off; hardcore — no health orbs and no Vampiric perk (legendary lifesteal is zeroed);
+- chaos — all gun rarities equally likely, all enemy types available from zone 1 and equally likely,
+  and every pack is 1/4 regular / champions / leader / **boss** (a wandering one: sleeps until you come close,
+  smaller loot, no rift);
+- starting gun: type and maker (or random); seed — a number or any text, empty — random.
 
-Настройки (`Game.DEFAULTS`, хранятся в `user://deviant.cfg`, секция `[settings]`): общая громкость, музыка (+ выкл), звуки игры, интерфейс,
-полный экран, V-Sync, тряска экрана (0–150%), цифры урона, FPS. Новая настройка = ключ в `DEFAULTS`,
-строка `_slider`/`_check` в `Menu._build_settings()` и чтение через `Game.setting("ключ")`.
+**Rating** (any run) = points × multiplier. Points = (zone − 1) × 100 + kills + bosses × 250.
+Multiplier = enemy health × enemy damage × (1 + bonuses): hardcore +100%, elites only +50%, chaos +25%,
+no chests +25%, heal between zones −50% (`Game.RATING_BONUS`, `POINTS_*`). Easy ×0.4, Normal ×1, Hard ×1.44.
+The multiplier is shown in Custom start and in the pause menu; rating and best rating — on the death screen and in the main menu.
 
-## Языки
+The seed and the differences from a normal game are shown in the pause menu and on the death screen; R repeats the run with the
+same parameters (a given seed gives the same world and loot). Best zone/kills only count with default settings.
 
-Исходный язык — английский: строки в коде и в `data/*.json` и есть ключи перевода. Переводы — `lang/<код>.json`
-(встроены русский `lang/ru.json` и норвежский `lang/nb.json`; справочник и гайд по моддингу тоже на трёх языках),
-моды могут дополнять их или добавлять новые языки. Переключатель — кнопка под «Выход»
-в главном меню (перебирает все найденные языки; настройка `language`, по умолчанию — язык системы).
-- В коде: `U.t("Text")`; шаблоны переводятся до подстановки: `U.t("Zone %d") % n`.
-- В переводе у существительных есть строчная форма и род (`{"text", "lower", "g"}`), у прилагательных — формы
-  по родам (`{"m", "f"}`); порядок слов в именах пушек и врагов — `templates` языка. Подробно — `Mods/README.md`.
-- Имена пушек хранятся «деталями» (`Gun.name_parts`) и собираются `GunGen.build_name()` на текущем языке —
-  смена языка посреди забега переименует и уже найденные пушки.
-- Нет строки в переводе — показывается английский оригинал. TranslationServer не используется (его fallback-локаль
-  подсовывала чужой язык).
+Esc in game — pause menu (resume / settings / codex / main menu); on the death screen Esc goes to the main menu.
 
-## Данные и моды
+Settings (`Game.DEFAULTS`, stored in `user://deviant.cfg`, section `[settings]`): master volume, music (+ mute), game sounds,
+interface sounds, fullscreen, V-Sync, screen shake (0–150%), damage numbers, FPS, interface size, screen-edge margins
+(sides / top-bottom) and the phone's safe area (`ui/ui_fit.gd`), gun card position for guns on the ground
+(right / left / above the gun). A new setting = a key in `DEFAULTS`, a `_slider`/`_check` line in `Menu._build_settings()`
+and reading it via `Game.setting("key")`.
 
-Основы, марки, перки, легендарки, редкости и списки имён — в `data/*.json`; эффекты перков и марок записаны
-операциями над статами (`GunOps`), а не кодом. Моды лежат в `Mods/<имя>/` (в собранной игре — рядом с exe),
-повторяют корень игры (`data/`, `lang/`, `sfx/`, `music/`, свои `.gd`) и включаются в меню «Моды».
-Полное описание формата, операций и скриптов — **`Mods/README.md`**, пример — `Mods/ExampleMod/`.
-Отладчик модов (журнал проверок и ошибок + консоль команд `give`/`reload`/`validate`...) — F8, включается
-в меню «Моды» и работает после перезапуска (`DebugLog`, `ui/debug_console.gd`).
+## Languages
 
-**Справочник** (главное меню / пауза → «Справочник», `systems/codex.gd`) — страницы из `data/codex.json`
-игры и модов: персонаж, урон и стихии, зоны и лут, типы оружия, производители, генерация пушек, перки,
-легендарки, враги, элитки, боссы, рейтинг, моддинг. Таблицы (`auto`) собираются из текущих данных, так что
-моды попадают туда сами. Страница «Как делать моды» пишет рядом с exe `гайд_по_модам.txt` /
-`modding_guide.txt` — текст из `data/guide.json` + справка по всем загруженным id.
+The source language is English: strings in code and in `data/*.json` are the translation keys. Translations are
+`lang/<code>.json` — Russian (`lang/ru.json`) and Norwegian Bokmål (`lang/nb.json`) are built in; the codex and the
+modding guide are in all three languages. Mods can extend them or add new languages. The switch is the button under
+Quit in the main menu (cycles through all languages found; setting `language`, defaults to the system language).
+- In code: `U.t("Text")`; format strings are translated before substitution: `U.t("Zone %d") % n`.
+- In a translation, nouns have a lower-case form and a gender (`{"text", "lower", "g"}`), adjectives have gender forms
+  (`{"m", "f", "n"}`); word order in gun and enemy names is the language's `templates`. Details in `Mods/README.md`.
+- Gun names are stored as "parts" (`Gun.name_parts`) and assembled by `GunGen.build_name()` in the current language —
+  switching language mid-run renames guns you already have.
+- A missing string is shown in English. TranslationServer is not used (its fallback locale leaked another language).
 
-## Как устроен забег
+## Data and mods
 
-- Каждая зона — открытая процедурная карта (шум → скалы, пропасти, кислотные/лавовые лужи).
-  Недостижимое замуровывается, портал — в самой дальней точке от спавна.
-- Каждая зона = +1 уровень лута и врагов. Здоровье врагов растёт на 15%/зону, урон пушек — на 14%,
-  так что старые стволы медленно протухают. Урон врагов растёт линейно.
-- Каждые 5 зон — арена с боссом (случайный набор паттернов, ярость на 50% HP).
-- Элитки как в Диабло: синие паки-чемпионы и жёлтые редкие вожаки с аффиксами
-  (телепорт, щит, орбиталы, ледяная аура, взрыв при смерти...).
-- Пассивного регена нет. Хилки по 10 HP, не больше 2 за зону. Вампиризм редкий и упирается в лимит 4 HP/с.
-  Если станет совсем нереально — `ZONE_HEAL` в `main.gd` (хил при входе в зону).
-- Дальность у всех пушек «бесконечная» (летит до стены), но после эффективной дальности урон резко падает:
-  +33% дальности → 37% урона, ×2 → 5%. Эффективная дальность видна в карточке.
-- **Патроны** общие на тип снаряда (гибрид ест патроны второй основы: дробовик-гранатомёт — гранаты).
-  Запас — 4 базовых магазина типа (`RESERVE_MAGS` в `gun_data.gd`). Источники: дроп с врагов
-  (в основном под пушки в слотах) и переработка пушек (X на полу или над пушкой в инвентаре).
-  Новые пушки приходят с пустым магазином (`LOOT_GUN_LOADED`). Магазин всегда кратен расходу патронов на выстрел.
-- Смерть = начать заново. Рекорд по зонам сохраняется.
+Gun types, makers, perks, legendaries, rarities and name lists live in `data/*.json`; perk and maker effects are written as
+operations on stats (`GunOps`), not code. Mods live in `Mods/<name>/` (next to the exe in an exported build),
+mirror the game's layout (`data/`, `lang/`, `sfx/`, `music/`, their own `.gd`) and are toggled in the Mods menu.
+Full description of the format, operations and scripts — **`Mods/README.md`**, example — `Mods/ExampleMod/`.
+The mod debugger (a log of checks and errors + a console with `give`/`reload`/`validate`...) — F8; enable it in the
+Mods menu, it works after a restart (`DebugLog`, `ui/debug_console.gd`).
 
-## Инвентарь
+**Codex** (main menu / pause → Codex, `systems/codex.gd`) — pages from `data/codex.json` of the game and mods:
+character, damage and elements, zones and loot, gun types, makers, gun generation, perks, legendaries, enemies,
+elites, bosses, rating, modding. Tables (`auto`) are built from the current data, so mod content shows up by itself.
+The "How to make mods" page writes `modding_guide.txt` (`гайд_по_модам.txt` / `moddeguide.txt` in other languages)
+next to the exe — the text from `data/guide.json` plus a reference of every loaded id.
 
-Перетаскивание мышью: слот ↔ слот, слот ↔ рюкзак (на занятую ячейку — обмен), внутри рюкзака — порядок;
-в зону «Выбросить» или за окно — на землю, в «Переработать» — на патроны (зона заранее показывает, сколько дадут).
-Клик ЛКМ: слот — сделать активным, рюкзак — взять в активный слот. ПКМ — слот ↔ рюкзак. X над пушкой — переработать.
-Последнюю пушку в руках не выбросить и не переработать.
+## How a run works
 
-## Генератор пушек
+- Every zone is an open procedural map (noise → rocks, chasms, acid/lava pools).
+  Unreachable areas get walled off, the rift is placed at the point farthest from the spawn.
+- Every zone = +1 level of loot and enemies. Enemy health grows 15% per zone, gun damage 14%,
+  so old guns slowly go stale. Enemy damage grows linearly.
+- Every 5th zone is a boss arena (random set of attack patterns, enrage at 50% HP).
+- Elites like in Diablo: blue champion packs and yellow rare leaders with affixes
+  (teleport, shield, orbitals, frost aura, explode on death...).
+- No passive regen. Health orbs heal 10 HP, at most 2 per zone. Lifesteal is rare and capped at 4 HP/s.
+  If it gets truly impossible — `ZONE_HEAL` in `main.gd` (heal on entering a zone).
+- Every gun has "infinite" range (flies until it hits a wall), but past its effective range damage falls off sharply:
+  +33% range → 37% damage, ×2 → 5%. Effective range is shown on the gun card.
+- **Ammo** is shared per projectile type (a hybrid uses the second type's ammo: a shotgun-grenade launcher eats grenades).
+  The reserve holds 4 base magazines of a type (`RESERVE_MAGS` in `gun_data.gd`). Sources: enemy drops
+  (mostly for guns in your slots) and scrapping guns (X on the ground or over a gun in the inventory).
+  New guns arrive with an empty magazine (`LOOT_GUN_LOADED`). The magazine is always a multiple of rounds per shot.
+- Death = start over. The best zone is saved.
 
-`редкость → основа (или гибрид) → производитель → моды → легендарная фишка → разброс → масштаб по уровню → имя`
+## Inventory
 
-- **10 основ**: пистолет, револьвер, ПП, автомат, дробовик, снайперка, ракетница, пулемёт, гранатомёт, миномёт.
-  - **Револьвер** — медленнее пистолета, вдвое больнее, свои патроны.
-  - **Миномёт** — ест гранаты. Мина летит по дуге в точку прицела (не дальше дальности) и взрывается
-	через 1 с. Разброс = отклонение точки падения. Самый большой урон за выстрел, магазин на 1 мину.
-  - **Дробовик** с шансом 30% рождается «пулевым»: один снаряд с уроном всего залпа (×0.85), разброс ×0.12, дальность ×2.
-- **Гибриды** (от редких и выше): узор стрельбы от первой основы, снаряд от второй.
-  Так и получается «Дробовик-гранатомёт»: 8 гранат веером.
-- **11 марок** с гарантированным эффектом:
-  | Марка | Эффект |
+Drag with the mouse (or a finger, or the gamepad pointer): slot ↔ slot, slot ↔ backpack (onto an occupied cell — swap),
+reorder inside the backpack; to the Drop zone or outside the window — onto the ground, to Recycle — into ammo (the zone shows
+how much you will get). LMB click: slot — make it active, backpack — take into the active slot. RMB — slot ↔ backpack.
+X over a gun — recycle. You can't drop or recycle your last gun in hand.
+
+## Gun generator
+
+`rarity → type (or hybrid) → maker → perks → legendary effect → random spread → zone scaling → name`
+
+- **10 types**: pistol, revolver, SMG, assault rifle, shotgun, sniper rifle, rocket launcher, machine gun, grenade launcher, mortar.
+  - **Revolver** — slower than the pistol, hits twice as hard, its own ammo.
+  - **Mortar** — uses grenades. A shell flies in an arc to the aim point (no farther than its range) and explodes
+    after 1 s. Spread = deviation of the landing point. Highest damage per shot, a magazine of 1 shell.
+  - **Shotgun** — 30% chance to be born a "slug gun": one projectile with the whole volley's damage (×0.85), spread ×0.12, range ×2.
+- **Hybrids** (from Rare and up): firing pattern from the first type, projectile from the second.
+  That's how you get a "Shotgun-Grenade Launcher": 8 grenades in a fan.
+- **11 makers** with a guaranteed effect:
+  | Maker | Effect |
   |---|---|
-  | Синергис | −40% урона, не тратит запас патронов, эффекты срабатывают в 2 раза реже, никаких взрывов |
-  | Гипернова | любая основа стреляет ракетами, но ест патроны своей основы (ПП — патроны ПП); урон ×2, скорострельность ×0.5, расход патронов ×2 |
-  | Шабаш | перезарядка −70%, −10% урона |
-  | Кузня хаоса | всегда случайный перк легендарки, −40% урона, сама легендаркой не бывает |
-  | Эррозия | всегда стихия, шанс стихии ×2, −25% урона |
-  | Атлант | никаких модов-эффектов, +20% урона |
-  | Ливень | +60% скорострельности, −20% урона |
-  | Щеголь | гарантированно дробь (мод «Дробящий»), −15% урона |
-  | Ноунейм | без фирменного перка |
-  | Бог силы | урон ×3, скорострельность ×0.3, расход патронов ×3, крит ×1.5 |
-  | АБОРДАЖ | магазин 30%, скорость пули ×3 (дальность та же), +40% урона, отбрасывание ×2 |
-  Стартовый пистолет — всегда Синергис.
-  На легендарках не бывает Гиперновы, Кузни хаоса, Атланта и Бога силы.
-- **35 модов**: гранаты, ракеты, рикошет, пробивание, деление, фрактальное деление, бумеранг, змейка,
-  цепные молнии, кассеты, «сеющие» снаряды, квантовая телепортация, ядерка и т.д.
-  Пробитие, вампиризм и чёрные дыры — редкие (от эпиков). Шанс чёрной дыры зависит от урона одного снаряда,
-  так что пулемёт её почти не прокает. Пули взрываются по шансу, ракеты и гранаты — всегда.
-- Взрывы: урон 100% в эпицентре → 20% на краю; свои взрывы бьют и тебя, но в 10 раз слабее.
-- Кислота и холод копятся линейно: секунда стрельбы любой пушкой даёт +10% (у Эррозии +20%). Кислота — до +50% входящего урона, холод — замедление до 40%, на 50% — заморозка 1.3 с. Без попаданий 3 с — сбрасываются. Чемпионы копят в 1.5 раза медленнее, вожаки — в 2, боссы — в 3.
-- **Электричество**: при срабатывании бьёт 2 соседей на 35% и станит цель на 0.5 с (чемпион/вожак/босс — 0.33/0.25/0.17 с), после стана 1 с иммунитета (×сопротивление).
-- **Проклятие** (5-я стихия, урон пушки −20%): копится линейно +40% за секунду попаданий; на 100% бьёт на 30% от потерянного здоровья цели и обнуляется. Чемпионы/вожаки/боссы копят в 1.5/2/3 раза медленнее и получают во столько же раз меньше (20%/15%/10% потерянного).
-- Каждый рикошет пули срезает 30% урона (отскоки гранат — нет).
-- Моды-эффекты (наведение, деление, стихии, пробитие...) раскатываются после статовых и удерживаются с шансом 4 / (скорострельность × пуль за выстрел), максимум 100%. Не удержался — слот получает обычный мод.
-- **Коэффициент срабатывания** (как proc coefficient в Risk of Rain): все эффекты «по шансу» — стихии,
-  взрывы, цепные молнии — умножаются на «вес» снаряда (урон без учёта уровня / 40, от 0.08 до 1).
-  Мелкие быстрые пули прокают редко, тяжёлые — почти всегда. Ядерка «Последнего Слова» копится от урона,
-  а не от числа выстрелов. Пушки не дают HP — только броню (−15% входящего урона за мод).
-- **6 редкостей**, последняя — «Абсурдная»: 5 модов без ограничений совместимости.
-- **12 легендарок** с уникальными фишками («Бабушкин Сюрприз», «Последнее Слово», «Кот Шрёдингера»...).
+  | Synergis | −40% damage, doesn't use reserve ammo, effects proc half as often, no explosions at all |
+  | Hypernova | any type fires rockets but uses its own type's ammo (an SMG — SMG ammo); damage ×2, fire rate ×0.5, ammo per shot ×2 |
+  | Sabbath | reload −70%, −10% damage |
+  | Chaos Forge | always a random legendary perk, −40% damage, never a legendary itself |
+  | Errosion | always an element, element chance ×2, −25% damage |
+  | Atlas | no effect perks, +20% damage |
+  | Downpour | +60% fire rate, −20% damage |
+  | Dandy | always scattering pellets (Scattering perk), −15% damage |
+  | Noname | no signature effect |
+  | Godforce | damage ×3, fire rate ×0.3, ammo per shot ×3, crit ×1.5 |
+  | BOARDING | magazine 30%, projectile speed ×3 (same range), +40% damage, knockback ×2 |
+  The starting pistol is always a Synergis.
+  Hypernova, Chaos Forge, Atlas and Godforce never appear on legendaries.
+- **37 perks**: grenades, rockets, ricochet, piercing, splitting, fractal splitting, boomerang, wave flight,
+  chain lightning, cluster bombs, "seeding" projectiles, quantum teleport, nuke, and so on.
+  Piercing, lifesteal and black holes are rare (Epic and up). Black hole chance depends on the damage of a single projectile,
+  so a machine gun barely ever procs it. Bullets explode by chance, rockets and grenades always.
+- Explosions: 100% damage at the center → 20% at the edge; your own explosions hurt you too, but 10 times less.
+- Acid and cryo build up linearly: a second of firing any gun gives +10% (+20% with Errosion). Acid — up to +50% damage taken,
+  cryo — slow up to 40%, freeze for 1.3 s at 50%. 3 s without hits — reset. Champions build up 1.5 times slower, leaders 2, bosses 3.
+- **Shock**: on proc hits 2 neighbours for 35% and stuns the target for 0.5 s (champion/leader/boss — 0.33/0.25/0.17 s),
+  then 1 s of stun immunity (× resistance).
+- **Curse** (5th element, gun damage −20%): builds up +40% per second of hits; at 100% deals 30% of the target's missing
+  health and resets. Champions/leaders/bosses build up 1.5/2/3 times slower and take that many times less (20%/15%/10% of missing).
+- Every bullet ricochet cuts 30% of damage (grenade bounces don't).
+- Effect perks (homing, splitting, elements, piercing...) are rolled after stat perks and stay with chance
+  4 / (fire rate × projectiles per shot), up to 100%. If one fails, the slot gets a regular perk.
+- **Proc coefficient** (like in Risk of Rain): every "by chance" effect — elements, explosions, chain lightning — is
+  multiplied by the projectile's "weight" (damage without level scaling / 40, from 0.08 to 1).
+  Small fast bullets rarely proc, heavy ones almost always. The Last Word's nuke charges from damage, not shot count.
+  Guns don't give HP — only armor (−15% damage taken per perk).
+- **6 rarities**, the last one is "Absurd": 5 perks with no compatibility restrictions.
+- **12 legendaries** with unique effects ("Granny's Surprise", "Last Word", "Schrödinger's Cat"...).
 
-## Музыка
+## Music
 
-`scripts/systems/music.gd` сам сканирует `res://music/` (с подпапками). Категория трека — по префиксу файла,
-иначе по имени папки: `zone_` — зоны, `boss_` — босс, `calm_` — пауза и передышка после босса, `death_` — смерть.
-Новый трек = просто кинуть `.ogg` с нужным префиксом. Красивое название для плашки «♪ …» — в `Music.TITLES`.
+`scripts/systems/music.gd` scans `res://music/` (with subfolders) by itself. A track's category comes from the file prefix,
+otherwise from the folder name: `zone_` — zones, `boss_` — boss, `calm_` — pause and the rest after a boss, `death_` — death,
+`menu_` — main menu. A new track = drop an `.ogg` with the right prefix. A nice title for the "♪ …" banner — in `Music.TITLES`.
 
-- Зоны: перемешанный плейлист без повторов, трек не обрывается при переходе между зонами.
-- Босс — свой трек, после победы — спокойный. Esc уводит в спокойную музыку и потом возвращает прерванный трек с того же места.
-- Инвентарь глушит музыку (тише + фильтр низких частот).
-- Следующий трек каждой категории выбирается заранее и грузится в фоне (`load_threaded_request` / `WorkerThreadPool`),
-  поэтому смена трека не даёт фриза.
-- Громкость — шина `Music` (создаётся кодом вместе с `SFX` и `UI`), сохраняется в `user://deviant.cfg`.
-  Звуки игры идут в шину `SFX`, интерфейс (все ключи `ui/...`) — в `UI`; в настройках у них отдельные ползунки.
+- Zones: a shuffled playlist without repeats; a track isn't cut when moving between zones.
+- Boss — its own track, after the win — a calm one. Esc switches to calm music and later resumes the interrupted track from the same spot.
+- The inventory muffles the music (quieter + low-pass filter).
+- The next track of each category is chosen in advance and loaded in the background (`load_threaded_request` / `WorkerThreadPool`),
+  so track changes don't stutter.
+- Volume — the `Music` bus (created in code along with `SFX` and `UI`), saved in `user://deviant.cfg`.
+  Game sounds go to the `SFX` bus, interface sounds (all `ui/...` keys) to `UI`; each has its own slider in settings.
 
-## Звуки
+## Sounds
 
-`scripts/systems/sfx.gd` сканирует `res://sfx/`: папка = банк, из которого играется случайный файл
-(`sfx/guns/shotgun/*` → ключ `guns/shotgun`), отдельный файл доступен по пути без расширения (`reload/pistol`).
-Новый вариант выстрела = кинуть `.wav` в папку основы. Громкость/питч по основам и маркам — `GUN_VOL`, `GUN_PITCH`, `MAKER_PITCH`.
+`scripts/systems/sfx.gd` scans `res://sfx/`: a folder = a bank that plays a random file
+(`sfx/guns/shotgun/*` → key `guns/shotgun`), a single file is available by its path without extension (`reload/pistol`).
+A new shot variant = drop a `.wav` into the type's folder. Volume/pitch per type and maker — `"sound"` in
+`data/archetypes.json` and `data/makers.json`.
 
-- Выстрел — по основе (первой у гибрида). Если снаряд другого типа (ракеты Гиперновы, гранатный мод) — сверху тихо его звук.
-- Пулемёт = винтовочные выстрелы на тон ниже, Бог силы — ещё ниже и громче, Ливень и АБОРДАЖ — выше.
-- Чем выше скорострельность, тем тише каждый выстрел; на один ключ — не больше 4 голосов, лишние вытесняют свои же старые.
-- Перезарядка ускоряется, если она короче записи (Шабаш). Пустой магазин щёлкает.
-- Взрывы: чем больше радиус, тем ниже и громче; `big` — отдельный низкочастотный банк.
-- События — папки-банки: `ui/` (меню, инвентарь, смена оружия, переработка, ошибка), `pickup/` (пушка, легендарка,
-  патроны, хилка), `world/` (сундук, портал, новая зона), `hit/` (стена, по врагу, по телу), `player/` (урон, перекат,
-  идеальный уклон, смерть), `enemy/` (выстрел, щит/телепорт, замах, призыв, смерть), `boss/` (появление, ярость, смерть),
-  `el/` (огонь, шок, кислота, заморозка, проклятие), `fx/vortex`. Пустая папка — событие молчит, кинь файл — заработает.
-  Вызов из кода: `Sfx.at("ключ", позиция, дБ)` или `Sfx.ui("ключ", дБ)`.
+- The shot sound follows the type (the first one for a hybrid). If the projectile is of another kind (Hypernova rockets,
+  the grenade perk) — its sound is layered quietly on top.
+- Machine gun = rifle shots pitched down, Godforce — lower and louder, Downpour and BOARDING — higher.
+- The higher the fire rate, the quieter each shot; at most 4 voices per key, extra ones steal their own oldest.
+- Reload sounds speed up if the reload is shorter than the recording (Sabbath). An empty magazine clicks.
+- Explosions: the bigger the radius, the lower and louder; `big` is a separate low-frequency bank.
+- Events are bank folders: `ui/` (menu, inventory, weapon switch, recycle, error), `pickup/` (gun, legendary,
+  ammo, health), `world/` (chest, rift, new zone), `hit/` (wall, enemy, body), `player/` (hurt, dodge,
+  perfect dodge, death), `enemy/` (shot, shield/teleport, windup, summon, death), `boss/` (appear, enrage, death),
+  `el/` (fire, shock, acid, freeze, curse), `fx/vortex`. An empty folder — the event is silent; drop a file in and it works.
+  Calling from code: `Sfx.at("key", position, dB)` or `Sfx.ui("key", dB)`.
 
-## Где что лежит
+## Where things are
 
 ```
 scripts/
-  main.gd               корень: зоны, спавн, лут, камера
-  core/                 автозагрузка Game, утилиты, ввод, пространственный хэш, i18n, mods (загрузчик модов)
-  weapons/              gun_data (загрузка таблиц), gun_ops (операции над статами), gun_gen (генератор),
-                        gun (статы), gun_icon (рисовалка)
-  systems/              projectiles (все пули как данные), combat (урон/взрывы/цепи), fx, music, sfx
-  world/                zone (сетка, коллизии, поле потока), zone_gen, биомы, портал, сундуки, лут
-  entities/             actor (статусы), player, enemy, boss, enemy_data
-  ui/                   hud, hud_draw, gun_card, inventory_ui, cursor_draw, menu, menu_bg
-data/                   archetypes, makers, perks, legendaries, rarities, names (JSON)
-lang/                   переводы (ru.json)
-Mods/                   моды (+ README для модеров, ExampleMod)
+  main.gd               root: zones, spawning, loot, camera
+  core/                 Game autoload, utilities, input setup, spatial hash, i18n, mods (mod loader), debug log
+  weapons/              gun_data (table loading), gun_ops (stat operations), gun_gen (generator),
+                        gun (stats), gun_icon (drawing)
+  systems/              projectiles (all bullets as data), combat (damage/explosions/chains), fx, music, sfx,
+                        controls (input devices, aiming), codex, warmup (loading screen)
+  world/                zone (grid, collisions, flow field), zone_gen, biomes, rift, chests, loot
+  entities/             actor (statuses), player, enemy, boss, enemy_data
+  ui/                   hud, hud_draw, gun_card, inventory_ui, cursor_draw, menu, menu_bg, touch_controls,
+                        ui_fit (interface size and margins), debug_console
+data/                   archetypes, makers, perks, legendaries, rarities, names, codex, guide (JSON)
+lang/                   translations (ru.json, nb.json)
+Mods/                   mods (+ README for modders, ExampleMod)
 ```
 
-## Хочу ещё абсурда — куда лезть
+## Want more absurdity — where to dig
 
-- Новая основа/марка/перк/легендарка: запись в `data/*.json` (или в моде) + перевод в `lang/ru.json`.
-  Если нужно новое поведение снаряда — поле в `Gun`, копирование в `Projectiles.fire_gun()`/`_clone()`,
-  логика в `_step()`; после этого его можно ставить операциями из JSON.
-- Новая спецфишка легендарки (`special`) — код в `player.gd`/`projectiles.gd`.
-- Новый враг: запись в `EnemyData.TYPES` + ветка в `Enemy._behave()`.
-- Новый биом: запись в `Biomes.LIST`.
-- Баланс кривых: `game.gd` → `enemy_hp_mult / enemy_dmg_mult / gun_dmg_mult`.
+- A new type/maker/perk/legendary: an entry in `data/*.json` (or in a mod) + translations in `lang/*.json`.
+  If it needs new projectile behaviour — a field in `Gun`, copying in `Projectiles.fire_gun()`/`_clone()`,
+  logic in `_step()`; after that it can be set by operations from JSON.
+- A new legendary special (`special`) — code in `player.gd`/`projectiles.gd`.
+- A new enemy: an entry in `EnemyData.TYPES` + a branch in `Enemy._behave()`.
+- A new biome: an entry in `Biomes.LIST`.
+- Balance curves: `game.gd` → `enemy_hp_mult / enemy_dmg_mult / gun_dmg_mult`.
 
-## Чего пока нет
+## Not there yet
 
-Части звуков (попадание по врагу, смерть врагов, огонь, чёрная дыра...), сохранения забега посреди игры, мета-прогрессии, геймпада.
+Meta-progression between runs, zone events (traders, timed waves, mimics), character builds/passives,
+saving a run mid-game, balance testing past the first dozen zones.
