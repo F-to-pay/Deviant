@@ -32,15 +32,20 @@ func _draw() -> void:
 			var card_h := GunCard.height(g)
 			var cy := clampf(vp.y * 0.5 - card_h * 0.5, 70.0, vp.y - card_h - 150.0)
 			GunCard.draw_card(self, g, Vector2(vp.x - GunCard.W - 24.0, cy), p.gun())
-			U.draw_text_c(self, fb, Vector2(vp.x * 0.5, vp.y - 170.0), U.t("[E] Pick up     [F] Swap with current     [X] Scrap for ammo"), 18, Color(1, 1, 1), 4)
-		elif main.near_chest != null and is_instance_valid(main.near_chest):
-			U.draw_text_c(self, fb, Vector2(vp.x * 0.5, vp.y - 170.0), U.t("[E] Open chest"), 18, Color(1.0, 0.9, 0.5), 4)
+			if Controls.mode != "touch":   # на сенсоре вместо подсказки — кнопки
+				U.draw_text_c(self, fb, Vector2(vp.x * 0.5, vp.y - 170.0), U.t("[%s] Pick up     [%s] Swap with current     [%s] Scrap for ammo") % [
+					Controls.label("interact"), Controls.label("swap"), Controls.label("scrap")], 18, Color(1, 1, 1), 4)
+		elif main.near_chest != null and is_instance_valid(main.near_chest) and Controls.mode != "touch":
+			U.draw_text_c(self, fb, Vector2(vp.x * 0.5, vp.y - 170.0), U.t("[%s] Open chest") % Controls.label("interact"), 18, Color(1.0, 0.9, 0.5), 4)
 	_draw_messages(vp, fb)
 	_draw_banner(vp, fb, f)
-	if hud.help_t > 0.0 and Game.zone_level == 1:
+	if hud.help_t > 0.0 and Game.zone_level == 1 and Controls.mode != "touch":
 		var a := clampf(hud.help_t / 2.0, 0.0, 1.0)
 		U.draw_text_c(self, f, Vector2(vp.x * 0.5, vp.y - 205.0),
-			U.t("WASD — move · LMB — shoot · Space/RMB — dodge · R — reload · E/F/X — loot · Tab — inventory · 1-4/wheel — weapons"),
+			U.t("%s — move · %s — shoot · %s — dodge · %s — reload · %s — loot · %s — inventory · %s — weapons") % [
+				Controls.move_label(), Controls.label("shoot"), Controls.label("dodge"), Controls.label("reload"),
+				"/".join(PackedStringArray([Controls.label("interact"), Controls.label("swap"), Controls.label("scrap")])),
+				InputSetup.action_label("inventory", "pad" if Controls.mode == "pad" else "kb", 1), Controls.weapons_label()],
 			15, Color(1, 1, 1, 0.85 * a), 3)
 	if Game.debug:
 		U.draw_text(self, f, Vector2(12, vp.y - 12), U.t("FPS %d · enemies %d · projectiles %d") % [Engine.get_frames_per_second(),
@@ -117,7 +122,10 @@ func _draw_weapons(p: Player, vp: Vector2, f: Font, fb: Font) -> void:
 		if p.is_reloading():
 			ammo_s = U.t("RELOADING")
 		elif ag.ammo <= 0:
-			ammo_s = U.t("EMPTY — [R]") if res > 0 else U.t("NO AMMO: %s") % ag.ammo_name()
+			if res > 0:
+				ammo_s = U.t("EMPTY — [%s]") % Controls.label("reload") if Controls.mode != "touch" else U.t("EMPTY")
+			else:
+				ammo_s = U.t("NO AMMO: %s") % ag.ammo_name()
 		U.draw_text_c(self, fb, Vector2(vp.x * 0.5, cy), ammo_s, 16, Color(1.0, 0.9, 0.6), 3)
 		if p.is_reloading():
 			_bar(Rect2(vp.x * 0.5 - 90, cy + 6, 180, 5), p.reload_progress(), Color(1, 1, 1))
@@ -211,5 +219,7 @@ func _draw_death(vp: Vector2, f: Font, fb: Font) -> void:
 		U.draw_text_c(self, f, Vector2(vp.x * 0.5, y), U.t("Best: zone %d") % Game.best_zone, 18, Color(0.8, 0.8, 0.8, a), 3)
 	y += 60.0
 	if hud.death_t > 0.6:
-		U.draw_text_c(self, fb, Vector2(vp.x * 0.5, y), U.t("[R] — one more time"), 24, Color(1, 1, 1, a), 4)
-		U.draw_text_c(self, f, Vector2(vp.x * 0.5, y + 36.0), U.t("[Esc] — main menu"), 18, Color(0.8, 0.8, 0.8, a), 3)
+		if Controls.mode != "touch":    # на сенсоре — кнопки (TouchControls)
+			var again := InputSetup.action_label("restart", "pad", 1) if Controls.mode == "pad" else Controls.label("reload")
+			U.draw_text_c(self, fb, Vector2(vp.x * 0.5, y), U.t("[%s] — one more time") % again, 24, Color(1, 1, 1, a), 4)
+			U.draw_text_c(self, f, Vector2(vp.x * 0.5, y + 36.0), U.t("[%s] — main menu") % Controls.label("pause"), 18, Color(0.8, 0.8, 0.8, a), 3)

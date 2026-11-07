@@ -1,18 +1,18 @@
 {
 	"_comment": "Справочник. Мод может положить свой data/codex.json: новые sections/pages (по id; поля-словари сливаются, так что можно добавить только перевод: {\"id\": \"character\", \"text\": {\"de\": [...]}}) и описания к автотаблицам: archetypes, makers, perks, legendaries, enemies, affixes, bosses. Текст — BBCode, строка или массив строк по языкам. auto: archetypes, makers, rarities, perks, legendaries, enemies, elites, bosses, rating, mods. actions: write_guide, open_mods_folder, open_game_folder.",
 	"sections": [
-		{"id": "basics", "order": 10, "title": {"en": "Basics", "ru": "Основы"}},
-		{"id": "weapons", "order": 20, "title": {"en": "Weapons", "ru": "Оружие"}},
-		{"id": "enemies", "order": 30, "title": {"en": "Enemies", "ru": "Противники"}},
-		{"id": "rating", "order": 40, "title": {"en": "Rating", "ru": "Рейтинг"}},
-		{"id": "modding", "order": 50, "title": {"en": "Modding", "ru": "Моддинг"}}
+		{"id": "basics", "order": 10, "title": {"en": "Basics", "ru": "Основы", "nb": "Grunnleggende"}},
+		{"id": "weapons", "order": 20, "title": {"en": "Weapons", "ru": "Оружие", "nb": "Våpen"}},
+		{"id": "enemies", "order": 30, "title": {"en": "Enemies", "ru": "Противники", "nb": "Fiender"}},
+		{"id": "rating", "order": 40, "title": {"en": "Rating", "ru": "Рейтинг", "nb": "Rangering"}},
+		{"id": "modding", "order": 50, "title": {"en": "Modding", "ru": "Моддинг", "nb": "Modding"}}
 	],
 	"pages": [
 		{
 			"id": "character",
 			"section": "basics",
 			"order": 10,
-			"title": {"en": "Character", "ru": "Персонаж"},
+			"title": {"en": "Character", "ru": "Персонаж", "nb": "Karakteren"},
 			"text": {
 				"en": [
 					"A lone gunner with [b]100 health[/b] and no levels. All your power is the guns you carry.",
@@ -38,6 +38,7 @@
 					"• Ammo drops: normal enemies 15% (half a magazine), champions 60% (a magazine), leaders 2 magazines, bosses 4.",
 					"",
 					"[color=#ff9a40][b]Controls[/b][/color]",
+					"Keys can be changed in Settings → Controls. Gamepad and touch screen work too.",
 					"WASD — move · mouse — aim · LMB — shoot · R — reload",
 					"E — pick up / open a chest · F — swap with the current gun · X — scrap",
 					"Tab / I — inventory · Esc — pause · F3 — debug info",
@@ -67,10 +68,41 @@
 					"• Патроны падают: обычные враги 15% (полмагазина), чемпионы 60% (магазин), вожаки 2 магазина, боссы 4.",
 					"",
 					"[color=#ff9a40][b]Управление[/b][/color]",
+					"Клавиши меняются в «Настройки» → «Управление». Геймпад и сенсорный экран тоже работают.",
 					"WASD — бег · мышь — прицел · ЛКМ — огонь · R — перезарядка",
 					"E — подобрать / открыть сундук · F — заменить текущую · X — переработать",
 					"Tab / I — инвентарь · Esc — пауза · F3 — отладка",
 					"− / + и M — музыка · [lb] / ] — звуки"
+				],
+				"nb": [
+					"En ensom skytter med [b]100 liv[/b] og ingen nivåer. All kraften din ligger i våpnene du bærer.",
+					"",
+					"[color=#ff9a40][b]Bevegelse[/b][/color]",
+					"• Løpefart 265. Tunge våpen bremser deg litt (maskingevær −12 %, rakettkaster −8 %, bombekaster −10 %), egenskapen [i]Lett[/i] gjør deg raskere.",
+					"• [b]Unnvikelse[/b] (Mellomrom / Shift / HMK) — et 0,32 s langt sprang der du er usårbar. Nedkjøling 4 s, men bare [b]0,5 s[/b] hvis du faktisk unngikk noe (perfekt unnvikelse, «UNNVEK!»).",
+					"• Etter hvert treff er du usårbar i 0,4 s.",
+					"",
+					"[color=#ff9a40][b]Liv[/b][/color]",
+					"• [b]Ingen regenerering.[/b] Livskuler helbreder 10, og en sone gir høyst 2 av dem.",
+					"• Kuler faller fra vanlige fiender (3 %), elitefiender (25 %), kister (25 %) og bosser (alltid).",
+					"• Livstyveri fra våpen helbreder høyst 4 liv i sekundet.",
+					"• Rustning (egenskap på våpenet i hånden) kutter innkommende skade med 15 %, høyst 50 %.",
+					"• Dine egne eksplosjoner gir deg bare 10 % av skaden.",
+					"• Syre- og lavapytter brenner for 4 skade hvert 0,5 s (mer i dypere soner). En fiendes frostaura bremser deg med 35 %.",
+					"",
+					"[color=#ff9a40][b]Våpen og ammo[/b][/color]",
+					"• 4 våpenplasser (1-4, musehjul, Q) og en sekk med plass til 12 til.",
+					"• [b]Tab / I[/b] — inventar: dra våpen mellom plassene og sekken, slipp dem på bakken eller i resirkuleringen.",
+					"• Hver våpentype bruker sin egen ammo; lageret rommer 4 fulle magasiner av hver type. Våpen fra bakken kommer med tomt magasin.",
+					"• [b]Demonter[/b] (X) ødelegger et våpen og gjør det om til ammo av samme type — jo sjeldnere våpen, jo mer ammo.",
+					"• Ammo faller: vanlige fiender 15 % (et halvt magasin), mestere 60 % (et magasin), ledere 2 magasiner, bosser 4.",
+					"",
+					"[color=#ff9a40][b]Kontroller[/b][/color]",
+					"Tastene kan endres i Innstillinger → Kontroller. Håndkontroll og berøringsskjerm fungerer også.",
+					"WASD — gå · mus — sikt · VMK — skyt · R — lad om",
+					"E — plukk opp / åpne kiste · F — bytt med nåværende · X — demonter",
+					"Tab / I — inventar · Esc — pause · F3 — feilsøking",
+					"− / + og M — musikk · [lb] / ] — lyder"
 				]
 			}
 		},
@@ -78,7 +110,7 @@
 			"id": "combat",
 			"section": "basics",
 			"order": 20,
-			"title": {"en": "Damage and elements", "ru": "Урон и стихии"},
+			"title": {"en": "Damage and elements", "ru": "Урон и стихии", "nb": "Skade og elementer"},
 			"text": {
 				"en": [
 					"[color=#ff9a40][b]Damage[/b][/color]",
@@ -119,6 +151,26 @@
 					"[color=#b340f2][b]Проклятие[/b][/color] — шкала растёт на 40% за секунду попаданий; заполнилась — удар на 30% [i]потерянного[/i] здоровья цели. Проклятые пушки бьют на 20% слабее.",
 					"",
 					"[color=#9aa0b0]Элитки и боссы сопротивляются статусам: набор, оглушение и урон проклятия делятся на сопротивление (чемпионы 1,5, вожаки 2, боссы 3).[/color]"
+				],
+				"nb": [
+					"[color=#ff9a40][b]Skade[/b][/color]",
+					"• [b]Kritiske treff[/b]: hvert våpen har en kritisk sjanse og en kritisk multiplikator (vanligvis ×2).",
+					"• [b]Rekkevidde[/b]: etter den effektive rekkevidden mister et prosjektil skade fort: +33 % avstand — 37 % skade, dobbel avstand — 5 %.",
+					"• [b]Rikosjetter[/b] kutter 30 % skade hver (granater ruller uten å miste noe).",
+					"• [b]Eksplosjoner[/b]: full skade i midten, 20 % i kanten.",
+					"• Skaden vokser ×1,14 for hver sone våpenet ble funnet i.",
+					"",
+					"[color=#ff9a40][b]Effektsjanse[/b][/color]",
+					"Elementer, eksplosjoner ved sjanse, kjedelyn og andre effekter utløses oftere av tunge prosjektiler: sjanse × (treffskade uten sonevekst / 40), fra 8 % til 100 %. Et snikskyttergevær utløser nesten hvert treff, et maskingevær sjelden. Derfor faller effekt-egenskaper ofte bort på raske våpen.",
+					"",
+					"[color=#ff9a40][b]Elementer[/b][/color]",
+					"[color=#ff731f][b]Ild[/b][/color] — brann: 45 % av treffskaden per sekund i 3 s. Sterkere treff erstatter svakere brann.",
+					"[color=#73bfff][b]Elektrisitet[/b][/color] — hopper til 2 fiender i nærheten for 35 % skade og lammer i 0,5 s, deretter er målet immunt mot lamming i et sekund.",
+					"[color=#99ff33][b]Syre[/b][/color] — etsing: hvert sekund med treff gir +10 % mottatt skade, opptil +50 %. Forsvinner 3 s etter siste treff.",
+					"[color=#b8f2ff][b]Kulde[/b][/color] — bremser 10 % per sekund med treff, opptil 40 %; ved 50 % fryser målet fast i 1,3 s.",
+					"[color=#b340f2][b]Forbannelse[/b][/color] — måleren fylles med 40 % per sekund med treff; når den er full, tar målet 30 % av sitt [i]tapte[/i] liv. Forbannede våpen gjør 20 % mindre skade.",
+					"",
+					"[color=#9aa0b0]Elitefiender og bosser motstår statuser: oppbygging, lamming og forbannelsesskade deles på motstanden (mestere 1,5, ledere 2, bosser 3).[/color]"
 				]
 			}
 		},
@@ -126,7 +178,7 @@
 			"id": "world",
 			"section": "basics",
 			"order": 30,
-			"title": {"en": "Zones and loot", "ru": "Зоны и добыча"},
+			"title": {"en": "Zones and loot", "ru": "Зоны и добыча", "nb": "Soner og bytte"},
 			"text": {
 				"en": [
 					"[color=#ff9a40][b]Zones[/b][/color]",
@@ -157,6 +209,21 @@
 					"• Пушки падают с обычных врагов (5,5%), чемпионов (40%, редкость лучше) и вожаков (всегда, и 50% на вторую).",
 					"• [b]Сундуки[/b]: 2–3 пушки, не хуже необычной. [color=#ffd24c]Золотой сундук[/color] (12% + 0,4% за зону) — на пушку больше, не хуже редкой и с куда лучшими шансами.",
 					"• [b]Босс[/b]: легендарка (40%) или эпическая пушка уровнем выше, две редкие пушки, 2 сферы здоровья и 4 магазина."
+				],
+				"nb": [
+					"[color=#ff9a40][b]Soner[/b][/color]",
+					"• Verden er en endeløs kjede av soner. Hver sone har en [b]rift[/b] til den neste — gå inn i den, og du faller dypere. Du trenger ikke drepe alle.",
+					"• Hver 5. sone er en [b]bossarena[/b]: én boss, og riften dukker opp først når den dør.",
+					"• Biomene skifter hver sone: ødemark, giftige myrer, frosne sletter, lavafelt, neonruiner, skraphaug. Myrer og lava har farlige pytter; kløfter og vann stopper deg, men ikke kuler.",
+					"",
+					"[color=#ff9a40][b]Vanskelighetsvekst[/b][/color]",
+					"• Fiendenes liv ×1,15 per sone, fiendenes skade +10 % per sone.",
+					"• Våpenskade ×1,14 per sone — et våpen fra sone 20 er omtrent 12 ganger sterkere enn et fra sone 1, så fortsett å plukke bytte.",
+					"",
+					"[color=#ff9a40][b]Bytte[/b][/color]",
+					"• Våpen faller fra vanlige fiender (5,5 %), mestere (40 %, bedre sjeldenhet) og ledere (alltid, 50 % for et til).",
+					"• [b]Kister[/b]: 2–3 våpen, minst uvanlige. En [color=#ffd24c]gullkiste[/color] (12 % + 0,4 % per sone) gir et våpen til, minst sjeldent, med mye bedre odds.",
+					"• [b]Boss[/b]: et legendarisk (40 %) eller episk våpen fra neste sone, to sjeldne våpen, 2 livskuler og 4 magasiner."
 				]
 			}
 		},
@@ -164,7 +231,7 @@
 			"id": "archetypes",
 			"section": "weapons",
 			"order": 10,
-			"title": {"en": "Gun types", "ru": "Типы оружия"},
+			"title": {"en": "Gun types", "ru": "Типы оружия", "nb": "Våpentyper"},
 			"text": {
 				"en": [
 					"The type sets the base: damage, fire rate, pellets, magazine, projectile and ammo. Numbers below are for a Common gun from zone 1 before the ±10% random spread.",
@@ -173,6 +240,10 @@
 				"ru": [
 					"Тип задаёт основу: урон, скорострельность, дробь, магазин, снаряд и патроны. Цифры ниже — для обычной пушки из 1-й зоны, до случайного разброса ±10%.",
 					"[b]Гибрид[/b] («Дробовик-Ракетница») берёт узор стрельбы — скорострельность, дробь, разброс, магазин — у первого типа, а снаряд у второго; урон усредняется между ними."
+				],
+				"nb": [
+					"Typen gir grunnlaget: skade, skuddtakt, hagl, magasin, prosjektil og ammo. Tallene under gjelder et vanlig våpen fra sone 1, før den tilfeldige spredningen på ±10 %.",
+					"En [b]hybrid[/b] («Hagle-Rakettkaster») tar skytemønsteret — skuddtakt, hagl, spredning, magasin — fra den første typen og prosjektilet fra den andre; skaden jevnes ut mellom dem."
 				]
 			},
 			"auto": "archetypes"
@@ -181,13 +252,16 @@
 			"id": "makers",
 			"section": "weapons",
 			"order": 20,
-			"title": {"en": "Makers", "ru": "Производители"},
+			"title": {"en": "Makers", "ru": "Производители", "nb": "Produsenter"},
 			"text": {
 				"en": [
 					"Every gun has a maker. The maker colors the gun and adds a signature effect on top of the type. The number in the name (\"Hypernova-512\") is just a serial number."
 				],
 				"ru": [
 					"У каждой пушки есть производитель. Он красит пушку и добавляет фирменный эффект поверх типа. Число в имени («Гипернова-512») — просто серийный номер."
+				],
+				"nb": [
+					"Hvert våpen har en produsent. Produsenten farger våpenet og legger et særpreg oppå typen. Tallet i navnet («Hypernova-512») er bare et serienummer."
 				]
 			},
 			"auto": "makers"
@@ -196,7 +270,7 @@
 			"id": "generation",
 			"section": "weapons",
 			"order": 30,
-			"title": {"en": "How guns are made", "ru": "Как собираются пушки"},
+			"title": {"en": "How guns are made", "ru": "Как собираются пушки", "nb": "Slik lages våpen"},
 			"text": {
 				"en": [
 					"Every gun is generated from scratch, step by step:",
@@ -225,6 +299,20 @@
 					"[b]7. Разброс[/b]: урон, скорострельность, разброс, скорость снаряда, перезарядка и магазин — каждый ×0,9–1,1. Дробовик с шансом 30% становится [b]пулевым[/b] — вся дробь в одном точном снаряде.",
 					"[b]8. Рост по зоне[/b] ×1,14 за зону и множитель урона редкости. Затем пределы: скорострельность 0,25–30/с, до 40 дробин, перезарядка 0,35–6 с, шанс крита до 75%.",
 					"[b]9. Имя[/b] из производителя, перков и случайного прозвища."
+				],
+				"nb": [
+					"Hvert våpen bygges fra bunnen, steg for steg:",
+					"",
+					"[b]1. Sjeldenhet.[/b] Trekkes etter vekt (tabellen under). Jo dypere sone og jo bedre kilde (mester, leder, kiste, boss), desto mer flyttes oddsen mot sjeldne våpen. [color=#ff4cb8]Absurde[/color] våpen faller ikke før sone 8 — bortsett fra fra bosser.",
+					"[b]2. Produsent[/b] — etter vekt. Noen produsenter dukker aldri opp på legendariske.",
+					"[b]3. Type.[/b] Et legendarisk våpen har fast type. Ellers tilfeldig, og med sjeldenhetens hybridsjanse — to typer på en gang.",
+					"[b]4. Grunnverdier[/b] for typen, deretter [b]produsentens særpreg[/b].",
+					"[b]5. Egenskaper.[/b] Så mange som sjeldenheten tillater. Egenskaper i samme gruppe kombineres ikke (to elementer, to prosjektiltyper), og en egenskap dukker bare opp der den gir mening — absurde våpen bryr seg ikke om noe av dette.",
+					"    Egenskaper for verdier kommer først; effekt-egenskaper (elementer, eksplosjoner, rikosjetter...) sjekkes mot den endelige skuddtakten: sjansen for å bli værende er 4 / (skudd per sekund × hagl). En effekt-egenskap som ikke består, erstattes av en verdi-egenskap.",
+					"[b]6. Legendarisk effekt[/b] — oppå alt.",
+					"[b]7. Tilfeldig spredning[/b]: skade, skuddtakt, spredning, prosjektilfart, omlading og magasin ganges hver med 0,9–1,1. En hagle har 30 % sjanse til å bli et [b]kulevåpen[/b] — alle haglene i én presis kule.",
+					"[b]8. Sonevekst[/b] ×1,14 per sone og sjeldenhetens skademultiplikator. Så grenser: skuddtakt 0,25–30/s, opptil 40 hagl, omlading 0,35–6 s, kritisk sjanse opptil 75 %.",
+					"[b]9. Navn[/b] fra produsenten, egenskapene og et tilfeldig kallenavn."
 				]
 			},
 			"auto": "rarities"
@@ -233,7 +321,7 @@
 			"id": "perks",
 			"section": "weapons",
 			"order": 40,
-			"title": {"en": "Perks", "ru": "Перки"},
+			"title": {"en": "Perks", "ru": "Перки", "nb": "Egenskaper"},
 			"text": {
 				"en": [
 					"Perks are what makes a gun special. Uncommon guns get 1, Rare 2, Epic 3, Absurd 5. Legendaries get their own fixed perks plus one random.",
@@ -242,6 +330,10 @@
 				"ru": [
 					"Перки — то, что делает пушку особенной. У необычных 1, у редких 2, у эпических 3, у абсурдных 5. У легендарок — свои постоянные и ещё один случайный.",
 					"[color=#9aa0b0]«эффект» — перк-эффект: его шанс остаться падает у скорострельных пушек (см. «Как собираются пушки»).[/color]"
+				],
+				"nb": [
+					"Egenskaper er det som gjør et våpen spesielt. Uvanlige våpen får 1, sjeldne 2, episke 3, absurde 5. Legendariske har sine faste egenskaper pluss én tilfeldig.",
+					"[color=#9aa0b0]«effekt» — en effekt-egenskap: sjansen for at den blir værende faller på raske våpen (se «Slik lages våpen»).[/color]"
 				]
 			},
 			"auto": "perks"
@@ -250,12 +342,15 @@
 			"id": "legendaries",
 			"section": "weapons",
 			"order": 50,
-			"title": {"en": "Legendaries", "ru": "Легендарки"},
+			"title": {"en": "Legendaries", "ru": "Легендарки", "nb": "Legendariske"},
 			"text": {
 				"en": [
 					"Unique guns with a fixed type, perks and an effect of their own. Bosses drop them with a 40% chance."
 				],
-				"ru": ["Уникальные пушки со своим типом, перками и фишкой. С босса падают с шансом 40%."]
+				"ru": ["Уникальные пушки со своим типом, перками и фишкой. С босса падают с шансом 40%."],
+				"nb": [
+					"Unike våpen med fast type, egenskaper og en egen effekt. Bosser slipper dem med 40 % sjanse."
+				]
 			},
 			"auto": "legendaries"
 		},
@@ -263,7 +358,7 @@
 			"id": "enemies",
 			"section": "enemies",
 			"order": 10,
-			"title": {"en": "Enemy types", "ru": "Виды противников"},
+			"title": {"en": "Enemy types", "ru": "Виды противников", "nb": "Fiendetyper"},
 			"text": {
 				"en": [
 					"Enemies come in packs of 4–6 (more in deeper zones), made of one or two types. A pack sleeps until you come close.",
@@ -272,6 +367,10 @@
 				"ru": [
 					"Враги ходят стаями по 4–6 (глубже — больше), из одного-двух видов. Стая спит, пока не подойдёшь.",
 					"Урон касанием — половина указанного урона каждые 0,8 с (бегуны бьют полным)."
+				],
+				"nb": [
+					"Fiender kommer i flokker på 4–6 (flere i dypere soner), av én eller to typer. En flokk sover til du kommer nær.",
+					"Berøringsskade: halvparten av skaden i tabellen hvert 0,8 s (løpere gjør full skade)."
 				]
 			},
 			"auto": "enemies"
@@ -280,7 +379,7 @@
 			"id": "elites",
 			"section": "enemies",
 			"order": 20,
-			"title": {"en": "Elites", "ru": "Элитные враги"},
+			"title": {"en": "Elites", "ru": "Элитные враги", "nb": "Elitefiender"},
 			"text": {
 				"en": [
 					"[color=#ff9a40][b]Champions[/b][/color]",
@@ -303,6 +402,17 @@
 					"Шанс на стаю: 7% + 1% за зону (со 2-й зоны), максимум 25%.",
 					"",
 					"[color=#ff9a40][b]Свойства[/b][/color]"
+				],
+				"nb": [
+					"[color=#ff9a40][b]Mestere[/b][/color]",
+					"En hel flokk på opptil 5 mestere med de samme egenskapene. ×3 liv, ×1,25 skade, statusmotstand 1,5. Én egenskap, to fra sone 10.",
+					"Sjanse per flokk: 14 % + 1,2 % per sone, høyst 35 %.",
+					"",
+					"[color=#ff9a40][b]Ledere[/b][/color]",
+					"En sjelden elitefiende med eget navn som leder en vanlig flokk. ×5 liv, ×1,35 skade, statusmotstand 2. To egenskaper, tre fra sone 15. Slipper alltid et våpen.",
+					"Sjanse per flokk: 7 % + 1 % per sone (fra sone 2), høyst 25 %.",
+					"",
+					"[color=#ff9a40][b]Egenskaper[/b][/color]"
 				]
 			},
 			"auto": "elites"
@@ -311,7 +421,7 @@
 			"id": "bosses",
 			"section": "enemies",
 			"order": 30,
-			"title": {"en": "Bosses", "ru": "Боссы"},
+			"title": {"en": "Bosses", "ru": "Боссы", "nb": "Bosser"},
 			"text": {
 				"en": [
 					"Every 5th zone is a boss arena. A boss has 3200 health and 16 damage at zone 1 (both grow like normal enemies), status resistance 3, and a random set of attack patterns: 3, plus one more every 10 zones. Charge is always in the set.",
@@ -326,6 +436,13 @@
 					"В режиме [b]Хаос[/b] босс может встретиться и вместо обычной стаи — он спит, пока не подойдёшь, и разлом за него не появляется.",
 					"",
 					"[color=#ff9a40][b]Атаки[/b][/color]"
+				],
+				"nb": [
+					"Hver 5. sone er en bossarena. En boss har 3200 liv og 16 skade i sone 1 (begge vokser som hos vanlige fiender), statusmotstand 3 og et tilfeldig sett angrep: 3, pluss ett til hver 10. sone. Stormangrep er alltid med.",
+					"Ved halvt liv blir bossen [b]rasende[/b]: angriper 35 % raskere og med flere kuler.",
+					"I [b]Kaos[/b]-modus kan en boss også erstatte en hvilken som helst flokk — den sover til du kommer nær, og ingen rift dukker opp for den.",
+					"",
+					"[color=#ff9a40][b]Angrep[/b][/color]"
 				]
 			},
 			"auto": "bosses"
@@ -334,7 +451,7 @@
 			"id": "rating",
 			"section": "rating",
 			"order": 10,
-			"title": {"en": "Rating", "ru": "Рейтинг"},
+			"title": {"en": "Rating", "ru": "Рейтинг", "nb": "Rangering"},
 			"text": {
 				"en": [
 					"Rating = points × multiplier. The best rating is saved for any run. Best zone and kills count only in standard runs (New game, or Custom start with default settings).",
@@ -343,6 +460,10 @@
 				"ru": [
 					"Рейтинг = очки × множитель. Лучший рейтинг сохраняется в любом забеге. Рекорды зоны и убийств — только в стандартных (Новая игра или «Настраиваемый старт» без изменений).",
 					"Множитель складывается из сложности (здоровье × урон врагов в «Настраиваемом старте») и опций забега ниже. Текущий множитель видно в «Настраиваемом старте» и в меню паузы."
+				],
+				"nb": [
+					"Rangering = poeng × multiplikator. Beste rangering lagres for alle løp. Beste sone og drap teller bare i vanlige løp (Nytt spill, eller Tilpasset start uten endringer).",
+					"Multiplikatoren kommer fra vanskelighetsgraden (fiendeliv × fiendeskade i Tilpasset start) og valgene for løpet under. Gjeldende multiplikator vises i Tilpasset start og i pausemenyen."
 				]
 			},
 			"auto": "rating"
@@ -351,7 +472,7 @@
 			"id": "modding",
 			"section": "modding",
 			"order": 10,
-			"title": {"en": "How to make mods", "ru": "Как делать моды"},
+			"title": {"en": "How to make mods", "ru": "Как делать моды", "nb": "Slik lager du mods"},
 			"text": {
 				"en": [
 					"Everything on these pages — guns, makers, perks, legendaries, names, translations, sounds, music and this codex — can be changed or extended by mods without touching the code.",
@@ -374,6 +495,17 @@
 					"",
 					"[color=#ff9a40][b]Дополнить справочник[/b][/color]",
 					"Положи в мод [b]data/codex.json[/b]: новые страницы и разделы, описания своих пушек, производителей и перков — или перевод существующих страниц. Подробности — в гайде."
+				],
+				"nb": [
+					"Alt på disse sidene — våpen, produsenter, egenskaper, legendariske, navn, oversettelser, lyder, musikk og selve oppslagsverket — kan endres eller utvides med mods uten å røre koden.",
+					"",
+					"• En mod er en mappe [b]Mods/<ModNavn>/[/b] ved siden av spillets exe. Inni gjentar den spillets oppsett: [b]data/[/b], [b]lang/[/b], [b]sfx/[/b], [b]music/[/b], [b]scripts/[/b] — alt er valgfritt.",
+					"• Slå mods av og på i hovedmenyen → Modder. Endringene gjelder med en gang.",
+					"• Slå på [b]mod-feilsøkeren[/b] der (F8 i spillet): den sjekker filene dine og viser hver feil med fil og linje.",
+					"• [b]Lag modding-guide[/b] skriver en full tekstguide ved siden av exe-filen: hver fil, hvert felt, hver operasjon, pluss en oversikt over alle id-er som er lastet nå (spillet + modsene dine). Den er mye lettere å lese i et tekstprogram enn her.",
+					"",
+					"[color=#ff9a40][b]Utvid oppslagsverket[/b][/color]",
+					"Legg [b]data/codex.json[/b] i moden din: nye sider, nye seksjoner, beskrivelser av dine våpen, produsenter og egenskaper — eller en oversettelse av eksisterende sider. Detaljene står i guiden."
 				]
 			},
 			"auto": "mods",
@@ -383,174 +515,269 @@
 	"archetypes": {
 		"shotgun": {
 			"en": "Pellets spread in a cone and fall off quickly with distance. 30% of shotguns are born as slug guns.",
-			"ru": "Дробь летит конусом и быстро слабеет с расстоянием. 30% дробовиков рождаются пулевыми."
+			"ru": "Дробь летит конусом и быстро слабеет с расстоянием. 30% дробовиков рождаются пулевыми.",
+			"nb": "Haglene sprer seg i en kjegle og mister fort kraft med avstanden. 30 % av haglene blir kulevåpen."
 		},
 		"sniper": {
 			"en": "Huge single hits — the best gun for effects and crits.",
-			"ru": "Огромный урон одним выстрелом — лучшая пушка для эффектов и критов."
+			"ru": "Огромный урон одним выстрелом — лучшая пушка для эффектов и критов.",
+			"nb": "Enorme enkelttreff — det beste våpenet for effekter og kritiske treff."
 		},
 		"rocket": {
 			"en": "Accelerating rockets that explode on impact.",
-			"ru": "Разгоняющиеся ракеты, взрываются при попадании."
+			"ru": "Разгоняющиеся ракеты, взрываются при попадании.",
+			"nb": "Raketter som akselererer og eksploderer ved treff."
 		},
 		"launcher": {
 			"en": "Grenades bounce off walls and explode on impact or at the end of their flight.",
-			"ru": "Гранаты отскакивают от стен и взрываются от удара или в конце полёта."
+			"ru": "Гранаты отскакивают от стен и взрываются от удара или в конце полёта.",
+			"nb": "Granater spretter fra vegger og eksploderer ved treff eller på slutten av ferden."
 		},
 		"mortar": {
 			"en": "Shells fly over walls and land exactly at the aim point after 1 s. Spread is how far from the point they land. Uses grenade launcher ammo.",
-			"ru": "Мины летят над стенами и через 1 с падают точно в точку прицела. Разброс — насколько далеко от точки. Ест патроны гранатомёта."
+			"ru": "Мины летят над стенами и через 1 с падают точно в точку прицела. Разброс — насколько далеко от точки. Ест патроны гранатомёта.",
+			"nb": "Granater flyr over vegger og lander nøyaktig der du sikter etter 1 s. Spredning er hvor langt fra punktet de lander. Bruker ammo fra granatkasteren."
 		},
 		"lmg": {
 			"en": "A 90-round belt and a long reload. Effects proc rarely.",
-			"ru": "Лента на 90 патронов и долгая перезарядка. Эффекты срабатывают редко."
+			"ru": "Лента на 90 патронов и долгая перезарядка. Эффекты срабатывают редко.",
+			"nb": "Et belte på 90 skudd og lang omlading. Effekter utløses sjelden."
 		}
 	},
 	"makers": {
 		"synergis": {
 			"en": "Never explosive: rockets and grenades turn into bullets.",
-			"ru": "Никаких взрывов: ракеты и гранаты превращаются в пули."
+			"ru": "Никаких взрывов: ракеты и гранаты превращаются в пули.",
+			"nb": "Aldri eksplosiv: raketter og granater blir til kuler."
 		},
 		"hypernova": {
 			"en": "Every type keeps its firing pattern, but shoots rockets.",
-			"ru": "Любой тип сохраняет свой узор стрельбы, но стреляет ракетами."
+			"ru": "Любой тип сохраняет свой узор стрельбы, но стреляет ракетами.",
+			"nb": "Alle typer beholder skytemønsteret sitt, men skyter raketter."
 		},
-		"chaos": {"en": "Gets the effect of a random legendary.", "ru": "Получает фишку случайной легендарки."},
+		"chaos": {
+			"en": "Gets the effect of a random legendary.",
+			"ru": "Получает фишку случайной легендарки.",
+			"nb": "Får effekten til et tilfeldig legendarisk våpen."
+		},
 		"erosion": {
 			"en": "Always has an element, and procs it twice as often.",
-			"ru": "Всегда со стихией и срабатывает ею вдвое чаще."
+			"ru": "Всегда со стихией и срабатывает ею вдвое чаще.",
+			"nb": "Har alltid et element og utløser det dobbelt så ofte."
 		},
-		"noname": {"en": "Nothing special. Literally.", "ru": "Ничего особенного. Буквально."}
+		"noname": {
+			"en": "Nothing special. Literally.",
+			"ru": "Ничего особенного. Буквально.",
+			"nb": "Ingenting spesielt. Bokstavelig talt."
+		}
 	},
 	"perks": {
 		"blast": {
 			"en": "Bullets explode by chance. On guns that already explode — more chance or a bigger blast.",
-			"ru": "Пули взрываются по шансу. Если пушка уже взрывается — шанс выше или взрыв больше."
+			"ru": "Пули взрываются по шансу. Если пушка уже взрывается — шанс выше или взрыв больше.",
+			"nb": "Kuler eksploderer ved sjanse. På våpen som allerede eksploderer — høyere sjanse eller større smell."
 		},
-		"grenade": {"en": "Turns projectiles into bouncing grenades.", "ru": "Превращает снаряды в прыгающие гранаты."},
+		"grenade": {
+			"en": "Turns projectiles into bouncing grenades.",
+			"ru": "Превращает снаряды в прыгающие гранаты.",
+			"nb": "Gjør prosjektilene om til sprettende granater."
+		},
 		"rocket": {
 			"en": "Turns projectiles into accelerating rockets.",
-			"ru": "Превращает снаряды в разгоняющиеся ракеты."
+			"ru": "Превращает снаряды в разгоняющиеся ракеты.",
+			"nb": "Gjør prosjektilene om til akselererende raketter."
 		},
-		"big": {"en": "Huge slow orbs that pierce everything.", "ru": "Огромные медленные шары, прошивают всех."},
-		"split": {"en": "A projectile splits into 3 on hit.", "ru": "Снаряд при попадании делится на 3."},
+		"big": {
+			"en": "Huge slow orbs that pierce everything.",
+			"ru": "Огромные медленные шары, прошивают всех.",
+			"nb": "Enorme, langsomme kuler som går gjennom alt."
+		},
+		"split": {
+			"en": "A projectile splits into 3 on hit.",
+			"ru": "Снаряд при попадании делится на 3.",
+			"nb": "Et prosjektil deler seg i 3 ved treff."
+		},
 		"fractal": {
 			"en": "Splits into 2, and those split again — three times.",
-			"ru": "Делится на 2, а те снова — три раза подряд."
+			"ru": "Делится на 2, а те снова — три раза подряд.",
+			"nb": "Deler seg i 2, og de deler seg igjen — tre ganger."
 		},
 		"gravity": {
 			"en": "A chance to open a black hole that pulls enemies in.",
-			"ru": "Шанс открыть чёрную дыру, которая затягивает врагов."
+			"ru": "Шанс открыть чёрную дыру, которая затягивает врагов.",
+			"nb": "Sjanse for å åpne et sort hull som trekker fiender inn."
 		},
 		"seeder": {
 			"en": "Projectiles shoot small bullets sideways mid-flight.",
-			"ru": "Снаряды в полёте стреляют вбок мелкими пулями."
+			"ru": "Снаряды в полёте стреляют вбок мелкими пулями.",
+			"nb": "Prosjektilene skyter små kuler til sidene underveis."
 		},
-		"quantum": {"en": "Projectiles teleport forward in jumps.", "ru": "Снаряды прыгают вперёд телепортом."},
-		"nuke": {"en": "Three times the blast radius.", "ru": "Взрыв втрое шире."},
+		"quantum": {
+			"en": "Projectiles teleport forward in jumps.",
+			"ru": "Снаряды прыгают вперёд телепортом.",
+			"nb": "Prosjektilene teleporterer fremover i hopp."
+		},
+		"nuke": {
+			"en": "Three times the blast radius.",
+			"ru": "Взрыв втрое шире.",
+			"nb": "Tre ganger så stor eksplosjonsradius."
+		},
 		"chain": {
 			"en": "Hits jump to 3 more enemies as lightning.",
-			"ru": "Попадание перескакивает молнией ещё на 3 врагов."
+			"ru": "Попадание перескакивает молнией ещё на 3 врагов.",
+			"nb": "Treff hopper som lyn til 3 fiender til."
 		},
-		"cluster": {"en": "Explosions scatter 4 bomblets.", "ru": "Взрыв разбрасывает 4 бомбочки."},
-		"double": {"en": "Two shots at once for double ammo.", "ru": "Два выстрела разом за двойной расход патронов."}
+		"cluster": {
+			"en": "Explosions scatter 4 bomblets.",
+			"ru": "Взрыв разбрасывает 4 бомбочки.",
+			"nb": "Eksplosjoner sprer 4 småbomber."
+		},
+		"double": {
+			"en": "Two shots at once for double ammo.",
+			"ru": "Два выстрела разом за двойной расход патронов.",
+			"nb": "To skudd på en gang for dobbel ammo."
+		}
 	},
 	"enemies": {
 		"runner": {
 			"en": "Fast and fragile, rushes you and hits on contact.",
-			"ru": "Быстрый и хрупкий, бежит на тебя и бьёт касанием."
+			"ru": "Быстрый и хрупкий, бежит на тебя и бьёт касанием.",
+			"nb": "Rask og skjør, stormer mot deg og slår ved berøring."
 		},
 		"gunner": {
 			"en": "Keeps distance and shoots every 1.3 s from up to 650 away.",
-			"ru": "Держит дистанцию и стреляет раз в 1,3 с с расстояния до 650."
+			"ru": "Держит дистанцию и стреляет раз в 1,3 с с расстояния до 650.",
+			"nb": "Holder avstand og skyter hvert 1,3 s fra opptil 650 unna."
 		},
 		"brute": {
 			"en": "Slow and tough. Raises its fists for 0.55 s, then slams an area around itself.",
-			"ru": "Медленный и толстый. 0,55 с замахивается, затем бьёт по площади вокруг себя."
+			"ru": "Медленный и толстый. 0,55 с замахивается, затем бьёт по площади вокруг себя.",
+			"nb": "Treg og seig. Løfter nevene i 0,55 s, så slår den ned et område rundt seg."
 		},
 		"bomber": {
 			"en": "Runs up, flashes and blows itself up. Dodge when it starts blinking.",
-			"ru": "Подбегает, мигает и взрывается. Уходи рывком, как замигал."
+			"ru": "Подбегает, мигает и взрывается. Уходи рывком, как замигал.",
+			"nb": "Løper bort til deg, blinker og sprenger seg selv. Unnvik når den begynner å blinke."
 		},
-		"spreader": {"en": "Fires a 5-bullet fan every 1.9 s.", "ru": "Раз в 1,9 с стреляет веером из 5 пуль."},
+		"spreader": {
+			"en": "Fires a 5-bullet fan every 1.9 s.",
+			"ru": "Раз в 1,9 с стреляет веером из 5 пуль.",
+			"nb": "Skyter en vifte på 5 kuler hvert 1,9 s."
+		},
 		"charger": {
 			"en": "Winds up for 0.7 s and dashes at 4× speed. Step aside.",
-			"ru": "0,7 с готовится и бросается на учетверённой скорости. Отойди в сторону."
+			"ru": "0,7 с готовится и бросается на учетверённой скорости. Отойди в сторону.",
+			"nb": "Lader i 0,7 s og stormer frem med 4× fart. Gå til siden."
 		},
 		"mortar": {
 			"en": "Lobs shells at where you are going to be, every 2.5 s, from up to 720 away. Keep moving.",
-			"ru": "Раз в 2,5 с кидает мины туда, где ты будешь, с расстояния до 720. Не стой на месте."
+			"ru": "Раз в 2,5 с кидает мины туда, где ты будешь, с расстояния до 720. Не стой на месте.",
+			"nb": "Kaster granater dit du kommer til å være, hvert 2,5 s, fra opptil 720 unna. Hold deg i bevegelse."
 		},
 		"summoner": {
 			"en": "Summons runners (up to 6 at once). Kill it first.",
-			"ru": "Призывает бегунов (до 6 разом). Убивай первым."
+			"ru": "Призывает бегунов (до 6 разом). Убивай первым.",
+			"nb": "Tilkaller løpere (opptil 6 samtidig). Drep den først."
 		}
 	},
 	"affixes": {
-		"fast": {"en": "×1.4 speed and faster attacks.", "ru": "×1,4 скорости и быстрее атакует."},
-		"tough": {"en": "×1.8 health.", "ru": "×1,8 здоровья."},
+		"fast": {
+			"en": "×1.4 speed and faster attacks.",
+			"ru": "×1,4 скорости и быстрее атакует.",
+			"nb": "×1,4 fart og raskere angrep."
+		},
+		"tough": {"en": "×1.8 health.", "ru": "×1,8 здоровья.", "nb": "×1,8 liv."},
 		"explosive": {
 			"en": "Explodes on death and releases a ring of 12 bullets.",
-			"ru": "При смерти взрывается и выпускает кольцо из 12 пуль."
+			"ru": "При смерти взрывается и выпускает кольцо из 12 пуль.",
+			"nb": "Eksploderer når den dør og slipper en ring av 12 kuler."
 		},
 		"teleport": {
 			"en": "Every 4–5.5 s blinks next to you if you are far. Where it will appear is marked 0.9 s in advance.",
-			"ru": "Каждые 4–5,5 с прыгает к тебе, если ты далеко. Место появления видно за 0,9 с."
+			"ru": "Каждые 4–5,5 с прыгает к тебе, если ты далеко. Место появления видно за 0,9 с.",
+			"nb": "Hvert 4–5,5 s hopper den bort til deg hvis du er langt unna. Stedet den dukker opp, vises 0,9 s i forveien."
 		},
 		"multishot": {
 			"en": "More bullets per attack. Melee enemies fire a ring of 6 bullets every 3.2 s.",
-			"ru": "Больше пуль за атаку. Ближники раз в 3,2 с выпускают кольцо из 6 пуль."
+			"ru": "Больше пуль за атаку. Ближники раз в 3,2 с выпускают кольцо из 6 пуль.",
+			"nb": "Flere kuler per angrep. Nærkampfiender skyter en ring av 6 kuler hvert 3,2 s."
 		},
 		"shielded": {
 			"en": "Every 7 s becomes invulnerable for 1.8 s.",
-			"ru": "Каждые 7 с становится неуязвимым на 1,8 с."
+			"ru": "Каждые 7 с становится неуязвимым на 1,8 с.",
+			"nb": "Blir usårbar i 1,8 s hvert 7. sekund."
 		},
-		"regen": {"en": "Restores 2% of its health per second.", "ru": "Восстанавливает 2% здоровья в секунду."},
+		"regen": {
+			"en": "Restores 2% of its health per second.",
+			"ru": "Восстанавливает 2% здоровья в секунду.",
+			"nb": "Gjenvinner 2 % av livet sitt per sekund."
+		},
 		"frost": {
 			"en": "A cold aura (radius 170) that slows you by 35%.",
-			"ru": "Морозная аура (радиус 170), замедляет тебя на 35%."
+			"ru": "Морозная аура (радиус 170), замедляет тебя на 35%.",
+			"nb": "En frostaura (radius 170) som bremser deg med 35 %."
 		},
 		"orbit": {
 			"en": "Three orbs circle around it and hurt on contact.",
-			"ru": "Вокруг кружат три сферы, которые бьют при касании."
+			"ru": "Вокруг кружат три сферы, которые бьют при касании.",
+			"nb": "Tre kuler sirkler rundt den og skader ved berøring."
 		}
 	},
 	"bosses": {
 		"radial": {
-			"name": {"en": "Ring", "ru": "Кольцо"},
-			"text": {"en": "Rings of 16 bullets (24 when enraged).", "ru": "Кольца из 16 пуль (24 в ярости)."}
+			"name": {"en": "Ring", "ru": "Кольцо", "nb": "Ring"},
+			"text": {
+				"en": "Rings of 16 bullets (24 when enraged).",
+				"ru": "Кольца из 16 пуль (24 в ярости).",
+				"nb": "Ringer av 16 kuler (24 i raseri)."
+			}
 		},
 		"spiral": {
-			"name": {"en": "Spiral", "ru": "Спираль"},
+			"name": {"en": "Spiral", "ru": "Спираль", "nb": "Spiral"},
 			"text": {
 				"en": "A rotating spiral of 2 arms (3 when enraged).",
-				"ru": "Вращающаяся спираль из 2 рукавов (3 в ярости)."
+				"ru": "Вращающаяся спираль из 2 рукавов (3 в ярости).",
+				"nb": "En roterende spiral med 2 armer (3 i raseri)."
 			}
 		},
 		"shotgun": {
-			"name": {"en": "Shotgun", "ru": "Дробовик"},
-			"text": {"en": "Aimed bursts of 11 + 7 bullets.", "ru": "Прицельные залпы из 11 + 7 пуль."}
+			"name": {"en": "Shotgun", "ru": "Дробовик", "nb": "Hagle"},
+			"text": {
+				"en": "Aimed bursts of 11 + 7 bullets.",
+				"ru": "Прицельные залпы из 11 + 7 пуль.",
+				"nb": "Siktede salver på 11 + 7 kuler."
+			}
 		},
 		"charge": {
-			"name": {"en": "Charge", "ru": "Таран"},
+			"name": {"en": "Charge", "ru": "Таран", "nb": "Storm"},
 			"text": {
 				"en": "3 charges at you (4 when enraged). Always in the set.",
-				"ru": "3 броска на тебя (4 в ярости). Есть всегда."
+				"ru": "3 броска на тебя (4 в ярости). Есть всегда.",
+				"nb": "3 stormangrep mot deg (4 i raseri). Er alltid med."
 			}
 		},
 		"summon": {
-			"name": {"en": "Summon", "ru": "Призыв"},
-			"text": {"en": "Calls 4 enemies (6 when enraged).", "ru": "Зовёт 4 врагов (6 в ярости)."}
+			"name": {"en": "Summon", "ru": "Призыв", "nb": "Tilkalling"},
+			"text": {
+				"en": "Calls 4 enemies (6 when enraged).",
+				"ru": "Зовёт 4 врагов (6 в ярости).",
+				"nb": "Kaller inn 4 fiender (6 i raseri)."
+			}
 		},
 		"mortar": {
-			"name": {"en": "Bombardment", "ru": "Бомбёжка"},
-			"text": {"en": "Shells rain around you every 0.3 s.", "ru": "Каждые 0,3 с вокруг тебя падают мины."}
+			"name": {"en": "Bombardment", "ru": "Бомбёжка", "nb": "Bombardement"},
+			"text": {
+				"en": "Shells rain around you every 0.3 s.",
+				"ru": "Каждые 0,3 с вокруг тебя падают мины.",
+				"nb": "Granater regner rundt deg hvert 0,3 s."
+			}
 		},
 		"wall": {
-			"name": {"en": "Wall", "ru": "Стена"},
+			"name": {"en": "Wall", "ru": "Стена", "nb": "Vegg"},
 			"text": {
 				"en": "Walls of bullets with a gap every 1.1 s — find the gap.",
-				"ru": "Стены пуль с просветом каждые 1,1 с — ищи просвет."
+				"ru": "Стены пуль с просветом каждые 1,1 с — ищи просвет.",
+				"nb": "Kulevegger med en åpning hvert 1,1 s — finn åpningen."
 			}
 		}
 	}

@@ -35,6 +35,7 @@ func _ready() -> void:
 	inv.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	inv.visible = false
 	cursor = CursorDraw.new()
+	cursor.follow_aim = true
 	cursor.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(cursor)
 	cursor.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -134,6 +135,6 @@ func _process(delta: float) -> void:
 		help_t -= delta
 	if dead_screen:
 		death_t += delta
-	cursor.visible = not Game.main.menu.visible
+	cursor.visible = not Game.main.menu.visible and not (inv.visible and Controls.mode != "kbm")
 	root.queue_redraw()
 	cursor.queue_redraw()

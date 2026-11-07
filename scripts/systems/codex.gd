@@ -61,7 +61,7 @@ static func load_data() -> void:
 		if not known.has(str(p.get("section", ""))):
 			p["section"] = "other"
 			if not known.has("other"):
-				sections.append({"id": "other", "title": {"en": "Other", "ru": "Другое"}, "order": 999})
+				sections.append({"id": "other", "title": {"en": "Other", "ru": "Другое", "nb": "Annet"}, "order": 999})
 				known["other"] = true
 	_sort(sections)
 	_sort(pages)

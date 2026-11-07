@@ -6,6 +6,8 @@ extends Control
 ##  в зону «Выбросить» или за пределы окна — на землю, в «Переработать» — на патроны.
 ##  Клик ЛКМ: по слоту — сделать активным, по рюкзаку — взять в активный слот (обмен).
 ##  ПКМ: слот -> рюкзак, рюкзак -> свободный (или активный) слот. X над пушкой — переработать.
+##  Геймпад: стик/крестовина водят указатель, A — как ЛКМ (держать — тащить), Y — как ПКМ,
+##  B (scrap) — переработать. Сенсор: касание = мышь (Godot имитирует её из касаний).
 ## Рюкзак — плотный массив без дыр: бросок на пустую ячейку кладёт пушку в конец.
 
 const PANEL := Vector2(1060, 640)
@@ -25,6 +27,8 @@ var _press_pos := Vector2.ZERO
 var _src_kind := ""
 var _src_idx := -1
 var dragging := false
+var _pad := Vector2(-1, -1)   # указатель геймпада (локальные координаты)
+const PAD_SPEED := 1150.0
 
 
 func _ready() -> void:
@@ -51,6 +55,12 @@ func _bag_rect(i: int) -> Rect2:
 	var col := i % COLS
 	var row := i / COLS
 	return Rect2(pr.position + Vector2(496 + col * (CELL.x + 8), 70 + row * (CELL.y + 10)), CELL)
+
+
+## Крестик закрытия (для пальца и мыши).
+func _close_rect() -> Rect2:
+	var pr := _panel()
+	return Rect2(pr.end.x - 58, pr.position.y + 12, 44, 44)
 
 
 func _drop_rect() -> Rect2:
@@ -106,38 +116,86 @@ func _hovered_gun() -> Gun:
 
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
-		var mm := event as InputEventMouseMotion
-		_update_hover(mm.position)
-		if _press and not dragging and mm.position.distance_to(_press_pos) > DRAG_START:
-			dragging = true
-			Sfx.ui("ui/grab", -6.0)
-		queue_redraw()
+		_pointer_move((event as InputEventMouseMotion).position)
 	elif event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
-		_update_hover(mb.position)
 		if mb.button_index == MOUSE_BUTTON_LEFT:
 			if mb.pressed:
-				if _hovered_gun() != null:
-					_press = true
-					_press_pos = mb.position
-					_src_kind = hover_kind
-					_src_idx = hover_idx
-			elif _press:
-				if dragging:
-					_drop_on(hover_kind, hover_idx)
-				else:
-					_click_left()
-				_cancel_drag()
-		elif mb.button_index == MOUSE_BUTTON_RIGHT and mb.pressed and not dragging:
-			_click_right()
+				_pointer_down(mb.position)
+			else:
+				_pointer_up(mb.position)
+		elif mb.button_index == MOUSE_BUTTON_RIGHT and mb.pressed:
+			_pointer_right(mb.position)
 		accept_event()
 		queue_redraw()
 
 
+## Указатель: мышь или палец, а на геймпаде — свой указатель.
+func _pointer() -> Vector2:
+	return _pad if Controls.mode == "pad" and _pad.x >= 0.0 else get_local_mouse_position()
+
+
+func _pointer_move(pos: Vector2) -> void:
+	_update_hover(pos)
+	if _press and not dragging and pos.distance_to(_press_pos) > DRAG_START:
+		dragging = true
+		Sfx.ui("ui/grab", -6.0)
+	queue_redraw()
+
+
+func _pointer_down(pos: Vector2) -> void:
+	if _close_rect().has_point(pos):
+		hud.toggle_inventory()
+		return
+	_update_hover(pos)
+	if _hovered_gun() != null:
+		_press = true
+		_press_pos = pos
+		_src_kind = hover_kind
+		_src_idx = hover_idx
+
+
+func _pointer_up(pos: Vector2) -> void:
+	_update_hover(pos)
+	if not _press:
+		return
+	if dragging:
+		_drop_on(hover_kind, hover_idx)
+	else:
+		_click_left()
+	_cancel_drag()
+
+
+func _pointer_right(pos: Vector2) -> void:
+	_update_hover(pos)
+	if not dragging:
+		_click_right()
+
+
 ## X над пушкой — переработать (клавиши сюда не доходят через _gui_input, ловим здесь).
+## Геймпад: A / Y — как левая / правая кнопка мыши у своего указателя.
 func _input(event: InputEvent) -> void:
 	if not visible:
 		return
+	if event is InputEventJoypadButton:
+		var jb := event as InputEventJoypadButton
+		if jb.button_index == JOY_BUTTON_A:
+			if _pad.x < 0.0:
+				_pad_reset()
+			if jb.pressed:
+				_pointer_down(_pad)
+			else:
+				_pointer_up(_pad)
+			get_viewport().set_input_as_handled()
+			queue_redraw()
+			return
+		if jb.button_index == JOY_BUTTON_Y and jb.pressed:
+			if _pad.x < 0.0:
+				_pad_reset()
+			_pointer_right(_pad)
+			get_viewport().set_input_as_handled()
+			queue_redraw()
+			return
 	if event.is_action_pressed("scrap"):
 		var g: Gun = _gun_at(_src_kind, _src_idx) if dragging else _hovered_gun()
 		if g != null:
@@ -306,9 +364,25 @@ func _scrap_preview(g: Gun) -> int:
 	return mini(n, maxi(0, GunData.ammo_cap(t) - p.reserve_of(t)))
 
 
-func _process(_delta: float) -> void:
-	if visible:
-		queue_redraw()
+func _process(delta: float) -> void:
+	if not visible:
+		_pad = Vector2(-1, -1)
+		return
+	if Controls.mode == "pad":
+		if _pad.x < 0.0:
+			_pad_reset()
+		var v := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+		v += Input.get_vector("aim_left", "aim_right", "aim_up", "aim_down")
+		if v.length() > 0.05:
+			_pad = (_pad + v.limit_length(1.0) * PAD_SPEED * delta).clamp(Vector2.ZERO, _vp())
+			_pointer_move(_pad)
+	queue_redraw()
+
+
+## Указатель геймпада — на активный слот.
+func _pad_reset() -> void:
+	_pad = _slot_rect(_player().active).get_center()
+	_update_hover(_pad)
 
 
 # --- Отрисовка -------------------------------------------------------------------
@@ -326,6 +400,13 @@ func _draw() -> void:
 	draw_rect(pr, Color(0.07, 0.07, 0.1, 0.97))
 	draw_rect(pr, Color(0.5, 0.45, 0.7, 0.6), false, 2.0)
 	U.draw_text(self, fb, pr.position + Vector2(24, 44), U.t("INVENTORY"), 26, Color.WHITE)
+	var cr := _close_rect()
+	var ch := cr.has_point(_pointer())
+	draw_rect(cr, Color(1, 1, 1, 0.12 if ch else 0.04))
+	draw_rect(cr, Color(1, 1, 1, 0.6 if ch else 0.3), false, 1.5)
+	var cc := cr.get_center()
+	draw_line(cc + Vector2(-9, -9), cc + Vector2(9, 9), Color.WHITE, 2.5)
+	draw_line(cc + Vector2(9, -9), cc + Vector2(-9, 9), Color.WHITE, 2.5)
 	U.draw_text(self, f, pr.position + Vector2(496, 44), U.t("Backpack %d/%d") % [p.backpack.size(), Player.BACKPACK_SIZE], 18, Color(0.8, 0.8, 0.85))
 
 	for i in 4:
@@ -379,19 +460,18 @@ func _draw() -> void:
 	var preview: Gun = dg if dg != null else _hovered_gun()
 	_zone(_drop_rect(), U.t("Drop"), U.t("drag here or outside the window"), Color(1.0, 0.75, 0.35),
 		hover_kind in ["drop", "out"] and dg != null, f, fb)
-	var scrap_sub := U.t("drag here or press [X]")
+	var scrap_sub := U.t("drag here or press [%s]") % Controls.label("scrap") if Controls.mode != "touch" \
+		else U.t("drag a gun here")
 	if preview != null:
 		scrap_sub = U.t("+%d rounds (%s)") % [_scrap_preview(preview), preview.ammo_name()]
 	_zone(_scrap_rect(), U.t("Recycle"), scrap_sub, GunData.ammo_color(preview.ammo_type()) if preview != null else OK_COL,
 		hover_kind == "scrap" and dg != null, f, fb)
 
-	U.draw_text_c(self, f, Vector2(pr.get_center().x, pr.end.y - 18),
-		U.t("Drag guns with the mouse · LMB — select / equip · RMB — slot ↔ backpack · X — recycle · Tab/Esc — close"),
-		14, Color(0.75, 0.75, 0.8))
+	U.draw_text_c(self, f, Vector2(pr.get_center().x, pr.end.y - 18), _hint(), 14, Color(0.75, 0.75, 0.8))
 
 	if dg != null:
 		# пушка «в руке» под курсором
-		var m := get_local_mouse_position()
+		var m := _pointer()
 		var sc := clampf(120.0 / maxf(60.0, float(dg.vis.get("len", 80.0))), 0.5, 1.4)
 		GunIcon.draw_gun(self, dg, m + Vector2(0, -6), sc, 0.0, false, true)
 		var hint := ""
@@ -408,14 +488,35 @@ func _draw() -> void:
 
 	# Карточка под курсором
 	var hg := _hovered_gun()
+	if Controls.mode == "pad" and _pad.x >= 0.0:
+		_draw_pad_pointer()
 	if hg != null:
-		var m := get_local_mouse_position()
+		var m := _pointer()
 		var ch := GunCard.height(hg)
 		var cx := m.x + 24.0
 		if cx + GunCard.W > _vp().x - 10.0:
 			cx = m.x - GunCard.W - 24.0
 		var cy := clampf(m.y - ch * 0.3, 10.0, _vp().y - ch - 10.0)
 		GunCard.draw_card(self, hg, Vector2(cx, cy), p.gun() if hg != p.gun() else null)
+
+
+func _draw_pad_pointer() -> void:
+	var tip := _pad
+	var pts := PackedVector2Array([tip, tip + Vector2(0, 22), tip + Vector2(6, 16), tip + Vector2(14, 16)])
+	draw_colored_polygon(pts, Color(1, 1, 1, 0.95))
+	draw_polyline(U.closed(pts), Color(0, 0, 0, 0.8), 1.5)
+
+
+## Подсказка внизу — под то, чем играют.
+func _hint() -> String:
+	match Controls.mode:
+		"pad":
+			return U.t("Stick — pointer · A — select / hold to drag · Y — slot ↔ backpack · %s — recycle · %s — close") % [
+				Controls.label("scrap"), Controls.label("inventory")]
+		"touch":
+			return U.t("Drag guns with your finger · tap — select / equip · drag to Drop or Recycle")
+	return U.t("Drag guns with the mouse · LMB — select / equip · RMB — slot ↔ backpack · %s — recycle · %s/%s — close") % [
+		Controls.label("scrap"), InputSetup.action_label("inventory", "kb", 1), Controls.label("pause")]
 
 
 ## Место, откуда тащим: пустая рамка-пунктир.

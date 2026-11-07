@@ -13,6 +13,8 @@ var hud: HUD
 var music: Music
 var sfx: Sfx
 var menu: Menu
+var controls: Controls
+var touch: TouchControls
 var camera: Camera2D
 var item_layer: Node2D
 var enemy_layer: Node2D
@@ -58,6 +60,8 @@ func _ready() -> void:
 	fx = FX.new()
 	fx.z_index = 6
 	add_child(fx)
+	controls = Controls.new()
+	add_child(controls)
 	camera = Camera2D.new()
 	add_child(camera)
 	camera.make_current()
@@ -69,6 +73,8 @@ func _ready() -> void:
 	add_child(sfx)
 	menu = Menu.new()
 	add_child(menu)
+	touch = TouchControls.new()
+	add_child(touch)
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 	# сначала прогрев под экраном загрузки (шрифты, шейдеры, музыка, скрипты и пушки модов), потом меню
 	hud.visible = false
@@ -443,7 +449,11 @@ func player_interact(swap: bool) -> void:
 				Game.say(U.t("Picked up: ") + g.gun_name, g.rarity_color())
 				Sfx.ui("pickup/gun", -4.0)
 			else:
-				Game.say(U.t("Backpack full! [F] — swap with current, [X] — scrap for ammo"), Color(1.0, 0.5, 0.4))
+				if Controls.mode == "touch":
+					Game.say(U.t("Backpack full! Swap with current or scrap for ammo"), Color(1.0, 0.5, 0.4))
+				else:
+					Game.say(U.t("Backpack full! [%s] — swap with current, [%s] — scrap for ammo") % [
+						Controls.label("swap"), Controls.label("scrap")], Color(1.0, 0.5, 0.4))
 				Sfx.ui("ui/error", -6.0)
 				return
 		Game.note_gun(g)
@@ -605,7 +615,7 @@ func _update_near() -> void:
 func _process(delta: float) -> void:
 	if player == null:
 		return
-	var mp := get_global_mouse_position()
+	var mp := Controls.aim_world(player.position)
 	var look := (mp - player.position).limit_length(500.0) * 0.22
 	var target := player.position + look
 	camera.position = camera.position.lerp(target, 1.0 - exp(-delta * 10.0))

@@ -22,12 +22,19 @@ var _custom_preset: Label
 var _custom_seed: LineEdit
 var _custom_rating: Label
 var _pause_info: Label
+var _help_box: VBoxContainer
 var _root: Control
 var _codex_page := ""
 var _codex_text: RichTextLabel
 var _codex_actions: HBoxContainer
 var _codex_status: Label
 var _codex_buttons := {}  # id страницы -> кнопка в списке
+var _bind_buttons := {}   # "действие:колонка" -> кнопка
+var _listening := ""      # "действие:колонка", пока ждём нажатия; "" — не ждём
+var _listen_t := 0.0
+var _controls_status: Label
+var _touch_opt: Button
+const LISTEN_TIME := 6.0
 
 ## Кнопки, которые страница справочника может попросить в "actions" (data/codex.json).
 const CODEX_ACTIONS := {
@@ -43,6 +50,19 @@ func _ready() -> void:
 	_build_ui()
 	visible = false
 	Game.settings_changed.connect(_on_setting)
+	Game.main.controls.mode_changed.connect(_on_input_mode)
+
+
+## Сменили устройство: подсказки паузы — под него; на геймпаде фокус нужен на кнопке.
+func _on_input_mode(m: String) -> void:
+	if not visible:
+		return
+	if mode == "pause":
+		_fill_help()
+	if m == "pad" and get_viewport().gui_get_focus_owner() == null:
+		var b: Control = _first_focus.get(current)
+		if b != null:
+			b.grab_focus()
 
 
 ## Весь UI строится заново при смене языка — так переводятся и форматированные подписи.
@@ -69,6 +89,7 @@ func _build_ui() -> void:
 	_build_pause(root)
 	_build_mods(root)
 	_build_codex(root)
+	_build_controls(root)
 	cursor = CursorDraw.new()
 	cursor.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(cursor)
@@ -89,11 +110,14 @@ func _rebuild() -> void:
 	_first_focus.clear()
 	_custom_ui.clear()
 	_codex_buttons.clear()
+	_bind_buttons.clear()
+	_listening = ""
 	_build_ui()
 	bg.visible = mode == "main"
 	dim.visible = mode == "pause"
 	records.text = _records_text()
 	_pause_info.text = run_info()
+	_fill_help()
 	show_screen(was if was != "" else mode)
 
 
@@ -125,6 +149,7 @@ func open_pause() -> void:
 	bg.visible = false
 	dim.visible = true
 	_pause_info.text = run_info()
+	_fill_help()
 	show_screen("pause")
 
 
@@ -142,22 +167,35 @@ func show_screen(sname: String) -> void:
 		_refresh_custom()
 	elif sname == "codex":
 		_codex_open(_codex_page)
+	elif sname == "controls":
+		_refresh_controls()
 	var b: Control = _first_focus.get(sname)
 	if b != null:
 		b.grab_focus.call_deferred()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if visible:
 		cursor.queue_redraw()
+	if _listening != "":
+		_listen_t -= delta
+		var b: Button = _bind_buttons.get(_listening)
+		if _listen_t <= 0.0:
+			_stop_listening()
+		elif b != null:
+			b.text = U.t("Press… %d") % ceili(_listen_t)
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not visible:
 		return
-	if event.is_action_pressed("pause"):
+	if event.is_action_pressed("pause") or event.is_action_pressed("ui_cancel"):
+		if _listening != "":
+			return   # в меню «Управление» ждём кнопку — Esc/B тоже можно назначить
 		if current == "custom":
 			_back_custom()
+		elif current == "controls":
+			show_screen("settings")
 		elif current != mode:
 			show_screen(mode)
 		elif mode == "pause":
@@ -415,6 +453,189 @@ func _codex_write_guide() -> void:
 	OS.shell_open(path)
 
 
+# --- Управление ---------------------------------------------------------------------
+
+## Экран «Управление»: автоприцел, экранные кнопки и переназначение клавиш и кнопок геймпада.
+func _build_controls(root: Control) -> void:
+	var holder := MarginContainer.new()
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for side in ["left", "right", "top", "bottom"]:
+		holder.add_theme_constant_override("margin_" + side, 40)
+	root.add_child(holder)
+	holder.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	screens["controls"] = holder
+	var panel := PanelContainer.new()
+	var sb := _box(Color(0.035, 0.035, 0.06, 0.95), Color(0.3, 0.3, 0.42))
+	sb.set_content_margin_all(18)
+	panel.add_theme_stylebox_override("panel", sb)
+	holder.add_child(panel)
+	var vb := VBoxContainer.new()
+	vb.add_theme_constant_override("separation", 10)
+	panel.add_child(vb)
+
+	var top := HBoxContainer.new()
+	top.add_theme_constant_override("separation", 12)
+	vb.add_child(top)
+	var title := _label(U.t("CONTROLS"), 40, ACCENT, true, HORIZONTAL_ALIGNMENT_LEFT)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top.add_child(title)
+	var reset := _button(U.t("Reset to defaults"), _reset_binds)
+	reset.custom_minimum_size = Vector2(0, 48)
+	top.add_child(reset)
+	var back := _button(U.t("Back"), func() -> void: show_screen("settings"))
+	back.custom_minimum_size = Vector2(200, 48)
+	top.add_child(back)
+	_first_focus["controls"] = back
+
+	var opts := GridContainer.new()
+	opts.columns = 3
+	opts.add_theme_constant_override("h_separation", 24)
+	opts.add_theme_constant_override("v_separation", 8)
+	vb.add_child(opts)
+	_check(opts, "auto_aim", U.t("Auto-aim (gamepad and touch)"))
+	opts.add_child(_label(U.t("Touch controls"), 22, TEXT, false, HORIZONTAL_ALIGNMENT_RIGHT))
+	_touch_opt = Button.new()
+	_touch_opt.custom_minimum_size = Vector2(340, 40)
+	_touch_opt.add_theme_font_size_override("font_size", 20)
+	_touch_opt.pressed.connect(_cycle_touch)
+	_touch_opt.pressed.connect(func() -> void: Sfx.ui("ui/click", -6.0))
+	opts.add_child(_touch_opt)
+	opts.add_child(Control.new())
+	_slider(opts, "touch_scale", U.t("Touch controls size"), 0.6, 1.6, 0.05, "pct")
+
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	vb.add_child(scroll)
+	var grid := GridContainer.new()
+	grid.columns = 3
+	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	grid.add_theme_constant_override("h_separation", 18)
+	grid.add_theme_constant_override("v_separation", 6)
+	scroll.add_child(grid)
+	grid.add_child(_label("", 18, DIM))
+	grid.add_child(_label(U.t("Keyboard and mouse"), 18, DIM, true))
+	grid.add_child(_label(U.t("Gamepad"), 18, DIM, true))
+	for row in InputSetup.REBINDABLE:
+		var action := str(row[0])
+		var name_l := _label(U.t(str(row[1])), 20, TEXT, false, HORIZONTAL_ALIGNMENT_RIGHT)
+		name_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		grid.add_child(name_l)
+		for col in ["kb", "pad"]:
+			var b := Button.new()
+			b.custom_minimum_size = Vector2(300, 38)
+			b.add_theme_font_size_override("font_size", 18)
+			b.pressed.connect(_start_listening.bind(action, col))
+			b.mouse_entered.connect(_on_hover.bind(b))
+			if action.begins_with("aim_") and col == "kb":
+				b.disabled = true    # прицел с клавиатуры — мышью
+			grid.add_child(b)
+			_bind_buttons[action + ":" + col] = b
+	_controls_status = _label(U.t("Click a binding, then press a key or a gamepad button. Delete — clear."), 16, DIM, false,
+		HORIZONTAL_ALIGNMENT_LEFT)
+	_controls_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	vb.add_child(_controls_status)
+
+
+func _refresh_controls() -> void:
+	_refresh_settings()
+	_touch_opt.text = U.t({"auto": "Auto (when playing with fingers)", "on": "Always", "off": "Off"}.get(
+		str(Game.setting("touch_controls")), "Auto (when playing with fingers)"))
+	for key in _bind_buttons:
+		var parts := str(key).split(":")
+		var b: Button = _bind_buttons[key]
+		if b.disabled:
+			b.text = U.t("mouse")
+		else:
+			b.text = InputSetup.action_label(parts[0], parts[1], 3)
+
+
+func _cycle_touch() -> void:
+	var order := ["auto", "on", "off"]
+	var i := order.find(str(Game.setting("touch_controls")))
+	Game.set_setting("touch_controls", order[(i + 1) % order.size()])
+	_refresh_controls()
+
+
+func _start_listening(action: String, col: String) -> void:
+	_stop_listening()
+	_listening = action + ":" + col
+	_listen_t = LISTEN_TIME
+
+
+func _stop_listening() -> void:
+	_listening = ""
+	if current == "controls":
+		_refresh_controls()
+
+
+## Пока ждём нажатия — ловим его раньше всех (и кнопки меню его не получат).
+func _input(event: InputEvent) -> void:
+	if _listening == "" or not visible:
+		return
+	var parts := _listening.split(":")
+	var action := parts[0]
+	var col := parts[1]
+	var ev: InputEvent = null
+	if col == "kb":
+		if event is InputEventKey and event.is_pressed() and not event.is_echo():
+			var k := event as InputEventKey
+			if k.physical_keycode == KEY_DELETE or k.keycode == KEY_DELETE:
+				_apply_bind(action, col, null)
+				get_viewport().set_input_as_handled()
+				return
+			var nk := InputEventKey.new()
+			nk.physical_keycode = k.physical_keycode if k.physical_keycode != KEY_NONE else k.keycode
+			ev = nk
+		elif event is InputEventMouseButton and event.is_pressed():
+			var nm := InputEventMouseButton.new()
+			nm.button_index = (event as InputEventMouseButton).button_index
+			ev = nm
+	else:
+		if event is InputEventJoypadButton and event.is_pressed():
+			var nb := InputEventJoypadButton.new()
+			nb.button_index = (event as InputEventJoypadButton).button_index
+			ev = nb
+		elif event is InputEventJoypadMotion and absf((event as InputEventJoypadMotion).axis_value) > 0.6:
+			var jm := event as InputEventJoypadMotion
+			var na := InputEventJoypadMotion.new()
+			na.axis = jm.axis
+			na.axis_value = signf(jm.axis_value)
+			ev = na
+		elif event is InputEventKey and event.is_pressed() and (event as InputEventKey).keycode == KEY_DELETE:
+			_apply_bind(action, col, null)
+			get_viewport().set_input_as_handled()
+			return
+	if ev == null:
+		return
+	get_viewport().set_input_as_handled()
+	_apply_bind(action, col, ev)
+
+
+func _apply_bind(action: String, col: String, ev: InputEvent) -> void:
+	InputSetup.rebind(action, col, ev)
+	_listening = ""
+	Game.set_setting("binds", JSON.stringify(InputSetup.current_binds()))
+	Sfx.ui("ui/click", -6.0)
+	if ev != null:
+		_controls_status.text = U.t("%s: %s") % [U.t(_action_title(action)), InputSetup.event_name(ev)]
+	_refresh_controls()
+
+
+func _action_title(action: String) -> String:
+	for row in InputSetup.REBINDABLE:
+		if str(row[0]) == action:
+			return str(row[1])
+	return action
+
+
+func _reset_binds() -> void:
+	_listening = ""
+	Game.set_setting("binds", "")
+	_controls_status.text = U.t("Controls reset to defaults.")
+	_refresh_controls()
+
+
 ## Настраиваемый старт: сложность, переключатели, стартовая пушка, сид.
 ## Значения правятся прямо в Game.custom и сохраняются при старте.
 func _build_custom(root: Control) -> void:
@@ -612,6 +833,7 @@ func _build_settings(root: Control) -> void:
 	_check(grid, "damage_numbers", U.t("Damage numbers"))
 	_check(grid, "show_fps", U.t("Show FPS"))
 	box.add_child(_gap(20))
+	box.add_child(_button(U.t("Controls"), func() -> void: show_screen("controls")))
 	var back := _button(U.t("Back"), func() -> void: show_screen(mode))
 	box.add_child(back)
 	_first_focus["settings"] = back
@@ -631,17 +853,50 @@ func _build_pause(root: Control) -> void:
 	_pause_info = _label("", 18, ACCENT)
 	box.add_child(_pause_info)
 	box.add_child(_gap(12))
-	for l in [
-		U.t("WASD — move, mouse — aim, LMB — shoot"),
-		U.t("Space / Shift / RMB — dodge: 4 s cooldown, 0.5 s if you actually dodged something"),
-		U.t("R — reload · 1-4, wheel, Q — switch weapons"),
-		U.t("E — pick up / open chest · F — swap with current · X — scrap for ammo"),
-		U.t("Tab / I — inventory · F3 — debug · Esc — resume"),
-		U.t("− / + and M — music · [ / ] — sounds"),
-		"",
-		U.t("No regen. Max 2 health orbs per zone. No levels — only guns."),
-	]:
-		box.add_child(_label(str(l), 17, DIM))
+	_help_box = VBoxContainer.new()
+	_help_box.add_theme_constant_override("separation", 4)
+	box.add_child(_help_box)
+
+
+## Подсказка по управлению в паузе — под то, чем играют сейчас (клавиатура / геймпад / сенсор).
+func _fill_help() -> void:
+	for c in _help_box.get_children():
+		_help_box.remove_child(c)
+		c.queue_free()
+	var lines: Array = []
+	match Controls.mode:
+		"kbm":
+			lines = [
+				U.t("%s — move, mouse — aim, %s — shoot") % [Controls.move_label(), Controls.label("shoot")],
+				U.t("%s — dodge: 4 s cooldown, 0.5 s if you actually dodged something") % Controls.label("dodge"),
+				U.t("%s — reload · %s, %s — switch weapons") % [Controls.label("reload"), Controls.weapons_label(), Controls.label("last_weapon")],
+				U.t("%s — pick up / open chest · %s — swap with current · %s — scrap for ammo") % [
+					Controls.label("interact"), Controls.label("swap"), Controls.label("scrap")],
+				U.t("%s — inventory · F3 — debug · %s — resume") % [Controls.label("inventory"), Controls.label("pause")],
+				U.t("− / + and M — music · [ / ] — sounds"),
+			]
+		"pad":
+			lines = [
+				U.t("Left stick — move, right stick — aim, %s — shoot") % Controls.label("shoot"),
+				U.t("%s — dodge: 4 s cooldown, 0.5 s if you actually dodged something") % Controls.label("dodge"),
+				U.t("%s — reload · %s — switch weapons") % [Controls.label("reload"), Controls.weapons_label()],
+				U.t("%s — pick up / open chest · %s — swap with current · %s — scrap for ammo") % [
+					Controls.label("interact"), Controls.label("swap"), Controls.label("scrap")],
+				U.t("%s — inventory · %s — resume") % [Controls.label("inventory"), Controls.label("pause")],
+			]
+			if bool(Game.setting("auto_aim")):
+				lines.append(U.t("Auto-aim: shoot without the right stick — the gun aims at the nearest enemy"))
+		"touch":
+			lines = [
+				U.t("Left stick — move, right stick — aim and shoot"),
+				U.t("Dodge: 4 s cooldown, 0.5 s if you actually dodged something"),
+			]
+			if bool(Game.setting("auto_aim")):
+				lines[0] = U.t("Left stick — move, hold FIRE — shoot at the nearest enemy")
+	lines.append("")
+	lines.append(U.t("No regen. Max 2 health orbs per zone. No levels — only guns."))
+	for l in lines:
+		_help_box.add_child(_label(str(l), 17, DIM))
 
 
 # --- Настройки: строки ------------------------------------------------------------

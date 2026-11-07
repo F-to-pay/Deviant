@@ -1,10 +1,16 @@
 class_name CursorDraw
 extends Control
 ## Прицел вместо системного курсора: показывает разброс и перезарядку.
+## follow_aim (прицел HUD): на геймпаде и сенсоре рисуется в точке прицеливания, а не у мыши.
+## Курсоры меню без follow_aim на геймпаде и сенсоре не рисуются — там работает фокус кнопок.
+
+var follow_aim := false
 
 
 func _draw() -> void:
-	var m := get_local_mouse_position()
+	if not follow_aim and Controls.mode != "kbm":
+		return
+	var m := Controls.cursor_screen(self) if follow_aim else get_local_mouse_position()
 	var main: Main = Game.main
 	var gap := 6.0
 	var reload := 0.0

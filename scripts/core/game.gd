@@ -12,6 +12,10 @@ const DEFAULTS := {
 	"language": "",   # "" — как в системе, иначе код языка ("en", "ru", ...)
 	"mod_states": "",  # JSON {имя мода: вкл/выкл}, см. Mods
 	"mod_debug": false,  # отладчик модов (F8); применяется после перезапуска
+	"auto_aim": false,   # автоприцел на геймпаде и сенсоре (Controls)
+	"binds": "",         # переназначенные кнопки, JSON (InputSetup)
+	"touch_controls": "auto",  # экранные кнопки: auto (когда играешь пальцем) / on / off
+	"touch_scale": 1.0,  # размер экранных кнопок
 }
 
 var rng := RandomNumberGenerator.new()
@@ -238,6 +242,8 @@ func _apply_setting(key: String) -> void:
 	match key:
 		"language":
 			I18n.apply(str(setting("language")))
+		"binds":
+			InputSetup.apply_setting(str(setting("binds")))
 		"master":
 			var v := float(setting("master"))
 			AudioServer.set_bus_mute(0, v <= 0.001)

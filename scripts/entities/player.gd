@@ -245,11 +245,11 @@ func _physics_process(delta: float) -> void:
 	if muzzle > 0.0:
 		muzzle -= delta
 
-	var mp := get_global_mouse_position()
+	var mp := Controls.aim_world(position)
 	if mp.distance_squared_to(position) > 16.0:
 		aim = (mp - position).normalized()
 
-	var input := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	var input := Controls.move_vector()
 	var g := gun()
 	var spd := SPEED
 	if g != null:
@@ -400,7 +400,7 @@ func _update_gun(delta: float) -> void:
 	if Input.is_action_just_pressed("reload"):
 		start_reload(true)
 		return
-	if not Input.is_action_pressed("shoot"):
+	if not Controls.firing():
 		if g.ammo <= 0 and (g.free_ammo or reserve_of(g.ammo_type()) > 0):
 			start_reload()
 		return
@@ -423,7 +423,7 @@ func _update_gun(delta: float) -> void:
 ## пропорционально дистанции. Несколько мин (дробь) ложатся пятном.
 func _fire_shells(g: Gun, mpos: Vector2, spr: float, n: int) -> void:
 	var main: Main = Game.main
-	var to := get_global_mouse_position() - position
+	var to := Controls.aim_world(position) - position
 	var dist := clampf(to.length(), 60.0, g.eff_range())
 	var aim_pt := position + aim * dist
 	var dev := dist * tan(clampf(spr * 0.5, 0.0, 1.2))
