@@ -110,6 +110,7 @@ func load_content() -> void:
 ## Перечитать всё после включения/выключения модов (из главного меню).
 func reload_content() -> void:
 	load_content()
+	Warmup.compile_scripts()
 	if main != null:
 		main.sfx.rescan()
 		main.music.rescan()

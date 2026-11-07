@@ -69,7 +69,12 @@ func _ready() -> void:
 	menu = Menu.new()
 	add_child(menu)
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
-	to_menu()
+	# сначала прогрев под экраном загрузки (шрифты, шейдеры, музыка, скрипты модов), потом меню
+	hud.visible = false
+	get_tree().paused = true
+	var w := Warmup.new()
+	w.finished.connect(to_menu)
+	add_child(w)
 
 
 ## Главное меню: мир выгружен и стоит на паузе, HUD спрятан.

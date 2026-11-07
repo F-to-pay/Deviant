@@ -560,6 +560,11 @@
 		"doesn't use reserve ammo": "не тратит запас патронов",
 		"effect chance": "шанс эффектов",
 		"move speed": "скорость бега",
-		"screen shake": "тряска экрана"
+		"screen shake": "тряска экрана",
+		"Compiling mod scripts": "Собираю скрипты модов",
+		"Loading music": "Гружу музыку",
+		"Preparing fonts": "Готовлю шрифты",
+		"Warming up shaders": "Прогреваю шейдеры",
+		"Ready": "Готово"
 	}
 }

@@ -9,6 +9,9 @@ extends Node
 ## Пауза уводит в calm и потом возвращает прерванный трек с того же места.
 ## Инвентарь — музыка глохнет (приглушение + фильтр низких частот).
 ## Шины Music и SFX создаются кодом; громкость — в настройках Game (deviant.cfg).
+## Без фризов: следующий трек каждой категории выбирается заранее и грузится в фоне
+## (res:// — ResourceLoader.load_threaded_request, файлы модов — WorkerThreadPool). Смена трека
+## берёт уже загруженный и сразу ставит в очередь следующий. Первую партию ждёт экран загрузки (Warmup).
 
 const CATS := ["zone", "boss", "calm", "death", "menu"]
 const FADE := 1.5            # кроссфейд по умолчанию, с
@@ -61,6 +64,10 @@ var _duck := 1.0
 var _cutoff := 20000.0
 var _bus := -1
 var _lp: AudioEffectLowPassFilter
+var _next := {}              # категория -> путь следующего трека (уже грузится)
+var _raw_tasks := {}         # путь -> id задачи WorkerThreadPool (файл мода)
+var _raw_done := {}          # путь -> AudioStream из рабочего потока (под _mutex)
+var _mutex := Mutex.new()
 
 
 func _ready() -> void:
@@ -155,12 +162,16 @@ func volume_text() -> String:
 
 func play_category(c: String, fade: float = FADE, announce: bool = true) -> void:
 	cat = c
-	var path := _pick(c)
+	var path: String = _next.get(c, "")
+	_next.erase(c)
+	if path == "":
+		path = _pick(c)
 	if path == "":
 		_fade_out(fade)
 		track = ""
 		return
-	var s := Mods.load_audio(path)
+	var s := _take(path)
+	_prepare(c)              # следующий трек этой категории — сразу в фон
 	if s == null:
 		return
 	# зацикливание делаем сами — иначе не будет сигнала finished и смены трека
@@ -198,6 +209,91 @@ func _on_finished(i: int) -> void:
 		_start(_players[i].stream, 0.0, 0.1)    # смерть крутится по кругу
 	elif cat != "":
 		play_category(cat, 0.5, cat != "calm")
+
+
+# --- Фоновая подгрузка -------------------------------------------------------------
+
+## Выбрать следующий трек категории и начать грузить его в фоне.
+func _prepare(c: String) -> void:
+	if _next.has(c):
+		return
+	var path := _pick(c)
+	if path == "":
+		return
+	_next[c] = path
+	if path.begins_with("res://"):
+		if ResourceLoader.load_threaded_request(path, "AudioStream") != OK:
+			DebugLog.warn("cannot start loading %s" % path, "music")
+	elif not _raw_tasks.has(path):
+		_raw_tasks[path] = WorkerThreadPool.add_task(_load_raw.bind(path), false, "music " + path.get_file())
+
+
+## В рабочем потоке: файл мода с диска.
+func _load_raw(path: String) -> void:
+	var s := Mods.load_audio(path)
+	_mutex.lock()
+	_raw_done[path] = s
+	_mutex.unlock()
+
+
+## Загружен ли уже трек (не блокирует).
+func _is_loaded(path: String) -> bool:
+	if path.begins_with("res://"):
+		return ResourceLoader.load_threaded_get_status(path) != ResourceLoader.THREAD_LOAD_IN_PROGRESS
+	if _raw_tasks.has(path):
+		return WorkerThreadPool.is_task_completed(int(_raw_tasks[path]))
+	return true
+
+
+## Забрать трек. Если фоновая загрузка ещё идёт — дождаться её; если её не было — загрузить сразу.
+func _take(path: String) -> AudioStream:
+	var s: AudioStream = null
+	if path.begins_with("res://"):
+		if ResourceLoader.load_threaded_get_status(path) != ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
+			s = ResourceLoader.load_threaded_get(path) as AudioStream
+	elif _raw_tasks.has(path):
+		WorkerThreadPool.wait_for_task_completion(int(_raw_tasks[path]))
+		_raw_tasks.erase(path)
+		_mutex.lock()
+		s = _raw_done.get(path)
+		_raw_done.erase(path)
+		_mutex.unlock()
+	if s == null:
+		s = Mods.load_audio(path)
+	return s
+
+
+## Для экрана загрузки: выбрать и начать грузить по треку на каждую категорию.
+func prepare_all() -> void:
+	for c in CATS:
+		_prepare(c)
+
+
+## Доля уже загруженных заготовленных треков (0..1).
+func prepared_ratio() -> float:
+	if _next.is_empty():
+		return 1.0
+	var n := 0
+	for c in _next:
+		if _is_loaded(str(_next[c])):
+			n += 1
+	return float(n) / float(_next.size())
+
+
+## Забросить заготовки (перед пересканом): дождаться и выкинуть, чтобы не висели в загрузчике.
+func _drop_prepared() -> void:
+	for c in _next:
+		var path := str(_next[c])
+		if path.begins_with("res://"):
+			if ResourceLoader.load_threaded_get_status(path) != ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
+				ResourceLoader.load_threaded_get(path)
+		elif _raw_tasks.has(path):
+			WorkerThreadPool.wait_for_task_completion(int(_raw_tasks[path]))
+	_next.clear()
+	_raw_tasks.clear()
+	_mutex.lock()
+	_raw_done.clear()
+	_mutex.unlock()
 
 
 ## Перемешанный «мешок»: все треки категории по разу, без повтора подряд.
@@ -269,6 +365,7 @@ func _ensure_bus(bus_name: String) -> int:
 
 ## Перечитать треки игры и модов (при старте и после включения/выключения модов).
 func rescan() -> void:
+	_drop_prepared()
 	tracks.clear()
 	_bags.clear()
 	for c in CATS:
@@ -289,6 +386,7 @@ func rescan() -> void:
 				cleared[root + c] = true
 				tracks[c] = []
 		(tracks[c] as Array).append(full)
+	prepare_all()
 
 
 func _cat_of(stem: String, dir: String) -> String:
