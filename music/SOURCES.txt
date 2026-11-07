@@ -1,0 +1,27 @@
+Deviant — музыка. Источник: Wikimedia Commons. Все треки: Public domain / CC0 / PDM — атрибуция не обязательна.
+
+music/zone/zone_grieg_mountain_king.ogg	Public domain	https://commons.wikimedia.org/wiki/File%3AGrieg_-_Peer_Gynt_Suite_No._1%2C_Op._46_-_IV._In_the_Hall_of_the_Mountain_King_(Musopen_Symphony).flac
+music/zone/zone_beethoven5_i.ogg	Public domain	https://commons.wikimedia.org/wiki/File%3ALudwig_van_Beethoven_-_symphony_no._5_in_c_minor%2C_op._67_-_i._allegro_con_brio.ogg
+music/zone/zone_beethoven5_iii.ogg	Public domain	https://commons.wikimedia.org/wiki/File%3ALudwig_van_Beethoven_-_symphony_no._5_in_c_minor%2C_op._67_-_iii._allegro.ogg
+music/zone/zone_mozart40_i.ogg	Public domain	https://commons.wikimedia.org/wiki/File%3AMozart_-_Symphony_No._40_in_G_minor%2C_K550_-_I._Molto_allegro_(Musopen_Symphony).flac
+music/zone/zone_mozart40_iv.ogg	Public domain	https://commons.wikimedia.org/wiki/File%3AMozart_-_Symphony_No._40_in_G_minor%2C_K550_-_IV._Finale._Allegro_assai_(Musopen_Symphony).flac
+music/zone/zone_vivaldi_summer_presto.ogg	PDM-owner	https://commons.wikimedia.org/wiki/File%3AThe_Modena_Chamber_Orchestra_-_Vivaldi's_Summer%2C_RV_315_-_III._Presto.ogg
+music/zone/zone_mendelssohn_saltarello.ogg	Public domain	https://commons.wikimedia.org/wiki/File%3AMendelssohn_-_Symphony_No._4_in_A_major%2C_Op._90_'Italian'_-_IV._Saltarello._Presto_(Musopen_Symphony).flac
+music/zone/zone_eroica_iv.ogg	Public domain	https://commons.wikimedia.org/wiki/File%3ABeethoven_-_Symphony_No._3_in_E_flat_major%2C_Op._55_'Eroica'_-_IV._Finale._Allegro_molto_(Musopen_Symphony).flac
+music/zone/zone_brahms4_iv.ogg	Public domain	https://commons.wikimedia.org/wiki/File%3ABrahms_-_Symphony_No._4_in_E_minor%2C_Op._98_-_IV._Allegro_energico_e_passionato_-_Pi%C3%B9_allegro_(Musopen_Symphony).flac
+music/zone/zone_dvorak_carnival.ogg	Public domain	https://commons.wikimedia.org/wiki/File%3AAntonin_Dvorak_-_carnival_overture%2C_op._92.ogg
+music/zone/zone_tchaikovsky6_iii.ogg	Public domain	https://commons.wikimedia.org/wiki/File%3ATchaikovsky_-_Symphony_No._6_in_B_minor%2C_Op._74_'Path%C3%A9tique'_-_III._Allegro_molto_vivace_(Musopen_Symphony).flac
+music/boss/boss_danse_macabre.ogg	Public domain	https://commons.wikimedia.org/wiki/File%3APhiladelphiaSymphonyOrchestra-DanseMacabre.ogg
+music/boss/boss_bald_mountain.ogg	Public domain	https://commons.wikimedia.org/wiki/File%3AModest_Mussorgsky_-_night_on_bald_mountain.ogg
+music/boss/boss_toccata.ogg	Public domain	https://commons.wikimedia.org/wiki/File%3AToccata_et_Fugue_BWV565.ogg
+music/boss/boss_toccata_brass.ogg	CC0	https://commons.wikimedia.org/wiki/File%3AIllinois_Brass_Band_-_02_-_Bach_Toccata_and_Fugue_in_D_Minor.ogg
+music/boss/boss_moonlight_presto.ogg	Public domain	https://commons.wikimedia.org/wiki/File%3AMoonlight_Sonata_Presto.ogg
+music/boss/boss_coriolan.ogg	Public domain	https://commons.wikimedia.org/wiki/File%3ABeethoven_-_Coriolan_Overture%2C_Op._62_(Musopen_Symphony).flac
+music/boss/boss_brahms_tragic.ogg	Public domain	https://commons.wikimedia.org/wiki/File%3ABrahms_-_Tragic_Overture%2C_Op._81_(Musopen_Symphony).flac
+music/calm/calm_satie_gymnopedie1.ogg	Public domain	https://commons.wikimedia.org/wiki/File%3AErik_Satie_-_gymnopedies_-_la_1_ere._lent_et_douloureux.ogg
+music/calm/calm_grieg_morning.ogg	Public domain	https://commons.wikimedia.org/wiki/File%3AGrieg_-_Peer_Gynt_Suite_No._1%2C_Op._46_-_I._Morning_Mood_(Musopen_Symphony).flac
+music/calm/death_grieg_aase.ogg	Public domain	https://commons.wikimedia.org/wiki/File%3AGrieg_-_Peer_Gynt_Suite_No._1%2C_Op._46_-_II._The_Death_of_Aase_(Musopen_Symphony).flac
+music/calm/death_eroica_funebre.ogg	Public domain	https://commons.wikimedia.org/wiki/File%3ABeethoven_-_Symphony_No._3_in_E_flat_major%2C_Op._55_'Eroica'_-_II._Marcia_funebre._Adagio_assai_(Musopen_Symphony).flac
+music/calm/calm_chopin_op48_1.ogg	CC0	https://commons.wikimedia.org/wiki/File%3AChopin_Nocturne_in_C_minor_Op._48_no._1_Luke_Faulkner.ogg
+music/calm/calm_chopin_op55_1.ogg	CC0	https://commons.wikimedia.org/wiki/File%3AChopin_-_Nocturne-op-55-no-1.ogg
+music/calm/calm_goldberg_aria.ogg	CC0	https://commons.wikimedia.org/wiki/File%3ABach%2C_Goldberg_Variations%2C_Aria_(Musopen_version).ogg

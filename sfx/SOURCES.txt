@@ -1,0 +1,22 @@
+Deviant — звуки. Всё CC0 / royalty-free, указывать авторов не обязательно.
+
+guns/pistol, revolver, smg, ar, lmg, shotgun, sniper
+  The Free Firearm Sound Library (CC0) — https://opengameart.org/content/the-free-firearm-sound-library
+  нарезано по одному выстрелу: <ствол>_<файл>_<номер выстрела>.wav, громкость выровнена
+guns/rocket, explosion, explosion_big — Kenney Sci-Fi Sounds (CC0), kenney.nl
+guns/launcher, guns/mortar — "25 CC0 bang / firework SFX" (CC0) — https://opengameart.org/content/25-cc0-bang-firework-sfx
+reload/pistol — https://opengameart.org/content/handgun-reload-sound-effect (CC0)
+reload/pistol_2, rifle, launcher — https://opengameart.org/content/gun-reload-sounds (CC0)
+reload/shotgun, shotgun_done — https://opengameart.org/content/shotgun-reload-sound-effects (CC0)
+reload/done, ui/empty — https://opengameart.org/content/gun-reload-lock-or-click-sound (CC0)
+
+--- События (ui/, pickup/, world/, hit/, player/, enemy/, boss/, el/, fx/) ---
+Kenney Interface Sounds (CC0): ui/*, pickup/ammo, pickup/heal, world/chest, player/perfect, el/cryo
+Kenney Sci-Fi Sounds (CC0): hit/wall, world/portal, enemy/shot, enemy/shield, el/shock, el/acid (slime)
+Sonniss #GameAudioGDC Bundle (royalty-free, без атрибуции), 344 Audio:
+  pickup/gun — Casino Cards; pickup/legendary — Christmas (Magic Bells); world/zone, boss/appear,
+  player/death, el/curse — Bass Drops & Downers; hit/body — Cinematic Fight (Punch);
+  player/dodge, el/acid (bubble) — Elemental Palette Designed; player/hurt — Anime Fight Voices;
+  boss/enrage, boss/death — Dinosaurs
+Пустые папки (звук не найден — просто кинь файлы): hit/enemy, enemy/death, enemy/windup,
+  enemy/summon, el/fire, fx/vortex
