@@ -39,6 +39,7 @@ The only assets are audio: music in `music/` (classical recordings from Wikimedi
 | Move / aim / shoot | WASD, mouse, LMB | left stick (or D-pad), right stick, RT |
 | Dodge (invulnerable, 4 s cooldown; 0.5 s if you actually dodged something) | Space / Shift | A |
 | Hero skill (grenade / blessing / slash — depends on the hero) | RMB | LT |
+| Drink a flask (heals 20%, up to 3) | C | D-pad up |
 | Reload | R | X |
 | Switch weapon | 1–4, wheel, Q — last one | LB / RB, left stick click — last one |
 | Pick up to backpack / open chest | E | Y |
@@ -61,6 +62,7 @@ Options in Settings → Controls:
   stored in `touch_layout`. Plus a global size slider.
 - **Fixed sticks** — sticks stay in place instead of following the finger.
 - **Tap to shoot** — instead of the right stick, a finger on the right side shoots at the point under it.
+- **Fire on release** (per gun type, Settings → Controls) — the right stick only aims; one shot when you let go.
 - **Auto-aim** (touch and gamepad) — shooting without manual aim targets the nearest enemy.
 - **Auto-fire at visible enemies** (touch and gamepad) — shoots on its own while an enemy is on screen and in line of sight.
 - Touch controls: Auto (when playing with fingers) / Always / Off.
@@ -76,7 +78,7 @@ The background is a parade of random guns from the real generator (`ui/menu_bg.g
 **Custom start** (`Game.RUN_DEFAULTS` / `Game.custom`, the last choice is saved in `[custom]`):
 - difficulty: presets Easy (enemy health 80%, damage 50%) / Normal / Hard (120% / 120%) and manual sliders 10–200%;
 - full heal on entering a new zone; no regular enemies (regular packs → champions, leader escorts too);
-- chests on/off; hardcore — no health orbs and no Vampiric perk (legendary lifesteal is zeroed);
+- chests on/off; hardcore — no flasks, no healer and no Vampiric perk (legendary lifesteal is zeroed);
 - chaos — all gun rarities equally likely, all enemy types available from zone 1 and equally likely,
   and every pack is 1/4 regular / champions / leader / **boss** (a wandering one: sleeps until you come close,
   smaller loot, no rift);
@@ -135,7 +137,9 @@ next to the exe — the text from `data/guide.json` plus a reference of every lo
 - Every 5th zone is a boss arena (random set of attack patterns, enrage at 50% HP).
 - Elites like in Diablo: blue champion packs and yellow rare leaders with affixes
   (teleport, shield, orbitals, frost aura, explode on death...).
-- No passive regen. Health orbs heal 10 HP, at most 2 per zone. Lifesteal is rare and capped at 4 HP/s.
+- No passive regen. Flasks (20% of max HP each, C / D-pad up): any number inside a zone, at most 3 carried over to the
+  next zone or town; drop from enemies and chests (2 per zone),
+  leaders always give 1, bosses 2; the town Healer heals and refills them for coins. Lifesteal is rare and capped at 4 HP/s.
   If it gets truly impossible — `ZONE_HEAL` in `main.gd` (heal on entering a zone).
 - **Bursts**: the Volley perk gives a burst of 2–7 shots per trigger pull (no more than ~2.5 s of fire rate per burst). The magazine is always
   a multiple of *burst × rounds per shot*, so a burst is never cut off by an empty magazine.
@@ -146,18 +150,18 @@ next to the exe — the text from `data/guide.json` plus a reference of every lo
   (mostly for guns in your slots) and scrapping guns (X on the ground or over a gun in the inventory).
   New guns arrive with an empty magazine (`LOOT_GUN_LOADED`). The magazine is always a multiple of rounds per shot.
 - **Stages and towns**: 5 zones (the last with a boss) make a stage. Before every stage — and at the start of a run —
-  you visit a procedural **town**: a plaza with four stalls: the **Gun Shop** (8 guns, buy / sell, new stock for coins,
+  you visit a procedural **town**: a plaza with five stalls: the **Gun Shop** (8 guns, buy / sell, new stock for coins,
   one magazine of ammo for 1.5× its scrap value),
-  the **Mystic** (one run-long hero perk per town), the **Workshop** (upgrade a gun to the current level, reroll a perk,
-  raise rarity up to Epic) and the **Guild** (contracts that pay ancient coins the moment they are done)
+  the **Mystic** (one run-long perk for the hero's skill per town: split, poison, heavy shell, parry, extra charges, element...), the **Workshop** (upgrade a gun to the current level, reroll a perk,
+  raise rarity up to Epic) and the **Healer** (heal to full, refill flasks), the **Guild** (one contract at a time; pays ancient and regular coins the moment it is done)
   and a rift onward. The town takes its colors, layout and name from the zone that comes next.
   Custom start can turn towns off. The **starting town** also has the Recruiter (pick a hero), the Relic Keeper
   (meta perks — stub), the Oddsmaker (custom start) and a Restart stone at the entrance: a new run in a new
   starting town, to reroll the stock.
 - **Heroes**, each with an active skill (RMB / LT): Pioneer — grenade (35 damage, radius 60, 6 s),
-  Cultist of Strength — the next shot deals +40 (6 s), Assassin — melee slash for 15 (0.7 s, slowed while striking).
+  Sheriff — the next shot deals +40 (6 s), Assassin — melee slash for 15, reach 95 (0.7 s, slowed while striking).
   The Pioneer is free, the others are unlocked with ancient coins. Skill damage does not grow with depth.
-- **Coins**: you start with 100 and a single gun; enemies, chests and bosses drop more, deeper coins are worth more. Lost on death.
+- **Coins**: you start with 100 and a single gun; enemies, chests and bosses drop more, income and prices grow 20% per stage (10:12). Lost on death.
   **Ancient coins** (meta-progression) drop from bosses, leaders and golden chests and are saved forever.
 - Death = start over. The best zone and ancient coins are saved.
 
@@ -177,7 +181,13 @@ X over a gun — recycle. You can't drop or recycle your last gun in hand.
   - **Mortar** — uses rockets. A shell flies in an arc to the aim point (no farther than its range) and explodes
     after 1 s. Spread = deviation of the landing point. Highest damage per shot, a magazine of 1 shell.
   - **Shotgun** — 30% chance to be born a "slug gun": one projectile with the whole volley's damage (×0.85), spread ×0.12, range ×2.
-- **Hybrids** (from Rare and up): firing pattern from the first type, projectile from the second.
+- **Hybrids** (from Rare and up): firing pattern from the first type, projectile and ammo from the second, fire rate
+  mixed 30/70 towards the ammo type;
+  damage comes from the ammo (one round hits like a shot of its own type, split between pellets). Traits of both
+  types combine; a mortar is always the projectile, a machine gun gives its magazine.
+- **Type traits**: effective range −30% for everything; shooting slows you by 15% (not pistols/SMGs); pistol and SMG
+  reload twice as fast with lower damage (same DPS); revolver has no damage falloff; assault rifle is 30% more accurate;
+  sniper +30% damage that grows with distance from 30% to 100% at half its effective range.
   That's how you get a "Shotgun-Grenade Launcher": 8 grenades in a fan.
 - **11 makers** with a guaranteed effect:
   | Maker | Effect |

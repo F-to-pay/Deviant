@@ -69,6 +69,10 @@ var free_ammo: bool = false     # «Синергис»: не тратит зап
 var proc_mult: float = 1.0      # множитель коэффициента срабатывания (марки)
 var elem_mult: float = 1.0      # множитель шанса стихии («Эррозия»)
 var move_mult: float = 1.0
+# --- Особенности основы (archetypes.json; у гибрида — от обеих основ)
+var light := false               # пистолет, ПП: стрельба не замедляет героя
+var no_falloff := false          # револьвер: урон не падает за эффективной дальностью
+var range_dmg: float = 0.0       # снайперка: урон растёт с пролётом — от этой доли до 100% на половине эффективной дальности
 var shake: float = 1.0
 
 # --- Внешний вид
@@ -144,8 +148,12 @@ func type_name_lower() -> String:
 
 
 ## Эффективная дальность (px). Дальше пуля летит, но урон резко падает.
+## Эффективная дальность: дальше урон падает (кроме no_falloff). 0.7 — общий срез дальности всех пушек.
+const RANGE_MULT := 0.7
+
+
 func eff_range() -> float:
-	return proj_speed * lifetime
+	return proj_speed * lifetime * RANGE_MULT
 
 
 ## Урон одного снаряда без учёта уровня (с редкостью) — мера «веса» выстрела.
@@ -222,6 +230,12 @@ func perk_lines() -> Array:
 		out.append([U.t("Spread = landing point deviation"), w])
 	if "slug" in mods:
 		out.append([U.t("Slug: one solid round instead of pellets"), w])
+	if range_dmg > 0.0:
+		out.append([U.t("Damage grows with distance: %d%% → 100%% at %d m") % [roundi(range_dmg * 100.0), roundi(eff_range() * 0.5 / 40.0)], w])
+	if no_falloff:
+		out.append([U.t("No damage falloff with range"), good])
+	if light:
+		out.append([U.t("Light: no slowdown while shooting"), good])
 	if explode_r > 0.0 and explode_chance >= 1.0:
 		out.append([U.t("Explosion, radius %d") % roundi(explode_r), w])
 	elif explode_r > 0.0:

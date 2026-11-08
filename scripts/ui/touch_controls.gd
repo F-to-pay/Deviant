@@ -31,6 +31,7 @@ const ELEMENTS := {
 	"aim": [0.875, 0.78, STICK_R, ""],
 	"dodge": [0.758, 0.78, BTN_R, "Dodge"],
 	"skill": [0.712, 0.635, BTN_R, "Skill"],
+	"flask": [0.275, 0.88, SMALL_R, ""],
 	"reload": [0.792, 0.633, BTN_R, "Reload"],
 	"next_weapon": [0.875, 0.572, BTN_R, ""],
 	"inventory": [0.465, 0.06, SMALL_R, "Bag"],
@@ -178,7 +179,7 @@ func _buttons() -> Array:
 			out.append(["restart", U.t("One more time"), Vector2(vp.x * 0.5 - 130 * s, vp.y - 150 * s), -s])
 			out.append(["pause", U.t("Main menu"), Vector2(vp.x * 0.5 + 130 * s, vp.y - 150 * s), -s])
 		return out
-	for id in ["dodge", "skill", "reload", "next_weapon", "inventory", "pause"]:
+	for id in ["dodge", "skill", "flask", "reload", "next_weapon", "inventory", "pause"]:
 		out.append([id, _label_of(id), _pos(id), _radius(id)])
 	if main.near_item != null and is_instance_valid(main.near_item):
 		for id in ["interact", "swap", "scrap"]:
@@ -281,6 +282,12 @@ func _touch_up(i: int) -> void:
 	_touches.erase(i)
 	if str(t["role"]) == "btn":
 		Controls.press(str(t["action"]), false)
+	elif str(t["role"]) == "aim" and Controls.release_fire():
+		# «стрельба по отпусканию»: отпустил отклонённый стик — один выстрел туда, куда он смотрел
+		var base: Vector2 = t["base"]
+		var pos: Vector2 = t["pos"]
+		if ((pos - base) / _radius("aim")).length() > DEAD:
+			Controls.queue_shot()
 	_update_sticks()
 
 
@@ -336,7 +343,9 @@ func _update_sticks() -> void:
 			aim = v if v.length() > DEAD else Vector2.ZERO
 	Controls.touch_move = mv
 	Controls.touch_aim = aim
-	if bool(Game.setting("auto_aim")):
+	if Controls.release_fire():
+		Controls.touch_fire = tapping   # стиком только целимся, выстрел — при отпускании (_touch_up)
+	elif bool(Game.setting("auto_aim")):
 		Controls.touch_fire = aiming or tapping
 	else:
 		Controls.touch_fire = aim != Vector2.ZERO or tapping
@@ -506,9 +515,14 @@ func _draw_button(c: CanvasItem, b: Array, on: bool, fb: Font, _s: float) -> voi
 	elif act == "dodge" and main.player.dodge_cd > 0.0 and not _editing:
 		var k := clampf(main.player.dodge_cd / main.player.dodge_max_cd(), 0.0, 1.0)
 		c.draw_arc(ctr, r - 5.0, -PI * 0.5, -PI * 0.5 + TAU * k, 32, Color(ACCENT, 0.9), 5.0)
+	elif act == "flask":
+		FlaskDrop.draw_icon(c, ctr + Vector2(0, 2), r / 22.0, 1.0 if main.player.flasks > 0 or _editing else 0.0)
+		label = ""
+		if not _editing:
+			U.draw_text_c(c, fb, ctr + Vector2(r * 0.55, r * 0.75), str(main.player.flasks), 16, Color.WHITE, 3)
 	elif act == "skill" and not _editing:
 		var hc := Heroes.color(main.player.hero)
-		if main.player.skill_cd > 0.0:
+		if main.player.skill_charges <= 0:
 			var k := clampf(main.player.skill_cd / main.player.skill_max_cd(), 0.0, 1.0)
 			c.draw_arc(ctr, r - 5.0, -PI * 0.5, -PI * 0.5 + TAU * k, 32, Color(hc, 0.9), 5.0)
 		else:

@@ -16,7 +16,7 @@ const PIT := Zone.PIT
 const SUFFIXES := ["ville", "burg", "hole", "stead", "wick"]
 ## Виды лавок — см. Stall.KINDS. В стартовом городе (перед зоной 1) ещё три: выбор героя,
 ## реликвии (мета-перки) и настраиваемый старт.
-const STALLS := ["shop", "perks", "workshop", "guild"]
+const STALLS := ["shop", "perks", "workshop", "guild", "healer"]
 const START_STALLS := ["heroes", "relics", "custom"]
 
 

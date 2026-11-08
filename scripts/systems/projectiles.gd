@@ -66,6 +66,9 @@ class Proj:
 	var knock := 0.0
 	var nuke := false
 	var chaos := false
+	var no_falloff := false   # револьвер: урон не падает за дальностью
+	var range_dmg := 0.0      # снайперка: урон растёт с пролётом от этой доли до 100% на половине eff_range
+	var skill := false        # снаряд навыка героя: попадания и взрыв — через Skills (перки навыка)
 	var hit: Dictionary = {}
 	var start := Vector2.ZERO   # мина: откуда летит
 	var target := Vector2.ZERO  # мина: куда падает
@@ -76,6 +79,7 @@ var list: Array[Proj] = []
 var _pending: Array[Proj] = []
 var blasts: Array = []
 var vortices: Array = []
+var clouds: Array = []       # дым «Дымовой гранаты»: {pos, r, dmg (за тик), t, max, tick, first}
 var _t := 0.0
 
 
@@ -88,6 +92,7 @@ func clear_all() -> void:
 	_pending.clear()
 	blasts.clear()
 	vortices.clear()
+	clouds.clear()
 	queue_redraw()
 
 
@@ -106,12 +111,13 @@ func fire_shell(g: Gun, pos: Vector2, target: Vector2, dmg_mult: float = 1.0) ->
 	return p
 
 
-## Граната героя (навык Первопроходца): летит дугой, как мина, и взрывается в точке падения.
-## Урон фиксированный — от уровня зоны не зависит.
+## Граната героя (навык Первопроходца): летит дугой, как мина, и взрывается в точке падения
+## через Skills.explode (перки навыка). Урон фиксированный — от уровня зоны не зависит.
 func throw_grenade(pos: Vector2, target: Vector2, dmg: float, r: float, col: Color) -> void:
 	if count() >= MAX_PROJ:
 		return
 	var p := Proj.new()
+	p.skill = true
 	p.team = 0
 	p.kind = K_SHELL
 	p.pos = pos
@@ -190,6 +196,8 @@ func fire_gun(g: Gun, pos: Vector2, dir: Vector2, team: int, dmg_mult: float = 1
 	p.crit_mult = g.crit_mult
 	p.knock = g.knock
 	p.chaos = g.special == "chaos"
+	p.no_falloff = g.no_falloff
+	p.range_dmg = g.range_dmg if p.kind != K_SHELL else 0.0
 	_add(p)
 	return p
 
@@ -288,6 +296,8 @@ func _clone(p: Proj) -> Proj:
 	c.crit_mult = p.crit_mult
 	c.knock = p.knock * 0.5
 	c.chaos = p.chaos
+	c.no_falloff = p.no_falloff
+	c.range_dmg = 0.0   # осколки и копии бьют в полную силу с места разделения
 	return c
 
 
@@ -312,7 +322,60 @@ func _physics_process(delta: float) -> void:
 	list = alive
 	_update_blasts(delta)
 	_update_vortices(delta, main)
+	if not clouds.is_empty():
+		_update_clouds(delta, main)
 	queue_redraw()
+
+
+## Облако дыма навыка: dmg — урон за тик (раз в секунду) всем внутри.
+func add_smoke(pos: Vector2, r: float, dmg: float, dur: float) -> void:
+	clouds.append({"pos": pos, "r": r, "dmg": dmg, "t": dur, "max": dur, "tick": 0.0, "first": true})
+
+
+func _update_clouds(delta: float, main: Main) -> void:
+	var keep: Array = []
+	for c in clouds:
+		c["t"] = float(c["t"]) - delta
+		c["tick"] = float(c["tick"]) - delta
+		if float(c["tick"]) <= 0.0:
+			c["tick"] = 1.0
+			var pos: Vector2 = c["pos"]
+			var r := float(c["r"])
+			for o in main.grid_hash.query(pos, r + 50.0):
+				var e: Enemy = o
+				if not e.dead and pos.distance_to(e.position) < r + e.radius:
+					Skills.hit(e, float(c["dmg"]), Vector2.ZERO, bool(c["first"]))
+			c["first"] = false
+		if float(c["t"]) > 0.0:
+			keep.append(c)
+	clouds = keep
+
+
+## Парирование Ассасина: вражеские снаряды в дуге удара разворачиваются и летят во врагов.
+## mult — урон отражённого снаряда относительно исходного. Возвращает, сколько отразили.
+func reflect(from: Vector2, dir: Vector2, r: float, half_arc: float, mult: float) -> int:
+	var n := 0
+	for p in list + _pending:
+		if p.dead or p.team != 1:
+			continue
+		var to := p.pos - from
+		if to.length() > r or (to.length() > 20.0 and absf(dir.angle_to(to)) > half_arc):
+			continue
+		var tgt := _nearest_enemy(p.pos, 700.0, Game.main)
+		var out := (tgt.position - p.pos).normalized() if tgt != null else -p.vel.normalized()
+		p.team = 0
+		p.kind = K_BULLET
+		p.vel = out * maxf(p.vel.length(), 700.0) * 1.2
+		p.dmg *= mult
+		p.color = Color(0.85, 0.7, 1.0)
+		p.life = MAX_LIFE
+		p.max_life = MAX_LIFE
+		p.eff_range = FAR
+		p.crit_chance = 0.0
+		p.hit = {}
+		Game.main.fx.spark(p.pos, out, p.color, 4, 220.0)
+		n += 1
+	return n
 
 
 func _step(p: Proj, delta: float, zone: Zone, player: Player, main: Main) -> void:
@@ -449,10 +512,15 @@ func _roll_el(p: Proj) -> int:
 
 
 ## Урон после эффективной дальности: +33% дальности -> 37%, x2 -> 5% (минимум).
+## Множитель урона от пролёта: за эффективной дальностью урон падает (кроме no_falloff),
+## у снайперки — растёт от range_dmg до 100% к половине эффективной дальности.
 func _falloff(p: Proj) -> float:
-	if p.traveled <= p.eff_range:
-		return 1.0
-	return maxf(0.05, exp(-3.0 * (p.traveled - p.eff_range) / p.eff_range))
+	var k := 1.0
+	if p.range_dmg > 0.0:
+		k = lerpf(p.range_dmg, 1.0, clampf(p.traveled / maxf(1.0, p.eff_range * 0.5), 0.0, 1.0))
+	if p.traveled <= p.eff_range or p.no_falloff:
+		return k
+	return k * maxf(0.05, exp(-3.0 * (p.traveled - p.eff_range) / p.eff_range))
 
 
 func _hit_enemy(p: Proj, e: Enemy, main: Main) -> void:
@@ -466,7 +534,10 @@ func _hit_enemy(p: Proj, e: Enemy, main: Main) -> void:
 		if p.chaos:
 			d *= randf_range(0.0, 2.0)
 		var el := _roll_el(p)
-		Combat.hit_enemy(e, d, crit, el, p.vel.normalized() * p.knock * fo, false, p.st)
+		if p.skill:
+			Skills.hit(e, d, p.vel.normalized() * maxf(p.knock, 60.0) * fo)
+		else:
+			Combat.hit_enemy(e, d, crit, el, p.vel.normalized() * p.knock * fo, false, p.st)
 		Sfx.at("hit/enemy", e.position, -12.0 if not crit else -8.0, 1.0, 0.1, 3, 0.035)
 		if p.leech > 0.0:
 			main.player.leech(d, p.leech)
@@ -491,6 +562,13 @@ func _hit_enemy(p: Proj, e: Enemy, main: Main) -> void:
 func _detonate(p: Proj, pos: Vector2, mult: float = 1.0, secondary: bool = false) -> void:
 	var main: Main = Game.main
 	var r := p.explode_r if p.explode_r > 0.0 else 40.0
+	if p.skill and not secondary:
+		Skills.explode(pos, r, p.dmg * mult, p.color)
+		p.skill = false   # кассеты и прочее после взрыва — уже обычные
+		if p.cluster_n > 0 and p.kind != K_BOMBLET:
+			for i in p.cluster_n:
+				_bomblet(p, pos)
+		return
 	var crit := randf() < p.crit_chance
 	var d := p.dmg * mult * (p.crit_mult if crit else 1.0)
 	if p.chaos:
@@ -662,6 +740,16 @@ func _update_vortices(delta: float, main: Main) -> void:
 # --- Отрисовка --------------------------------------------------------------------
 
 func _draw() -> void:
+	for c in clouds:
+		var pos: Vector2 = c["pos"]
+		var r := float(c["r"])
+		var fade := clampf(float(c["t"]) / 0.6, 0.0, 1.0) * clampf((float(c["max"]) - float(c["t"])) / 0.3, 0.0, 1.0)
+		draw_circle(pos, r, Color(0.62, 0.64, 0.68, 0.16 * fade))
+		for i in 7:
+			var a := _t * 0.4 + TAU * float(i) / 7.0
+			var q := pos + Vector2.from_angle(a) * r * (0.35 + 0.25 * sin(_t * 0.7 + float(i)))
+			draw_circle(q, r * 0.28, Color(0.7, 0.72, 0.76, 0.12 * fade))
+		draw_arc(pos, r, 0.0, TAU, 48, Color(0.8, 0.82, 0.86, 0.35 * fade), 2.0)
 	for b in blasts:
 		var pos: Vector2 = b["pos"]
 		var r: float = b["r"]

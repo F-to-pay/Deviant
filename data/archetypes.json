@@ -2,14 +2,14 @@
 	"pistol": {
 		"name": "Pistol",
 		"weight": 10.0,
-		"damage": 14.0,
+		"damage": 12.3,
 		"fire_rate": 3.5,
 		"pellets": 1,
 		"spread": 3.0,
 		"speed": 950.0,
 		"lifetime": 0.75,
 		"mag": 12,
-		"reload": 1.1,
+		"reload": 0.55,
 		"crit": 0.07,
 		"crit_mult": 2.0,
 		"kind": "bullet",
@@ -17,22 +17,23 @@
 		"knock": 60.0,
 		"move": 1.0,
 		"shake": 1.5,
+		"light": true,
 		"ammo_name": "pistol",
 		"ammo_color": "#f2d966",
 		"icon": {"body": 26.0, "bh": 9.0, "barrel": 12.0, "bt": 4.0, "stock": 0.0},
-		"sound": {"vol": -6.0, "pitch": 1.0, "reload": "reload/pistol", "reload_done": "reload/done"}
+		"sound": {"vol": -6.0, "pitch": 1.0, "reload": "reload/pistol_start", "reload_done": "reload/pistol_done"}
 	},
 	"smg": {
 		"name": "SMG",
 		"weight": 9.0,
-		"damage": 5.0,
+		"damage": 4.1,
 		"fire_rate": 11.0,
 		"pellets": 1,
 		"spread": 7.0,
 		"speed": 1000.0,
 		"lifetime": 0.55,
 		"mag": 30,
-		"reload": 1.5,
+		"reload": 0.75,
 		"crit": 0.05,
 		"crit_mult": 2.0,
 		"kind": "bullet",
@@ -40,10 +41,11 @@
 		"knock": 30.0,
 		"move": 1.0,
 		"shake": 1.0,
+		"light": true,
 		"ammo_name": "SMG",
 		"ammo_color": "#99d9ff",
 		"icon": {"body": 34.0, "bh": 10.0, "barrel": 14.0, "bt": 4.0, "stock": 8.0},
-		"sound": {"vol": -9.0, "pitch": 1.05, "reload": "reload/rifle", "reload_done": "reload/done"}
+		"sound": {"vol": -9.0, "pitch": 1.05, "reload": "reload/rifle_start", "reload_done": "reload/rifle_done"}
 	},
 	"ar": {
 		"name": "Assault Rifle",
@@ -51,7 +53,7 @@
 		"damage": 8.0,
 		"fire_rate": 7.0,
 		"pellets": 1,
-		"spread": 4.0,
+		"spread": 2.8,
 		"speed": 1150.0,
 		"lifetime": 0.8,
 		"mag": 26,
@@ -66,7 +68,7 @@
 		"ammo_name": "rifle",
 		"ammo_color": "#80f280",
 		"icon": {"body": 44.0, "bh": 11.0, "barrel": 22.0, "bt": 4.0, "stock": 16.0},
-		"sound": {"vol": -7.0, "pitch": 1.0, "reload": "reload/rifle", "reload_done": "reload/done"}
+		"sound": {"vol": -7.0, "pitch": 1.0, "reload": "reload/rifle_start", "reload_done": "reload/rifle_done"}
 	},
 	"shotgun": {
 		"name": "Shotgun",
@@ -95,7 +97,7 @@
 	"sniper": {
 		"name": "Sniper Rifle",
 		"weight": 6.0,
-		"damage": 60.0,
+		"damage": 78.0,
 		"fire_rate": 0.8,
 		"pellets": 1,
 		"spread": 0.5,
@@ -110,6 +112,7 @@
 		"knock": 160.0,
 		"move": 0.97,
 		"shake": 4.0,
+		"range_dmg": 0.3,
 		"ammo_name": "sniper",
 		"ammo_color": "#bf8cff",
 		"icon": {"body": 46.0, "bh": 10.0, "barrel": 38.0, "bt": 4.0, "stock": 20.0, "scope": true},
@@ -158,10 +161,11 @@
 		"knock": 40.0,
 		"move": 0.88,
 		"shake": 1.8,
+		"big_mag": true,
 		"ammo_name": "machine gun",
 		"ammo_color": "#d9d9d9",
 		"icon": {"body": 50.0, "bh": 14.0, "barrel": 26.0, "bt": 5.0, "stock": 14.0},
-		"sound": {"vol": -7.0, "pitch": 0.85, "reload": "reload/rifle", "reload_done": "reload/done"}
+		"sound": {"vol": -7.0, "pitch": 0.85, "reload": "reload/rifle_start", "reload_done": "reload/rifle_done"}
 	},
 	"launcher": {
 		"name": "Grenade Launcher",
@@ -208,10 +212,11 @@
 		"knock": 100.0,
 		"move": 1.0,
 		"shake": 2.5,
+		"no_falloff": true,
 		"ammo_name": "revolver",
 		"ammo_color": "#e6b880",
 		"icon": {"body": 28.0, "bh": 10.0, "barrel": 18.0, "bt": 5.0, "stock": 0.0, "cylinder": true},
-		"sound": {"vol": -3.0, "pitch": 1.0, "reload": "reload/pistol_2", "reload_done": "reload/done"}
+		"sound": {"vol": -3.0, "pitch": 1.0, "reload": "reload/revolver_start", "reload_done": "reload/revolver_done"}
 	},
 	"mortar": {
 		"name": "Mortar",

@@ -34,6 +34,7 @@ var _shop_ammo: VBoxContainer
 var _shop_status: Label
 var _mystic_box: VBoxContainer
 var _mystic_owned: Label
+var _mystic_element := false   # Мистик: выбираем стихию для перка «Стихия»
 var _ws_list: VBoxContainer
 var _ws_actions: VBoxContainer
 var _ws_prev: GunPreview
@@ -42,6 +43,9 @@ var _ws_gun: Gun = null
 var _guild_offers: VBoxContainer
 var _guild_active: VBoxContainer
 var _guild_active_title: Label
+var _release_grid: GridContainer
+var _healer_box: VBoxContainer
+var _healer_info: Label
 var _pause_info: Label
 var _help_box: VBoxContainer
 var _root: Control
@@ -115,11 +119,13 @@ func _build_ui() -> void:
 	_build_mystic(root)
 	_build_workshop(root)
 	_build_guild(root)
+	_build_healer(root)
 	_build_settings(root)
 	_build_pause(root)
 	_build_mods(root)
 	_build_codex(root)
 	_build_controls(root)
+	_build_release(root)
 	cursor = CursorDraw.new()
 	cursor.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(cursor)
@@ -213,6 +219,7 @@ func open_town(sname: String, line: String = "", col: Color = DIM) -> void:
 	if sub != null:
 		sub.text = "«%s»" % line if line != "" else ""
 		sub.add_theme_color_override("font_color", col.lightened(0.2))
+	_mystic_element = false
 	if sname in ["shop", "workshop"]:
 		_shop_status.text = ""
 		_ws_status.text = ""
@@ -260,10 +267,14 @@ func show_screen(sname: String) -> void:
 		_refresh_workshop()
 	elif sname == "guild":
 		_refresh_guild()
+	elif sname == "healer":
+		_refresh_healer()
 	elif sname == "codex":
 		_codex_open(_codex_page)
 	elif sname == "controls":
 		_refresh_controls()
+	elif sname == "release":
+		_refresh_release()
 	var b: Control = _first_focus.get(sname)
 	if b != null:
 		b.grab_focus.call_deferred()
@@ -301,6 +312,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			close_town()
 		elif current == "controls":
 			show_screen("settings")
+		elif current == "release":
+			show_screen("controls")
 		elif current != mode:
 			show_screen(mode)
 		elif mode == "pause":
@@ -627,6 +640,12 @@ func _build_controls(root: Control) -> void:
 	edit.add_theme_font_size_override("font_size", 20)
 	opts.add_child(edit)
 	opts.add_child(Control.new())
+	opts.add_child(Control.new())
+	var rel := _button(U.t("Fire on release…"), func() -> void: show_screen("release"))
+	rel.custom_minimum_size = Vector2(340, 48)
+	rel.add_theme_font_size_override("font_size", 20)
+	opts.add_child(rel)
+	opts.add_child(_label(U.t("per gun type"), 16, DIM, false, HORIZONTAL_ALIGNMENT_LEFT))
 
 	var grid := GridContainer.new()
 	grid.columns = 3
@@ -775,6 +794,50 @@ func _action_title(action: String) -> String:
 		if str(row[0]) == action:
 			return str(row[1])
 	return action
+
+
+## «Стрельба по отпусканию» (сенсор): для каждого типа пушки — стрелять, пока держишь правый стик,
+## или целиться стиком и выстрелить один раз, когда отпустил. Настройка touch_release_fire (JSON).
+func _build_release(root: Control) -> void:
+	var box := _screen(root, "release")
+	box.add_child(_label(U.t("FIRE ON RELEASE"), 48, ACCENT, true))
+	var info := _label(U.t("Touch: aim with the right stick and fire one shot when you let go. Hybrids follow their first type. Does not work with tap-to-shoot; auto-fire is off for these guns."), 18, DIM)
+	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	info.custom_minimum_size = Vector2(900, 0)
+	box.add_child(info)
+	box.add_child(_gap(8))
+	_release_grid = GridContainer.new()
+	_release_grid.columns = 4
+	_release_grid.add_theme_constant_override("h_separation", 18)
+	_release_grid.add_theme_constant_override("v_separation", 8)
+	box.add_child(_release_grid)
+	box.add_child(_gap(8))
+	var back := _button(U.t("Back"), func() -> void: show_screen("controls"))
+	box.add_child(back)
+	_first_focus["release"] = back
+
+
+func _refresh_release() -> void:
+	for c in _release_grid.get_children():
+		_release_grid.remove_child(c)
+		c.queue_free()
+	var on := Controls.release_types()
+	for k in GunData.ARCH:
+		_release_grid.add_child(_label(U.t(str(GunData.ARCH[k].get("name", k))), 22, TEXT, false, HORIZONTAL_ALIGNMENT_RIGHT))
+		var c := CheckButton.new()
+		c.focus_mode = Control.FOCUS_ALL
+		c.button_pressed = bool(on.get(k, false))
+		c.toggled.connect(_set_release.bind(str(k)))
+		_release_grid.add_child(c)
+
+
+func _set_release(enabled: bool, arch: String) -> void:
+	var d := Controls.release_types().duplicate()
+	if enabled:
+		d[arch] = true
+	else:
+		d.erase(arch)
+	Game.set_setting("touch_release_fire", JSON.stringify(d) if not d.is_empty() else "")
 
 
 func _reset_binds() -> void:
@@ -1032,7 +1095,7 @@ func _sell_gun(g: Gun) -> void:
 func _build_mystic(root: Control) -> void:
 	var box := _screen(root, "mystic")
 	_shop_head(box, "mystic", U.t("MYSTIC"))
-	box.add_child(_label(U.t("One gift per town. Gifts last until the end of the run."), 18, DIM))
+	box.add_child(_label(U.t("One gift for your hero's skill per town. Gifts last until the end of the run."), 18, DIM))
 	box.add_child(_gap(6))
 	_mystic_box = VBoxContainer.new()
 	_mystic_box.add_theme_constant_override("separation", 10)
@@ -1040,7 +1103,7 @@ func _build_mystic(root: Control) -> void:
 	box.add_child(_gap(6))
 	_mystic_owned = _label("", 18, TEXT)
 	_mystic_owned.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_mystic_owned.custom_minimum_size = Vector2(900, 0)
+	_mystic_owned.custom_minimum_size = Vector2(1100, 0)
 	box.add_child(_mystic_owned)
 	var back := _button(U.t("Back"), _back)
 	box.add_child(back)
@@ -1052,37 +1115,72 @@ func _refresh_mystic() -> void:
 	_clear_box(_mystic_box)
 	var town: Dictionary = Game.main.town
 	var p: Player = Game.main.player
+	# перки — под текущего героя (в стартовом городе героя могли сменить)
+	if str(town.get("mystic_for", "")) != p.hero:
+		town["mystic_for"] = p.hero
+		town["mystic"] = Heroes.perk_offer(p.hero, p.run_perks, Game.main.rng, Shops.MYSTIC_OFFER)
 	var price := Shops.mystic_price(int(town.get("level", 1)), p.run_perk_count())
 	var done := bool(town.get("mystic_done", false))
-	for o in town.get("mystic", []):
+	if _mystic_element:
+		# выбор стихии для перка «Стихия»
+		_mystic_box.add_child(_label(U.t("Choose the element of your skill:"), 20, TEXT))
+		for el in Heroes.ELEMENTS:
+			var eb := _small_button(U.t(str(U.EL_NAMES[int(el)])), _buy_mystic.bind("element", int(el)), 420.0)
+			eb.add_theme_color_override("font_color", U.el_color(int(el)))
+			_mystic_box.add_child(eb)
+		_mystic_box.add_child(_small_button(U.t("Cancel"), _mystic_cancel, 420.0))
+		_grab_first(_mystic_box)
+		return
+	var offer: Array = town.get("mystic", [])
+	if offer.is_empty():
+		_mystic_box.add_child(_label(U.t("The spirits have nothing more for this hero."), 18, DIM))
+	for o in offer:
 		var id := str(o)
 		var have := int(p.run_perks.get(id, 0))
-		var t := "%s — %s%s   ·   %d" % [Shops.mystic_name(id), Shops.mystic_desc(id),
-			(" (×%d)" % have) if have > 0 else "", price]
-		var b := _small_button(t, _buy_mystic.bind(id), 900.0)
-		b.disabled = done or Game.coins < price
+		var t := "%s%s — %s   ·   %d" % [Heroes.perk_name(id, p.hero), (" ×%d" % (have + 1)) if have > 0 else "",
+			Heroes.perk_desc(id, have), price]
+		var b := _small_button(t, _buy_mystic.bind(id, -1), 1100.0)
+		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		b.custom_minimum_size = Vector2(1100, 58)
+		b.disabled = done or Game.coins < price or not Heroes.perk_open(id, p.hero, have)
 		_mystic_box.add_child(b)
 	if done:
 		_mystic_box.add_child(_label(U.t("The spirits are tired. Come back in the next town."), 18, DIM))
 	var owned := PackedStringArray()
 	for id in p.run_perks:
-		owned.append("%s ×%d" % [Shops.mystic_name(str(id)), int(p.run_perks[id])])
+		var nm := Heroes.perk_name(str(id), p.hero) + " ×%d" % int(p.run_perks[id])
+		if str(id) == "element" and p.skill_element >= 0:
+			nm += " (%s)" % U.t(str(U.EL_NAMES[p.skill_element]))
+		if not Heroes.perk_fits(str(id), p.hero):
+			nm += " " + U.t("(not for this hero)")
+		owned.append(nm)
 	_mystic_owned.text = U.t("Your gifts: %s") % (", ".join(owned) if not owned.is_empty() else U.t("none"))
 	_grab_first(_mystic_box)
 
 
-func _buy_mystic(id: String) -> void:
+func _mystic_cancel() -> void:
+	_mystic_element = false
+	_refresh_mystic()
+
+
+## Купить перк навыка. Для «Стихии» сначала выбор стихии (element = -1 -> показать выбор).
+func _buy_mystic(id: String, element: int) -> void:
 	var town: Dictionary = Game.main.town
 	var p: Player = Game.main.player
 	var price := Shops.mystic_price(int(town.get("level", 1)), p.run_perk_count())
 	if bool(town.get("mystic_done", false)) or Game.coins < price:
 		Sfx.ui("ui/error", -6.0)
 		return
+	if id == "element" and element < 0:
+		_mystic_element = true
+		_refresh_mystic()
+		return
+	_mystic_element = false
 	Game.add_coins(-price)
-	p.add_run_perk(id)
+	p.add_run_perk(id, element)
 	town["mystic_done"] = true
 	Sfx.ui("pickup/legendary", -6.0)
-	Game.say(U.t("Gift: %s") % Shops.mystic_name(id), Color(0.78, 0.45, 1.0))
+	Game.say(U.t("Gift: %s") % Heroes.perk_name(id, p.hero), Color(0.78, 0.45, 1.0))
 	_refresh_mystic()
 
 
@@ -1221,12 +1319,76 @@ func _ws_reroll(id: String) -> void:
 	_refresh_workshop()
 
 
+# --- Лекарь ---
+
+func _build_healer(root: Control) -> void:
+	var box := _screen(root, "healer")
+	_shop_head(box, "healer", U.t("HEALER"))
+	_healer_info = _label("", 22, TEXT)
+	box.add_child(_healer_info)
+	box.add_child(_gap(6))
+	_healer_box = VBoxContainer.new()
+	_healer_box.add_theme_constant_override("separation", 8)
+	box.add_child(_healer_box)
+	var back := _button(U.t("Back"), _back)
+	box.add_child(back)
+	_first_focus["healer"] = back
+
+
+func _refresh_healer() -> void:
+	_shop_refresh_head("healer")
+	_clear_box(_healer_box)
+	var p: Player = Game.main.player
+	var lvl := int(Game.main.town.get("level", 1))
+	_healer_info.text = U.t("Health: %s / %s   ·   Flasks: %d / %d") % [U.fmt(ceilf(p.hp)), U.fmt(p.max_hp), p.flasks, Player.FLASK_MAX]
+	if bool(Game.run["no_heal"]):
+		_healer_box.add_child(_label(U.t("Hardcore run — the healer won't touch you."), 18, DIM))
+		return
+	var hp_price := Shops.heal_price(lvl, 1.0 - p.hp / p.max_hp)
+	var hb := _small_button(U.t("Heal to full — %d") % hp_price if hp_price > 0 else U.t("Health is full"), _heal_full, 560.0)
+	hb.disabled = hp_price <= 0 or Game.coins < hp_price
+	_healer_box.add_child(hb)
+	var fp := Shops.flask_price(lvl)
+	var need := Player.FLASK_MAX - p.flasks
+	var fb := _small_button(U.t("Fill a flask — %d") % fp if need > 0 else U.t("Flasks are full"), _buy_flask.bind(1), 560.0)
+	fb.disabled = need <= 0 or Game.coins < fp
+	_healer_box.add_child(fb)
+	if need > 1:
+		var ab := _small_button(U.t("Fill all (%d) — %d") % [need, fp * need], _buy_flask.bind(need), 560.0)
+		ab.disabled = Game.coins < fp * need
+		_healer_box.add_child(ab)
+	_grab_first(_healer_box)
+
+
+func _heal_full() -> void:
+	var p: Player = Game.main.player
+	var price := Shops.heal_price(int(Game.main.town.get("level", 1)), 1.0 - p.hp / p.max_hp)
+	if price <= 0 or Game.coins < price:
+		Sfx.ui("ui/error", -6.0)
+		return
+	Game.add_coins(-price)
+	p.heal(p.max_hp, true)
+	_refresh_healer()
+
+
+func _buy_flask(n: int) -> void:
+	var p: Player = Game.main.player
+	var price := Shops.flask_price(int(Game.main.town.get("level", 1))) * n
+	if Game.coins < price or p.flasks + n > Player.FLASK_MAX:
+		Sfx.ui("ui/error", -6.0)
+		return
+	Game.add_coins(-price)
+	p.add_flask(n)
+	Sfx.ui("pickup/heal", -6.0, 1.2)
+	_refresh_healer()
+
+
 # --- Гильдия ---
 
 func _build_guild(root: Control) -> void:
 	var box := _screen(root, "guild")
 	_shop_head(box, "guild", U.t("GUILD"))
-	box.add_child(_label(U.t("Contracts pay ancient coins the moment they are done. Up to %d at once.") % Quests.MAX_ACTIVE, 18, DIM))
+	box.add_child(_label(U.t("A contract pays the moment it is done. One contract at a time."), 18, DIM))
 	box.add_child(_gap(6))
 	box.add_child(_label(U.t("Contracts on the board"), 22, TEXT))
 	_guild_offers = VBoxContainer.new()
@@ -1251,7 +1413,8 @@ func _refresh_guild() -> void:
 	if offers.is_empty():
 		_guild_offers.add_child(_label(U.t("The board is empty."), 18, DIM))
 	for q in offers:
-		var b := _small_button(U.t("Take: %s — +%d ancient coins") % [Quests.text(q), int(q["reward"])], _take_quest.bind(q), 900.0)
+		var b := _small_button(U.t("Take: %s — +%d ancient coins, +%d coins") % [Quests.text(q), int(q["reward"]), int(q["coins"])],
+			_take_quest.bind(q), 1000.0)
 		b.disabled = not Quests.can_take() or Quests.has_type(str(q["type"]))
 		_guild_offers.add_child(b)
 	_guild_active_title.text = U.t("Your contracts (%d/%d)") % [Quests.active.size(), Quests.MAX_ACTIVE]
@@ -1259,7 +1422,7 @@ func _refresh_guild() -> void:
 		var q: Dictionary = Quests.active[i]
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 12)
-		var l := _label("%s — +%d" % [Quests.line(q), int(q["reward"])], 18, Color(0.6, 1.0, 1.0), false, HORIZONTAL_ALIGNMENT_LEFT)
+		var l := _label(U.t("%s — +%d ancient, +%d coins") % [Quests.line(q), int(q["reward"]), int(q["coins"])], 18, Color(0.6, 1.0, 1.0), false, HORIZONTAL_ALIGNMENT_LEFT)
 		l.custom_minimum_size = Vector2(700, 0)
 		row.add_child(l)
 		row.add_child(_small_button(U.t("Abandon"), _abandon_quest.bind(i), 190.0))
@@ -1386,7 +1549,7 @@ func _build_custom(root: Control) -> void:
 	_custom_check(grid, "zone_heal", U.t("Full heal when entering a new zone"))
 	_custom_check(grid, "no_normals", U.t("No regular enemies (elites only)"))
 	_custom_check(grid, "chests", U.t("Chests"))
-	_custom_check(grid, "no_heal", U.t("Hardcore: no health orbs or lifesteal"))
+	_custom_check(grid, "no_heal", U.t("Hardcore: no flasks, healer or lifesteal"))
 	_custom_check(grid, "chaos", U.t("Chaos: all gun rarities and enemy types equally likely"))
 	_custom_check(grid, "towns", U.t("Towns between stages"))
 
@@ -1634,7 +1797,7 @@ func _fill_help() -> void:
 			if bool(Game.setting("auto_aim")):
 				lines[0] = U.t("Left stick — move, hold FIRE — shoot at the nearest enemy")
 	lines.append("")
-	lines.append(U.t("No regen. Max 2 health orbs per zone. No levels — only guns."))
+	lines.append(U.t("No regen. Flasks heal 20%: up to 3, refilled by the town healer. No levels — only guns."))
 	for l in lines:
 		_help_box.add_child(_label(str(l), 17, DIM))
 

@@ -2,9 +2,10 @@ class_name Shops
 extends RefCounted
 ## Цены и товар городских лавок (экраны — в Menu: _build_shop, _build_mystic, _build_workshop).
 ##  Оружейная — купить пушку из ассортимента / продать свою, обновить ассортимент, купить магазин патронов.
-##  Мистик — один перк героя на забег за город (1 из 3), каждый следующий дороже.
+##  Мистик — один перк навыка героя за город (1 из 3, Heroes.PERKS), на забег; каждый следующий дороже.
 ##  Мастерская — подтянуть уровень пушки, перебросить перк, поднять редкость.
-## Все цены — в обычных монетах и растут с глубиной так же, как стоимость монетки (Game.coin_value).
+##  Лекарь — вылечить до полного, наполнить фляги (в хардкоре не работает).
+## Все цены — в обычных монетах и растут с этапом так же, как доход (Game.econ: ×1.2 за этап).
 ## Ассортимент города создаётся при входе в него (Main.load_town -> make_town) и живёт до выхода.
 
 ## Цена пушки по редкости (обычная ... абсурдная) при стоимости монетки 1.
@@ -13,31 +14,19 @@ const SELL_SHARE := 0.25        # продажа — четверть цены
 const STOCK := 8                # пушек в Оружейной
 const REROLL_STOCK_BASE := 10   # обновить ассортимент; каждое следующее обновление в этом городе — +50%
 const AMMO_MARKUP := 1.5        # патроны дороже, чем их «стоимость» при разборе (см. ammo_price)
+const HEAL_FULL := 40           # Лекарь: вылечить с нуля до полного (меньше — пропорционально)
+const FLASK_PRICE := 20         # Лекарь: наполнить одну флягу
 const MYSTIC_OFFER := 3         # перков на выбор у Мистика
 const MYSTIC_BASE := 40         # первый перк; каждый следующий за забег — +50%
 const REROLL_SHARE := 0.35      # переброс перка — доля цены пушки
 const RARITY_UP_SHARE := 0.7    # повышение редкости — доля цены пушки новой редкости
 
-## Перки Мистика (на забег, складываются). stat — что меняет (Player.stat_mult), v — на сколько за штуку.
-const MYSTIC := {
-	"vitality": {"name": "Vitality", "desc": "+15% max health", "stat": "hp", "v": 0.15},
-	"swift": {"name": "Swiftness", "desc": "+8% move speed", "stat": "speed", "v": 0.08},
-	"focus": {"name": "Focus", "desc": "Skill cooldown −15%", "stat": "skill_cd", "v": -0.15},
-	"zeal": {"name": "Zeal", "desc": "+25% skill damage", "stat": "skill_dmg", "v": 0.25},
-	"power": {"name": "Power", "desc": "+10% gun damage", "stat": "dmg", "v": 0.1},
-	"hands": {"name": "Quick Hands", "desc": "Reload time −15%", "stat": "reload", "v": -0.15},
-	"reflex": {"name": "Reflexes", "desc": "Dodge cooldown −20%", "stat": "dodge_cd", "v": -0.2},
-	"greed": {"name": "Greed", "desc": "+20% coins", "stat": "coins", "v": 0.2},
-	"scavenger": {"name": "Scavenger", "desc": "+25% ammo from drops", "stat": "ammo", "v": 0.25},
-}
-
-
-static func cv(level: int) -> int:
-	return Game.coin_value(level)
+static func cv(level: int) -> float:
+	return Game.econ(level)
 
 
 static func price_of(rarity: int, level: int) -> int:
-	return int(RARITY_PRICE[clampi(rarity, 0, RARITY_PRICE.size() - 1)]) * cv(level)
+	return roundi(float(RARITY_PRICE[clampi(rarity, 0, RARITY_PRICE.size() - 1)]) * cv(level))
 
 
 static func gun_price(g: Gun) -> int:
@@ -70,7 +59,7 @@ static func rarity_up_price(g: Gun) -> int:
 
 
 static func stock_reroll_price(level: int, done: int) -> int:
-	return roundi(float(REROLL_STOCK_BASE * cv(level)) * (1.0 + 0.5 * float(done)))
+	return roundi(float(REROLL_STOCK_BASE) * cv(level) * (1.0 + 0.5 * float(done)))
 
 
 ## Сколько патронов даёт разбор пушки сам по себе (без патронов в магазине) — как в Player.scrap.
@@ -85,24 +74,27 @@ static func ammo_price(g: Gun, rounds: int) -> int:
 	return maxi(1, ceili(per * float(rounds) * AMMO_MARKUP))
 
 
+## Вылечить до полного: цена пропорциональна недостающему здоровью.
+static func heal_price(level: int, missing_frac: float) -> int:
+	if missing_frac <= 0.0:
+		return 0
+	return maxi(1, ceili(float(HEAL_FULL) * cv(level) * missing_frac))
+
+
+static func flask_price(level: int) -> int:
+	return roundi(float(FLASK_PRICE) * cv(level))
+
+
 static func mystic_price(level: int, bought: int) -> int:
-	return roundi(float(MYSTIC_BASE * cv(level)) * (1.0 + 0.5 * float(bought)))
-
-
-static func mystic_name(id: String) -> String:
-	return U.t(str(MYSTIC.get(id, {}).get("name", id)))
-
-
-static func mystic_desc(id: String) -> String:
-	return U.t(str(MYSTIC.get(id, {}).get("desc", "")))
+	return roundi(float(MYSTIC_BASE) * cv(level) * (1.0 + 0.5 * float(bought)))
 
 
 ## Товар города перед зоной level: пушки Оружейной, перки Мистика, задания Гильдии.
+## Перки Мистика подбираются под героя при первом заходе к нему (Menu._refresh_mystic) —
+## в стартовом городе героя ещё могут сменить.
 static func make_town(level: int, rng: RandomNumberGenerator) -> Dictionary:
-	var ids: Array = MYSTIC.keys()
-	U.shuffle(ids, rng)
 	return {"level": level, "stock": make_stock(level, rng), "rerolls": 0,
-		"mystic": ids.slice(0, MYSTIC_OFFER), "mystic_done": false, "guild": Quests.make_offers(level, rng)}
+		"mystic": [], "mystic_for": "", "mystic_done": false, "guild": Quests.make_offers(level, rng)}
 
 
 ## Ассортимент Оружейной: STOCK пушек, одна — не хуже редкой, остальные с «магик файндом» как у чемпиона.

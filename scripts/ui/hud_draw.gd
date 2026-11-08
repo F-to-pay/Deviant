@@ -75,6 +75,17 @@ func _draw_hp(p: Player, f: Font, fb: Font) -> void:
 	var col := Color(0.9, 0.22, 0.25)
 	_bar(r, p.hp / p.max_hp, col)
 	U.draw_text_c(self, fb, Vector2(r.position.x + r.size.x * 0.5, r.position.y + 17), "%s / %s" % [U.fmt(ceilf(p.hp)), U.fmt(p.max_hp)], 15, Color.WHITE, 3)
+	# фляги лечения справа от полосы здоровья
+	# сверх трёх — «+N»: в зоне фляг сколько угодно, лишние сгорят при переходе
+	for i in Player.FLASK_MAX:
+		FlaskDrop.draw_icon(self, Vector2(r.end.x + 18.0 + float(i) * 20.0, r.position.y + 13.0), 1.0, 1.0 if i < p.flasks else 0.0)
+	var fx := r.end.x + 12.0 + float(Player.FLASK_MAX) * 20.0
+	if p.flasks > Player.FLASK_MAX:
+		var extra := "+%d" % (p.flasks - Player.FLASK_MAX)
+		U.draw_text(self, fb, Vector2(fx, r.position.y + 17.0), extra, 15, Color(1.0, 0.55, 0.6), 3)
+		fx += U.text_w(fb, extra, 15) + 8.0
+	if Controls.mode != "touch":
+		U.draw_text(self, f, Vector2(fx, r.position.y + 17.0), "[%s]" % Controls.label("flask"), 12, Color(1.0, 0.7, 0.7, 0.8), 2)
 	# Перезарядка переката
 	var dk := 1.0 - clampf(p.dodge_cd / p.dodge_max_cd(), 0.0, 1.0)
 	var dodge_ready := p.dodge_cd <= 0.0
@@ -83,11 +94,18 @@ func _draw_hp(p: Player, f: Font, fb: Font) -> void:
 	U.draw_text(self, f, Vector2(150, 59), dl, 12, Color(0.7, 0.85, 1.0, 0.9 if dodge_ready else 0.6), 2)
 	# Навык героя
 	var hc := Heroes.color(p.hero)
-	var sk_ready := p.skill_cd <= 0.0
-	var sk := 1.0 - clampf(p.skill_cd / p.skill_max_cd(), 0.0, 1.0)
+	if p.skill_element >= 0:
+		hc = U.el_color(p.skill_element)
+	var sk_ready := p.skill_charges > 0
+	var full := p.skill_charges >= p.max_charges()
+	var sk := 1.0 if full else 1.0 - clampf(p.skill_cd / p.skill_max_cd(), 0.0, 1.0)
 	_bar(Rect2(24, 66, 120, 6), sk, hc if sk_ready else hc.darkened(0.4))
 	var sname := U.t(str(Heroes.get_hero(p.hero)["skill_name"]))
-	var sl := (sname + (" !" if p.blessed else "")) if sk_ready or p.blessed else sname + " " + U.t("%.1f s") % p.skill_cd
+	if p.max_charges() > 1:
+		sname += " ×%d" % p.skill_charges
+	var sl := sname + (" !" if p.blessed else "")
+	if not full:
+		sl += " · " + U.t("%.1f s") % p.skill_cd
 	U.draw_text(self, f, Vector2(150, 73), sl, 12, Color(hc.lightened(0.4), 0.9 if sk_ready else 0.6), 2)
 
 

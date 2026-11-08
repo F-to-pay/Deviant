@@ -35,6 +35,8 @@ var shock_time: float = 0.0
 var stun_time: float = 0.0
 var _stun_cd: float = 0.0
 var status_resist: float = 1.0   # 1 — обычный, больше — стаки копятся медленнее
+var wound: float = 0.0           # «Опасные раны» (перк навыка): вечное замедление, до 0.3
+var delayed: Array = []          # «Ядовитый снаряд»: отложенный урон [осталось секунд, урон, стихия]
 var _burn_tick: float = 0.0
 
 
@@ -45,7 +47,12 @@ func vulnerability() -> float:
 func slow_mult() -> float:
 	if frozen_time > 0.0 or stun_time > 0.0:
 		return 0.0
-	return 1.0 - minf(cryo, CRYO_SLOW_MAX)
+	return (1.0 - minf(cryo, CRYO_SLOW_MAX)) * (1.0 - wound)
+
+
+## Отложенный урон навыка (перк «Ядовитый снаряд/разрез»): ляжет через t секунд.
+func delay_damage(dmg: float, t: float, el: int) -> void:
+	delayed.append([t, dmg, el])
 
 
 ## st — сколько кислоты/холода добавляет попадание (0.1 = секунда стрельбы).
@@ -116,6 +123,26 @@ func tick_status(delta: float) -> void:
 		stun_time -= delta
 	if _stun_cd > 0.0:
 		_stun_cd -= delta
+	if not delayed.is_empty():
+		_tick_delayed(delta)
+
+
+func _tick_delayed(delta: float) -> void:
+	var keep: Array = []
+	var land := 0.0
+	var el := -1
+	for d in delayed:
+		d[0] = float(d[0]) - delta
+		if float(d[0]) <= 0.0:
+			land += float(d[1])
+			el = int(d[2])
+		else:
+			keep.append(d)
+	delayed = keep
+	if land > 0.0 and not dead:
+		on_dot(land, el)
+		if dead and Game.main != null:
+			Game.main.player.on_skill_kill(self)
 
 
 ## Переопределяется наследниками.
@@ -145,6 +172,11 @@ func draw_statuses(t: float) -> void:
 		for i in n:
 			var a := TAU * float(i) / 5.0 - PI * 0.5
 			draw_circle(Vector2.from_angle(a) * (radius + 6.0), 2.5, U.el_color(U.EL_CRYO))
+	if wound > 0.0:
+		draw_arc(Vector2(0, 2), radius + 2.0, PI * 0.15, PI * 0.15 + PI * 0.7 * wound / 0.3, 12, Color(0.75, 0.05, 0.1, 0.9), 3.0)
+	if not delayed.is_empty():
+		var pulse := 0.5 + sin(t * 8.0) * 0.3
+		draw_arc(Vector2.ZERO, radius + 10.0, 0.0, TAU, 20, Color(0.45, 1.0, 0.3, pulse), 2.0)
 	if shock_time > 0.0:
 		for i in 2:
 			var a := randf() * TAU

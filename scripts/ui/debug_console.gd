@@ -20,8 +20,9 @@ const HELP := [
 	"coins <n>                     — add coins of this run (negative — take away)",
 	"ancient <n>                   — add ancient coins (meta, saved)",
 	"town                          — go to the town before the next zone (in a run)",
-	"unlock <hero|all>             — unlock a hero for free (pioneer, cultist, assassin)",
+	"unlock <hero|all>             — unlock a hero for free (pioneer, sheriff, assassin)",
 	"hero <id>                     — play as this hero (unlocks it if needed)",
+	"skillperk <id> [element 0-4]  — take a skill perk for free (split, wounds, poison, heavy, parry, hand, vandal, element, trophies, smoke, precise, ready)",
 ]
 
 var panel: PanelContainer
@@ -264,6 +265,17 @@ func _on_submit(text: String) -> void:
 				Game.unlock_hero(hid, true)
 				Game.select_hero(hid)
 				_say("hero: %s" % hid)
+		"skillperk":
+			var main2: Main = Game.main
+			var pid: String = args[0] if not args.is_empty() else ""
+			if not Heroes.PERKS.has(pid):
+				_say("skill perks: " + ", ".join(PackedStringArray(Heroes.PERKS.keys())))
+			elif main2 == null or main2.player == null:
+				_say("start a run first")
+			else:
+				main2.player.add_run_perk(pid, int(args[1]) if args.size() > 1 else 0)
+				_say("skill perk %s ×%d%s" % [pid, int(main2.player.run_perks[pid]),
+					"" if Heroes.perk_fits(pid, main2.player.hero) else " (not for this hero — no effect)"])
 		"missing":
 			var code: String = args[0] if not args.is_empty() else I18n.current()
 			var d: Dictionary = DebugLog.missing_tr.get(code, {})

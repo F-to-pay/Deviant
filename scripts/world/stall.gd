@@ -24,6 +24,10 @@ const KINDS := {
 		"lines": ["The Guild pays in ancient coins. Don't ask where we get them.",
 			"Contracts are paid the moment they're done. We have ways of knowing.",
 			"Sign here. Die somewhere else."]},
+	"healer": {"title": "Healer", "color": Color(1.0, 0.4, 0.45), "menu": "healer",
+		"lines": ["Bleeding? That'll cost you.",
+			"I fix holes. Bullet holes, mostly.",
+			"Flasks refilled. Do not drink the blue one."]},
 	"heroes": {"title": "Recruiter", "color": Color(0.4, 0.85, 1.0), "menu": "heroes",
 		"lines": ["Pick a hero. Any hero. They all die the same."]},
 	"relics": {"title": "Relic Keeper", "color": Color(0.45, 0.95, 0.95),
@@ -121,6 +125,11 @@ func _draw_goods(col: Color) -> void:
 			draw_circle(Vector2(-30, -50), 4.0, Color(0.16, 0.11, 0.08))
 			draw_rect(Rect2(14, -52, 30, 5), Color(0.6, 0.62, 0.66))
 			draw_rect(Rect2(40, -56, 7, 12), Color(0.6, 0.62, 0.66))
+		"healer":
+			for i in 3:
+				FlaskDrop.draw_icon(self, Vector2(-34.0 + float(i) * 26.0, -50), 1.0, 1.0)
+			draw_rect(Rect2(32, -60, 14, 4), Color(1, 1, 1))
+			draw_rect(Rect2(37, -65, 4, 14), Color(1, 1, 1))
 		"heroes":
 			# три фигурки — «кого берёшь?»
 			for i in 3:

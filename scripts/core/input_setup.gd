@@ -14,10 +14,10 @@ const STICK_DEADZONE := 0.2
 ## Действие -> {kb: [...], pad: [...]}. Ключи — KEY_*, мышь — "m" + номер кнопки,
 ## геймпад — JOY_BUTTON_* или [ось, направление].
 const DEFAULTS := {
-	"move_up": {"kb": [KEY_W, KEY_UP], "pad": [[JOY_AXIS_LEFT_Y, -1], JOY_BUTTON_DPAD_UP]},
-	"move_down": {"kb": [KEY_S, KEY_DOWN], "pad": [[JOY_AXIS_LEFT_Y, 1], JOY_BUTTON_DPAD_DOWN]},
-	"move_left": {"kb": [KEY_A, KEY_LEFT], "pad": [[JOY_AXIS_LEFT_X, -1], JOY_BUTTON_DPAD_LEFT]},
-	"move_right": {"kb": [KEY_D, KEY_RIGHT], "pad": [[JOY_AXIS_LEFT_X, 1], JOY_BUTTON_DPAD_RIGHT]},
+	"move_up": {"kb": [KEY_W, KEY_UP], "pad": [[JOY_AXIS_LEFT_Y, -1]]},
+	"move_down": {"kb": [KEY_S, KEY_DOWN], "pad": [[JOY_AXIS_LEFT_Y, 1]]},
+	"move_left": {"kb": [KEY_A, KEY_LEFT], "pad": [[JOY_AXIS_LEFT_X, -1]]},
+	"move_right": {"kb": [KEY_D, KEY_RIGHT], "pad": [[JOY_AXIS_LEFT_X, 1]]},
 	"aim_up": {"kb": [], "pad": [[JOY_AXIS_RIGHT_Y, -1]]},
 	"aim_down": {"kb": [], "pad": [[JOY_AXIS_RIGHT_Y, 1]]},
 	"aim_left": {"kb": [], "pad": [[JOY_AXIS_RIGHT_X, -1]]},
@@ -26,6 +26,7 @@ const DEFAULTS := {
 	"dodge": {"kb": [KEY_SPACE, KEY_SHIFT], "pad": [JOY_BUTTON_A]},
 	"skill": {"kb": ["m2"], "pad": [[JOY_AXIS_TRIGGER_LEFT, 1]]},   # активный навык героя (Heroes)
 	"reload": {"kb": [KEY_R], "pad": [JOY_BUTTON_X]},
+	"flask": {"kb": [KEY_C], "pad": [JOY_BUTTON_DPAD_UP]},   # выпить флягу лечения
 	"interact": {"kb": [KEY_E], "pad": [JOY_BUTTON_Y]},
 	"swap": {"kb": [KEY_F], "pad": [JOY_BUTTON_RIGHT_STICK]},
 	"scrap": {"kb": [KEY_X], "pad": [JOY_BUTTON_B]},
@@ -52,7 +53,7 @@ const DEFAULTS := {
 const REBINDABLE := [
 	["move_up", "Move up"], ["move_down", "Move down"], ["move_left", "Move left"], ["move_right", "Move right"],
 	["aim_up", "Aim up"], ["aim_down", "Aim down"], ["aim_left", "Aim left"], ["aim_right", "Aim right"],
-	["shoot", "Shoot"], ["dodge", "Dodge"], ["skill", "Skill"], ["reload", "Reload"],
+	["shoot", "Shoot"], ["dodge", "Dodge"], ["skill", "Skill"], ["flask", "Drink a flask"], ["reload", "Reload"],
 	["interact", "Pick up / open"], ["swap", "Swap with current"], ["scrap", "Scrap for ammo"],
 	["next_weapon", "Next weapon"], ["prev_weapon", "Previous weapon"], ["last_weapon", "Last weapon"],
 	["slot_1", "Weapon 1"], ["slot_2", "Weapon 2"], ["slot_3", "Weapon 3"], ["slot_4", "Weapon 4"],

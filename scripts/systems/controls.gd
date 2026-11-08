@@ -10,6 +10,8 @@ extends Node
 ##  Автоогонь (настройка "auto_fire", геймпад и сенсор): пока на экране есть видимый враг —
 ##  стреляем сами и целимся в него (стик вручную по-прежнему важнее).
 ##  «Стрельба по тапу» (сенсор): палец справа = прицел в точку под пальцем + огонь (touch_target).
+##  «Стрельба по отпусканию» (сенсор, своя для каждого типа пушки — настройка touch_release_fire):
+##  правым стиком только целишься, выстрел — один, когда отпустил (queue_shot / take_shot).
 ##  Движение: действия move_* (клавиши, левый стик, крестовина) + левый экранный стик.
 
 signal mode_changed(mode: String)
@@ -31,6 +33,10 @@ static var _self: Controls = null
 static var _frame := -1                  # кадр, для которого уже посчитан прицел
 static var touch_target: Variant = null  # «стрельба по тапу»: мировая точка под пальцем (или null)
 static var _visible_target: Variant = null  # ближайший враг на экране в прямой видимости (для автоогня)
+static var _shot_ms := 0                 # когда отпустили стик в режиме «по отпусканию» (0 — выстрела нет)
+static var _release_cache := {}          # разобранная настройка touch_release_fire
+static var _release_src := "?"
+const SHOT_WAIT_MS := 600                # отложенный выстрел ждёт перезарядки ствола не дольше
 
 
 func _ready() -> void:
@@ -87,7 +93,7 @@ static func _update_aim() -> void:
 	_visible_target = null
 	if mode == "kbm":
 		return
-	var auto_fire := bool(Game.setting("auto_fire"))
+	var auto_fire := bool(Game.setting("auto_fire")) and not release_fire()
 	if auto_fire:
 		_visible_target = _nearest_visible()
 	if touch_target != null:
@@ -169,11 +175,50 @@ static func move_vector() -> Vector2:
 	return (v + touch_move).limit_length(1.0)
 
 
+## Типы пушек (id основы), которые на сенсоре стреляют по отпусканию стика.
+static func release_types() -> Dictionary:
+	var src := str(Game.setting("touch_release_fire"))
+	if src != _release_src:
+		_release_src = src
+		var d: Variant = JSON.parse_string(src) if src != "" else {}
+		_release_cache = d if d is Dictionary else {}
+	return _release_cache
+
+
+## Текущая пушка стреляет по отпусканию стика (только сенсор и только стиком, не «по тапу»).
+static func release_fire() -> bool:
+	if mode != "touch" or bool(Game.setting("touch_tap_fire")):
+		return false
+	var main: Main = Game.main
+	if main == null or main.player == null:
+		return false
+	var g := main.player.gun()
+	return g != null and bool(release_types().get(g.archetype, false))
+
+
+## Отпустили правый стик в режиме «по отпусканию» — выстрелить один раз.
+static func queue_shot() -> void:
+	_shot_ms = Time.get_ticks_msec()
+
+
+## Забрать отложенный выстрел. ready — ствол готов стрелять; не готов — ждём до SHOT_WAIT_MS.
+static func take_shot(ready: bool) -> bool:
+	if _shot_ms == 0:
+		return false
+	if Time.get_ticks_msec() - _shot_ms > SHOT_WAIT_MS:
+		_shot_ms = 0
+		return false
+	if ready:
+		_shot_ms = 0
+		return true
+	return false
+
+
 ## Зажат ли огонь.
 static func firing() -> bool:
 	if Input.is_action_pressed("shoot") or touch_fire:
 		return true
-	if mode != "kbm" and bool(Game.setting("auto_fire")):
+	if mode != "kbm" and bool(Game.setting("auto_fire")) and not release_fire():
 		_update_aim()
 		return _visible_target != null
 	return false

@@ -25,6 +25,7 @@ const DEFAULTS := {
 	"ui_margin_y": 0.0,       # ... сверху и снизу
 	"gun_card": "right",      # карточка пушки на земле: right / left / above (над пушкой)
 	"ui_safe_area": true,     # на телефоне — ещё и безопасная зона системы (вырез, скругления)
+	"touch_release_fire": "", # сенсор: какие типы пушек стреляют по отпусканию стика, JSON {id основы: true}
 }
 
 var rng := RandomNumberGenerator.new()
@@ -188,9 +189,34 @@ func town_before(level: int) -> bool:
 
 # --- Монеты ---------------------------------------------------------------------
 
-## Сколько стоит одна монетка, выпавшая в зоне level: глубже — дороже (цены в городе будут расти так же).
-func coin_value(level: int) -> int:
-	return 1 + maxi(0, level - 1) / 3
+## Экономика: доход и цены растут на ECON_GROWTH за этап (10:12), а не с каждой зоной.
+## Монеты с врагов ещё и делятся на рост числа врагов в зоне — иначе доход рос бы вместе с ним.
+const ECON_GROWTH := 1.2
+
+
+## Множитель цен и наград для зоны level: 1.0 на первом этапе, ×1.2 за каждый следующий.
+func econ(level: int) -> float:
+	return pow(ECON_GROWTH, float(maxi(0, level - 1) / TOWN_EVERY))
+
+
+## Сколько врагов в среднем в зоне (как в ZoneGen и EnemyData.roll_pack).
+func expected_enemies(level: int) -> float:
+	return float(mini(20 + level, 42)) * (10.0 + float(mini(level / 3, 5))) * 0.5
+
+
+## Монеты из base «монет первого этапа»: × econ, дробная часть — случайно (0.4 — с шансом 40% одна монета).
+func coins_for(level: int, base: float, r: RandomNumberGenerator) -> int:
+	return _round_rand(base * econ(level), r)
+
+
+## То же для добычи с врагов: ещё и делится на рост числа врагов, чтобы доход за зону не рос с ним.
+func kill_coins(level: int, base: float, r: RandomNumberGenerator) -> int:
+	return _round_rand(base * econ(level) * expected_enemies(1) / expected_enemies(level), r)
+
+
+func _round_rand(x: float, r: RandomNumberGenerator) -> int:
+	var n := floori(x)
+	return n + (1 if r.randf() < x - float(n) else 0)
 
 
 func add_coins(n: int) -> void:
@@ -344,10 +370,10 @@ func _load() -> void:
 		best_kills = int(cf.get_value("records", "best_kills", 0))
 		best_rating = int(cf.get_value("records", "best_rating", 0))
 		meta_coins = int(cf.get_value("meta", "coins", 0))
-		hero = str(cf.get_value("meta", "hero", Heroes.DEFAULT))
+		hero = str(cf.get_value("meta", "hero", Heroes.DEFAULT)).replace("cultist", "sheriff")   # старое имя героя
 		if not Heroes.LIST.has(hero):
 			hero = Heroes.DEFAULT
-		for h in str(cf.get_value("meta", "heroes", "")).split(",", false):
+		for h in str(cf.get_value("meta", "heroes", "")).replace("cultist", "sheriff").split(",", false):
 			if Heroes.LIST.has(h) and not (h in heroes_open):
 				heroes_open.append(h)
 		if not hero_unlocked(hero):

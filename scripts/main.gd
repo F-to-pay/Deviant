@@ -2,7 +2,7 @@ class_name Main
 extends Node2D
 ## Корень игры: собирает мир, спавнит зоны и города, раздаёт лут и монеты, двигает камеру.
 
-const MAX_ORBS_PER_ZONE := 2   # хилок за зону, не больше
+const MAX_FLASKS_PER_ZONE := 2   # фляг за зону со случайных дропов (вожаки и боссы — сверх этого)
 const ZONE_HEAL := 0.0         # хил при входе в новую зону (0 = хардкор). Крути, если станет нереально.
 
 var zone: Zone
@@ -23,7 +23,7 @@ var rng := RandomNumberGenerator.new()
 
 var enemies: Array = []
 var items: Array = []
-var orbs: Array = []
+var flask_drops: Array = []
 var ammo_boxes: Array = []
 var chests: Array = []
 var coins: Array = []
@@ -40,7 +40,7 @@ var _next_level := 1
 var town: Dictionary = {}       # товар текущего города (Shops.make_town), пусто — не в городе
 var _next_town := false
 var zone_time := 0.0
-var orbs_spawned := 0
+var flasks_spawned := 0
 
 var _warmup: Warmup = null
 var _wake_t := 0.0
@@ -160,10 +160,10 @@ func _clear_zone() -> void:
 		if is_instance_valid(it):
 			it.queue_free()
 	items.clear()
-	for o in orbs:
+	for o in flask_drops:
 		if is_instance_valid(o):
 			o.queue_free()
-	orbs.clear()
+	flask_drops.clear()
 	for a in ammo_boxes:
 		if is_instance_valid(a):
 			a.queue_free()
@@ -198,12 +198,13 @@ func _clear_zone() -> void:
 
 
 func load_zone(level: int) -> void:
+	player.trim_flasks()
 	Game.zone_level = level
 	Game.in_town = false
 	town = {}
 	player.hurt_this_zone = false
 	zone_time = 0.0
-	orbs_spawned = 0
+	flasks_spawned = 0
 	if level > 1:
 		if bool(Game.run["zone_heal"]):
 			player.heal(player.max_hp, true)
@@ -244,6 +245,7 @@ func load_town(next_level: int) -> void:
 		load_zone(next_level)
 		return
 	Game.in_town = true
+	player.trim_flasks()
 	_clear_zone()
 	town = Shops.make_town(next_level, rng)
 	Game.town_name = str(data["name"])
@@ -446,7 +448,7 @@ func pick_coin(c: Coin) -> void:
 		Sfx.ui("pickup/relic", -6.0, 1.0, 0.05)
 		fx.text(c.position + Vector2(0, -20), "+%d %s" % [c.value, U.t("ancient")], Color(0.6, 1.0, 1.0), 14, 1.0)
 	else:
-		var v := maxi(c.value, roundi(float(c.value) * player.stat_mult("coins")))
+		var v := c.value
 		Game.add_coins(v)
 		Quests.progress("coins", v)
 		Sfx.at("pickup/coin", c.position, -12.0, 1.0, 0.06, 3, 0.03)
@@ -454,19 +456,23 @@ func pick_coin(c: Coin) -> void:
 	c.queue_free()
 
 
-func spawn_orb(pos: Vector2) -> void:
-	if orbs_spawned >= MAX_ORBS_PER_ZONE or bool(Game.run["no_heal"]):
+## Фляга лечения на земле. forced — вне лимита MAX_FLASKS_PER_ZONE (вожаки, боссы). Хардкор — без фляг.
+func spawn_flask(pos: Vector2, forced: bool = false) -> void:
+	if bool(Game.run["no_heal"]):
 		return
-	orbs_spawned += 1
-	var o := HealthOrb.new()
+	if not forced:
+		if flasks_spawned >= MAX_FLASKS_PER_ZONE:
+			return
+		flasks_spawned += 1
+	var o := FlaskDrop.new()
 	o.position = pos
 	o.vel = Vector2.from_angle(randf() * TAU) * randf_range(60.0, 140.0)
 	item_layer.add_child(o)
-	orbs.append(o)
+	flask_drops.append(o)
 
 
-func remove_orb(o: HealthOrb) -> void:
-	orbs.erase(o)
+func remove_flask(o: FlaskDrop) -> void:
+	flask_drops.erase(o)
 	o.queue_free()
 
 
@@ -497,7 +503,7 @@ func spawn_ammo(pos: Vector2, mags: float, t: String = "") -> void:
 	var at := t if t != "" else _pick_ammo_type()
 	var b := AmmoBox.new()
 	b.ammo_type = at
-	b.amount = maxi(1, ceili(float(GunData.base_mag(at)) * mags * player.stat_mult("ammo")))
+	b.amount = maxi(1, ceili(float(GunData.base_mag(at)) * mags))
 	b.position = pos
 	b.vel = Vector2.from_angle(randf() * TAU) * randf_range(60.0, 150.0)
 	item_layer.add_child(b)
@@ -541,9 +547,8 @@ func open_chest(c: Chest) -> void:
 		var g := _loot(GunGen.generate(lvl, rng, 2.5 if c.golden else 1.0, 2 if c.golden else 1))
 		drop_gun(g, c.position + Vector2(0, 8))
 	if rng.randf() < 0.25:
-		spawn_orb(c.position)
-	var cv := Game.coin_value(lvl)
-	drop_coins(c.position, cv * rng.randi_range(4, 7) * (2 if c.golden else 1), 5)
+		spawn_flask(c.position)
+	drop_coins(c.position, Game.coins_for(lvl, float(rng.randi_range(4, 7) * (2 if c.golden else 1)), rng), 5)
 	if c.golden:
 		drop_coins(c.position, 1, 1, true)
 	fx.ring(c.position, 50.0, Color(1.0, 0.85, 0.4))
@@ -628,18 +633,19 @@ func on_enemy_killed(e: Enemy, by_player: bool = true) -> void:
 		drop_gun(_loot(GunGen.generate(lvl, rng, bonus)), e.position)
 	if e.elite == 2 and rng.randf() < 0.5:
 		drop_gun(_loot(GunGen.generate(lvl, rng, bonus)), e.position)
-	var orb_chance := 0.03 if e.elite == 0 else 0.25
-	if rng.randf() < orb_chance:
-		spawn_orb(e.position)
-	# монеты: обычный — 35% на одну, чемпион — 2–4, вожак — 5–8 и иногда древняя
-	var cv := Game.coin_value(lvl)
+	# фляги: обычный — 3%, чемпион — 25% (в пределах лимита зоны), вожак — одна всегда
+	if e.elite == 2:
+		spawn_flask(e.position, true)
+	elif rng.randf() < (0.03 if e.elite == 0 else 0.25):
+		spawn_flask(e.position)
+	# монеты (на первом этапе): обычный — в среднем 0.35, чемпион — 2–4, вожак — 5–8 и иногда древняя.
+	# Game.kill_coins: ×1.2 за этап и делится на рост числа врагов в зоне
 	if e.elite == 0:
-		if rng.randf() < 0.35:
-			drop_coins(e.position, cv)
+		drop_coins(e.position, Game.kill_coins(lvl, 0.35, rng))
 	elif e.elite == 1:
-		drop_coins(e.position, cv * rng.randi_range(2, 4), 3)
+		drop_coins(e.position, Game.kill_coins(lvl, float(rng.randi_range(2, 4)), rng), 3)
 	else:
-		drop_coins(e.position, cv * rng.randi_range(5, 8), 5)
+		drop_coins(e.position, Game.kill_coins(lvl, float(rng.randi_range(5, 8)), rng), 5)
 		if rng.randf() < 0.15:
 			drop_coins(e.position, 1, 1, true)
 	# патроны: обычный — 15% на полмагазина, чемпион — 60% на магазин, вожак — 2 магазина
@@ -671,8 +677,9 @@ func _boss_dead(b: Enemy) -> void:
 	if not Game.is_boss_zone(lvl):
 		# бродячий босс хаоса: лут поскромнее, без портала и смены музыки
 		drop_gun(_loot(GunGen.generate(lvl + 1, rng, 3.0, GunData.R_EPIC if rng.randf() < 0.3 else GunData.R_RARE)), b.position)
-		spawn_orb(b.position)
-		drop_coins(b.position, Game.coin_value(lvl) * 15, 6)
+		for i in 2:
+			spawn_flask(b.position, true)
+		drop_coins(b.position, Game.coins_for(lvl, 15.0, rng), 6)
 		drop_coins(b.position, 1, 1, true)
 		for i in 2:
 			spawn_ammo(b.position, 1.0)
@@ -683,11 +690,11 @@ func _boss_dead(b: Enemy) -> void:
 	for i in 2:
 		drop_gun(_loot(GunGen.generate(lvl, rng, 3.0, GunData.R_RARE)), b.position)
 	for i in 2:
-		spawn_orb(b.position)
+		spawn_flask(b.position, true)
 	for i in 4:
 		spawn_ammo(b.position, 1.0)
 	# босс этапа: горсть монет и древние монеты (чем глубже, тем больше)
-	drop_coins(b.position, Game.coin_value(lvl) * 30, 8)
+	drop_coins(b.position, Game.coins_for(lvl, 30.0, rng), 8)
 	drop_coins(b.position, 3 + lvl / 5, mini(5, 3 + lvl / 5), true)
 	_spawn_portal(zone.random_free_near(b.position + Vector2(0, -90), 0.0, 60.0), lvl + 1)
 

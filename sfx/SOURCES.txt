@@ -8,6 +8,9 @@ guns/launcher, guns/mortar — "25 CC0 bang / firework SFX" (CC0) — https://op
 reload/pistol — https://opengameart.org/content/handgun-reload-sound-effect (CC0)
 reload/pistol_2, rifle, launcher — https://opengameart.org/content/gun-reload-sounds (CC0)
 reload/sniper, sniper_done — нарезаны из reload/rifle (0–0.55 с: вынимание магазина; 0.72–1.32 с: магазин на место + затвор)
+reload/rifle_start, rifle_done — та же нарезка из reload/rifle (ПП, автомат, пулемёт)
+reload/pistol_start, pistol_done — нарезаны из reload/pistol (0.45–0.82 с: магазин вон; 0.90–1.50 с: магазин + затвор)
+reload/revolver_start, revolver_done — нарезаны из reload/pistol_2 (0.03–1.12 с: барабан и гильзы; 1.22–1.58 с: защёлка)
 reload/shotgun, shotgun_done — https://opengameart.org/content/shotgun-reload-sound-effects (CC0)
 reload/done, ui/empty — https://opengameart.org/content/gun-reload-lock-or-click-sound (CC0)
 

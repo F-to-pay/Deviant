@@ -6,6 +6,7 @@ extends RefCounted
 ## Все таблицы — в GunData (из data/*.json и модов); эффекты — операции GunOps.
 
 const BURST_MAX := 7    # дольше очередь не бывает (перк «Залповый» кидает 2–7)
+const HYBRID_AMMO_RATE := 0.7   # доля основы патронов в скорострельности гибрида (см. _apply_base)
 const CURSE_DMG := 0.8   # проклятая пушка бьёт на 20% слабее
 
 ## Отладчик: следующая легендарка будет именно этой (id), "" — случайная.
@@ -65,6 +66,7 @@ static func generate(level: int, rng: RandomNumberGenerator, bonus: float = 0.0,
 			g.archetype = _pick_arch(rng, false)
 		if g.archetype2 != "" and not GunData.ARCH.has(g.archetype2):
 			g.archetype2 = ""
+		_shell_first(g)
 	else:
 		if g.rarity == GunData.R_LEGENDARY:
 			g.rarity = GunData.R_EPIC   # легендарок нет вовсе (мод всё убрал)
@@ -81,8 +83,9 @@ static func generate(level: int, rng: RandomNumberGenerator, bonus: float = 0.0,
 				g.archetype2 = a2
 		# Гипернова делает из любой основы ракетницу: узор стрельбы свой, снаряд — ракета
 		var pa := str(_maker(g).get("projectile_arch", ""))
-		if pa != "" and GunData.ARCH.has(pa) and g.archetype != pa and force_arch == "":
+		if pa != "" and GunData.ARCH.has(pa) and g.archetype != pa and force_arch == "" and not _is_shell(g.archetype):
 			g.archetype2 = pa
+		_shell_first(g)
 	_build(g, rng, leg)
 	return g
 
@@ -190,6 +193,17 @@ static func rebuild(old: Gun, rarity: int, drop: String, rng: RandomNumberGenera
 
 # --- Основа -------------------------------------------------------------------
 
+static func _is_shell(arch: String) -> bool:
+	return str(GunData.ARCH.get(arch, {}).get("kind", "")) == "shell"
+
+
+## Навесная мина при объединении всегда побеждает: основа с минами становится снарядом гибрида.
+static func _shell_first(g: Gun) -> void:
+	if g.archetype2 != "" and _is_shell(g.archetype) and not _is_shell(g.archetype2):
+		var t := g.archetype
+		g.archetype = g.archetype2
+		g.archetype2 = t
+
 static func _apply_base(g: Gun) -> void:
 	var a: Dictionary = GunData.ARCH[g.archetype]
 	if g.archetype2 == "":
@@ -233,11 +247,23 @@ static func _apply_base(g: Gun) -> void:
 		g.explode_r = float(b.get("explode", 0.0))
 		g.bounces = int(b.get("bounce", 0))
 		g.drag = float(b.get("drag", 0.0))
-		# Нормируем урон, чтобы гибрид не был ни имбой, ни мусором.
-		var dps_a := float(a.get("damage", 10.0)) * float(a.get("pellets", 1)) * float(a.get("fire_rate", 2.0))
-		var dps_b := float(b.get("damage", 10.0)) * float(b.get("pellets", 1)) * float(b.get("fire_rate", 2.0))
-		var target := (dps_a + dps_b) * 0.5 * 1.1
-		g.damage = target / (float(g.pellets) * g.fire_rate)
+		# Урон — от патронов, которые ест гибрид: один патрон бьёт как выстрел той основы, чьи это патроны,
+		# и делится между снарядами узора стрельбы. Снайперка с патронами пулемёта бьёт как пулемёт,
+		# пулемёт с патронами снайперки — как снайперка, но патронов к нему мало.
+		var am: Dictionary = a if str(_maker(g).get("projectile_arch", "")) != "" else b
+		g.damage = float(am.get("damage", 10.0)) * float(am.get("pellets", 1)) / float(maxi(1, g.pellets))
+		# скорострельность — смесь с уклоном к основе патронов (30% узора, 70% патронов, геометрически):
+		# пулемёт на минах — 1.5 выстр/с, а не 14; снайперка на патронах ПП — 5, а не 0.8
+		g.fire_rate = pow(float(a.get("fire_rate", 2.0)), 1.0 - HYBRID_AMMO_RATE) * pow(float(am.get("fire_rate", 2.0)), HYBRID_AMMO_RATE)
+		# пулемёт отдаёт гибриду огромный магазин
+		if bool(b.get("big_mag", false)):
+			g.mag_size = maxi(g.mag_size, int(b.get("mag", 10)))
+	# особенности основ — у гибрида от обеих
+	var b2: Dictionary = GunData.ARCH.get(g.archetype2, {}) if g.archetype2 != "" else {}
+	g.light = bool(a.get("light", false)) or bool(b2.get("light", false))
+	g.no_falloff = bool(a.get("no_falloff", false)) or bool(b2.get("no_falloff", false))
+	var rd := maxf(float(a.get("range_dmg", 0.0)), float(b2.get("range_dmg", 0.0)))
+	g.range_dmg = clampf(rd, 0.0, 1.0)
 	if g.proj_kind == GunData.K_ROCKET:
 		g.accel = 2.8
 		g.explode_chance = 1.0
