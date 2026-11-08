@@ -106,7 +106,7 @@
 		"group": "",
 		"tags": [],
 		"fits": [["fire_rate", ">=", 1.2]],
-		"ops": [["set", "burst", 3], ["mul", "damage", 1.05], ["max", "mag_size", 3]]
+		"ops": [["rand", "burst", 2, 7], ["mul", "damage", 1.05]]
 	},
 	{
 		"id": "armored",

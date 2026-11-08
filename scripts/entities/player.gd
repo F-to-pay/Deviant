@@ -1,6 +1,6 @@
 class_name Player
 extends Actor
-## Игрок. Уровней нет — вся сила в пушках. 4 слота + рюкзак.
+## Игрок. Уровней нет — вся сила в пушках. 4 слота + рюкзак. Плюс герой (Heroes) с активным навыком.
 
 const BASE_HP := 100.0
 const SPEED := 265.0
@@ -34,6 +34,14 @@ var chill: float = 0.0
 var hazard_tick: float = 0.0
 var anim: float = 0.0
 var muzzle: float = 0.0
+var hero := Heroes.DEFAULT
+var skill_cd: float = 0.0       # перезарядка навыка
+var blessed := false            # Культист: следующий выстрел усилен
+var slash_t: float = 0.0        # Ассасин: идёт удар (замедление, дуга на экране)
+var slash_dir := Vector2.RIGHT
+var run_perks: Dictionary = {}  # перки Мистика на этот забег: id -> сколько раз взят (Shops.MYSTIC)
+var reload_total: float = 1.0   # полная длительность текущей перезарядки (с перками)
+var hurt_this_zone := false     # получал ли урон в этой зоне (задание «без урона»)
 
 
 func reset() -> void:
@@ -43,6 +51,7 @@ func reset() -> void:
 	active = 0
 	last_active = 0
 	radius = 14.0
+	run_perks = {}
 	max_hp = BASE_HP
 	hp = max_hp
 	dead = false
@@ -56,6 +65,49 @@ func reset() -> void:
 	acid = 0.0
 	cryo = 0.0
 	frozen_time = 0.0
+	set_hero(Game.hero)
+
+
+## Сменить героя (в стартовом городе): навык готов сразу.
+func set_hero(id: String) -> void:
+	hero = id if Heroes.LIST.has(id) else Heroes.DEFAULT
+	skill_cd = 0.0
+	blessed = false
+	slash_t = 0.0
+	queue_redraw()
+
+
+func skill_max_cd() -> float:
+	return float(Heroes.get_hero(hero)["cd"]) * stat_mult("skill_cd")
+
+
+func dodge_max_cd() -> float:
+	return DODGE_CD * stat_mult("dodge_cd")
+
+
+## Множитель от перков Мистика: 1 + сумма бонусов (не меньше 0.3).
+func stat_mult(stat: String) -> float:
+	var k := 1.0
+	for id in run_perks:
+		var pk: Dictionary = Shops.MYSTIC.get(id, {})
+		if str(pk.get("stat", "")) == stat:
+			k += float(pk["v"]) * float(run_perks[id])
+	return maxf(0.3, k)
+
+
+## Взять перк Мистика. Здоровье сразу растёт на прибавку.
+func add_run_perk(id: String) -> void:
+	run_perks[id] = int(run_perks.get(id, 0)) + 1
+	var before := max_hp
+	max_hp = BASE_HP * stat_mult("hp")
+	hp = minf(max_hp, hp + maxf(0.0, max_hp - before))
+
+
+func run_perk_count() -> int:
+	var n := 0
+	for id in run_perks:
+		n += int(run_perks[id])
+	return n
 
 
 func gun() -> Gun:
@@ -78,7 +130,7 @@ func reload_progress() -> float:
 	var g := gun()
 	if g == null or reload_t <= 0.0:
 		return 0.0
-	return 1.0 - reload_t / g.reload_time
+	return 1.0 - reload_t / maxf(0.01, reload_total)
 
 
 # --- Инвентарь -------------------------------------------------------------------
@@ -129,7 +181,7 @@ func on_gun_changed() -> void:
 		Game.main.sfx.reload_cancel()
 	reload_t = 0.0
 	burst_left = 0
-	max_hp = BASE_HP
+	max_hp = BASE_HP * stat_mult("hp")
 	hp = minf(hp, max_hp)
 
 
@@ -150,6 +202,7 @@ func take_damage(amount: float) -> bool:
 		return false
 	if invuln > 0.0:
 		return false
+	hurt_this_zone = true
 	amount *= 1.0 - armor()
 	hp -= amount
 	invuln = 0.4
@@ -178,6 +231,7 @@ func _on_dodged() -> void:
 func hurt_dot(amount: float, el: int) -> void:
 	if dead:
 		return
+	hurt_this_zone = true
 	amount *= 1.0 - armor()
 	hp -= amount
 	Game.main.fx.damage_number(position + Vector2(0, -radius), amount, false, el, true)
@@ -198,12 +252,12 @@ func leech(dmg_dealt: float, frac: float) -> void:
 	heal(amt)
 
 
-func heal(amount: float, show: bool = false) -> void:
+func heal(amount: float, show_fx: bool = false) -> void:
 	if dead or amount <= 0.0:
 		return
 	var before := hp
 	hp = minf(max_hp, hp + amount)
-	if show and hp > before:
+	if show_fx and hp > before:
 		Game.main.fx.heal_fx(position)
 		Sfx.ui("pickup/heal", -5.0)
 		Game.main.fx.text(position + Vector2(0, -30), "+" + U.fmt(hp - before), Color(0.4, 1.0, 0.5), 16, 0.8)
@@ -244,6 +298,10 @@ func _physics_process(delta: float) -> void:
 		chill -= delta
 	if muzzle > 0.0:
 		muzzle -= delta
+	if skill_cd > 0.0:
+		skill_cd -= delta
+	if slash_t > 0.0:
+		slash_t -= delta
 
 	var mp := Controls.aim_world(position)
 	if mp.distance_squared_to(position) > 16.0:
@@ -251,11 +309,13 @@ func _physics_process(delta: float) -> void:
 
 	var input := Controls.move_vector()
 	var g := gun()
-	var spd := SPEED
+	var spd := SPEED * stat_mult("speed")
 	if g != null:
 		spd *= g.move_mult
 	if chill > 0.0:
 		spd *= 0.65
+	if slash_t > 0.0:
+		spd *= 1.0 - float(Heroes.get_hero(hero).get("slow", 0.0))
 	if main.transitioning:
 		input = Vector2.ZERO
 	if dodge_t > 0.0:
@@ -266,7 +326,7 @@ func _physics_process(delta: float) -> void:
 		if Input.is_action_just_pressed("dodge") and dodge_cd <= 0.0 and not main.transitioning:
 			dodge_dir = input.normalized() if input.length() > 0.1 else aim
 			dodge_t = DODGE_TIME
-			dodge_cd = DODGE_CD
+			dodge_cd = dodge_max_cd()
 			perfect_dodge = false
 			invuln = maxf(invuln, DODGE_TIME)
 			main.fx.dust(position)
@@ -290,8 +350,61 @@ func _physics_process(delta: float) -> void:
 	leech_budget = minf(LEECH_CAP, leech_budget + LEECH_CAP * delta)
 
 	if not main.transitioning:
+		if Input.is_action_pressed("skill") and skill_cd <= 0.0:
+			_use_skill()
 		_update_gun(delta)
 	queue_redraw()
+
+
+# --- Навык героя -------------------------------------------------------------------
+
+func _use_skill() -> void:
+	var main: Main = Game.main
+	var h := Heroes.get_hero(hero)
+	var col: Color = h["color"]
+	skill_cd = skill_max_cd()
+	var sdmg := float(h["dmg"]) * stat_mult("skill_dmg")
+	match str(h["skill"]):
+		"grenade":
+			# в точку прицела, но не дальше range
+			var to := Controls.aim_world(position) - position
+			var dist := clampf(to.length(), 40.0, float(h["range"]))
+			var target := position + aim * dist
+			main.projectiles.throw_grenade(position + aim * (radius + 6.0), target, sdmg, float(h["r"]), col)
+			Sfx.at("player/dodge", position, -6.0, 1.4, 0.06, 1, 0.1)
+		"bless":
+			blessed = true
+			main.fx.ring(position, 34.0, Color(1.0, 0.8, 0.3), 0.4)
+			Sfx.at("player/perfect", position, -6.0, 0.7, 0.04, 1, 0.1)
+		"slash":
+			slash_t = float(h["time"])
+			slash_dir = aim
+			var r := float(h["r"])
+			var half := deg_to_rad(float(h["arc"])) * 0.5
+			var hits := 0
+			for o in main.grid_hash.query(position, r + 60.0):
+				var e: Enemy = o
+				if e.dead:
+					continue
+				var to_e := e.position - position
+				if to_e.length() > r + e.radius:
+					continue
+				# совсем вплотную — бьём в любом случае, иначе только в дуге
+				if to_e.length() > e.radius + radius and absf(aim.angle_to(to_e)) > half:
+					continue
+				Combat.hit_enemy(e, sdmg, false, -1, to_e.normalized() * 160.0)
+				hits += 1
+			Sfx.at("player/dodge", position, -5.0, 1.6, 0.08, 2, 0.05)
+			if hits > 0:
+				Sfx.at("hit/body", position, -6.0, 1.2, 0.08, 2, 0.05)
+				main.fx.shake(2.0)
+
+
+## Благословение Культиста: прибавка к урону снаряда n-го выстрела (делится между дробинами/минами).
+func _bless_bonus(n: int) -> float:
+	if not blessed:
+		return 0.0
+	return float(Heroes.get_hero(hero)["dmg"]) * stat_mult("skill_dmg") / float(maxi(1, n))
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -360,7 +473,8 @@ func start_reload(manual: bool = false) -> void:
 		if manual or g.ammo <= 0:
 			_dry(U.t("NO AMMO"))
 		return
-	reload_t = g.reload_time
+	reload_t = g.reload_time * stat_mult("reload")
+	reload_total = reload_t
 	burst_left = 0
 	Game.main.sfx.reload_start(g)
 
@@ -429,7 +543,9 @@ func _fire_shells(g: Gun, mpos: Vector2, spr: float, n: int) -> void:
 	var dev := dist * tan(clampf(spr * 0.5, 0.0, 1.2))
 	for i in n:
 		var off := Vector2.from_angle(randf() * TAU) * dev * sqrt(randf())
-		main.projectiles.fire_shell(g, mpos, aim_pt + off)
+		var p := main.projectiles.fire_shell(g, mpos, aim_pt + off, stat_mult("dmg"))
+		if p != null:
+			p.dmg += _bless_bonus(n)
 
 
 func _fire(g: Gun) -> void:
@@ -449,11 +565,16 @@ func _fire(g: Gun) -> void:
 				a += lerpf(-spr * 0.5, spr * 0.5, (float(i) + 0.5) / float(n)) + randf_range(-0.08, 0.08) * spr
 			else:
 				a += randf_range(-spr * 0.5, spr * 0.5)
-			main.projectiles.fire_gun(g, mpos, Vector2.from_angle(a), 0)
+			var p := main.projectiles.fire_gun(g, mpos, Vector2.from_angle(a), 0, stat_mult("dmg"))
+			if p != null:
+				p.dmg += _bless_bonus(n)
+	if blessed:
+		blessed = false
+		main.fx.ring(mpos, 24.0, Color(1.0, 0.8, 0.3), 0.3)
 	if g.special == "ring" and randf() < GunGen.proc_keep_chance(g):
 		for k in 8:
 			var dir := Vector2.from_angle(base + TAU * float(k) / 8.0)
-			main.projectiles.fire_gun(g, position + dir * 18.0, dir, 0, 0.4)
+			main.projectiles.fire_gun(g, position + dir * 18.0, dir, 0, 0.4 * stat_mult("dmg"))
 	if g.special == "nuke10":
 		# заряд копится от «веса» выстрела, а не от их количества
 		g.nuke_charge += g.norm_damage() * float(n) / Gun.NUKE_COST
@@ -474,7 +595,7 @@ func _draw() -> void:
 	if dead:
 		return
 	var blink := invuln > 0.0 and dodge_t <= 0.0 and fmod(anim * 20.0, 1.0) < 0.5
-	var body := Color(0.35, 0.85, 1.0)
+	var body := Heroes.color(hero)
 	if flash > 0.0:
 		body = Color(1, 0.4, 0.4)
 	if blink:
@@ -485,6 +606,20 @@ func _draw() -> void:
 			draw_circle(-dodge_dir * float(i + 1) * 10.0, radius * (0.9 - 0.2 * float(i)), Color(0.35, 0.85, 1.0, 0.25 - 0.07 * float(i)))
 	if chill > 0.0:
 		draw_circle(Vector2.ZERO, radius + 5.0, Color(0.7, 0.95, 1.0, 0.25))
+	if blessed:
+		var pulse := 1.0 + sin(anim * 8.0) * 0.15
+		draw_circle(Vector2.ZERO, (radius + 7.0) * pulse, Color(1.0, 0.8, 0.3, 0.22))
+		draw_arc(Vector2.ZERO, (radius + 7.0) * pulse, 0.0, TAU, 24, Color(1.0, 0.85, 0.4, 0.8), 2.0)
+	if slash_t > 0.0:
+		# дуга удара: метёт от одного края к другому
+		var hs := Heroes.get_hero(hero)
+		var half := deg_to_rad(float(hs["arc"])) * 0.5
+		var k := 1.0 - clampf(slash_t / float(hs["time"]), 0.0, 1.0)
+		var a0 := slash_dir.angle() - half
+		var a1 := a0 + half * 2.0 * minf(1.0, k * 1.6)
+		var sc: Color = hs["color"]
+		draw_arc(Vector2.ZERO, float(hs["r"]) * 0.8, a0, a1, 20, Color(sc.lightened(0.4), 0.9 * (1.0 - k * 0.6)), 10.0)
+		draw_arc(Vector2.ZERO, float(hs["r"]) * 0.8 + 8.0, a0, a1, 20, Color(1, 1, 1, 0.5 * (1.0 - k)), 3.0)
 	var bob := sin(anim * 14.0) * 1.5 if vel.length() > 10.0 else 0.0
 	draw_circle(Vector2(0, bob), radius, body.darkened(0.2))
 	draw_arc(Vector2(0, bob), radius, 0.0, TAU, 24, body.lightened(0.4), 2.5)

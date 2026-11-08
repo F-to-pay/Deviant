@@ -26,12 +26,26 @@ func _draw() -> void:
 	var deco: Color = b["deco"]
 	var shadow := Color(0, 0, 0, 0.28)
 
-	# Пятна на полу
+	# Пятна на полу; в городе на улицах — мостовая
+	var pave: Color = Color(b["floor"]).lightened(0.07)
+	var seam: Color = Color(b["floor"]).darkened(0.18)
 	for cy in range(y0, y1):
 		for cx in range(x0, x1):
 			if zone.get_cell(cx, cy) != Zone.FLOOR:
 				continue
 			var hh := _hash(cx, cy)
+			if zone.is_paved(cx, cy):
+				# «булыжники»: два ряда в клетке, швы через ряд со сдвигом на четверть клетки
+				draw_rect(Rect2(cx * ts, cy * ts, ts, ts), seam)
+				for row in 2:
+					var cuts: Array = [0.0, 0.5, 1.0] if (cy * 2 + row) % 2 == 0 else [0.0, 0.25, 0.75, 1.0]
+					for k in cuts.size() - 1:
+						var xa := cx * ts + float(cuts[k]) * ts
+						var xb := cx * ts + float(cuts[k + 1]) * ts
+						var shade := float((hh >> (k + row * 3)) % 3) * 0.025
+						draw_rect(Rect2(xa + 1.5, cy * ts + float(row) * ts * 0.5 + 1.5, xb - xa - 3.0, ts * 0.5 - 3.0),
+							pave.lightened(shade))
+				continue
 			if hh % 5 == 0:
 				var ox := float(hh % 23)
 				var oy := float((hh / 23) % 23)

@@ -107,6 +107,15 @@ func on_zone(is_boss: bool) -> void:
 		play_category("zone", 2.0)
 
 
+## Город: спокойная музыка (если её нет — обычная зонная).
+func on_town() -> void:
+	_saved = {}
+	set_muffled(false)
+	var c := "calm" if not (tracks["calm"] as Array).is_empty() else "zone"
+	if cat != c or not _players[_cur].playing:
+		play_category(c, 2.0)
+
+
 func on_boss_dead() -> void:
 	play_category("calm", 3.0)
 

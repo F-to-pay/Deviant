@@ -1,6 +1,6 @@
 class_name Main
 extends Node2D
-## Корень игры: собирает мир, спавнит зоны, раздаёт лут, двигает камеру.
+## Корень игры: собирает мир, спавнит зоны и города, раздаёт лут и монеты, двигает камеру.
 
 const MAX_ORBS_PER_ZONE := 2   # хилок за зону, не больше
 const ZONE_HEAL := 0.0         # хил при входе в новую зону (0 = хардкор). Крути, если станет нереально.
@@ -26,11 +26,19 @@ var items: Array = []
 var orbs: Array = []
 var ammo_boxes: Array = []
 var chests: Array = []
+var coins: Array = []
+var stalls: Array = []
 var portal: Portal = null
 var boss: Boss = null
 var near_item: GroundItem = null
 var near_chest: Chest = null
+var near_stall: Stall = null
+var reset_stone: ResetStone = null   # камень перезапуска (только в стартовом городе)
+var near_reset := false
 var transitioning := false
+var _next_level := 1
+var town: Dictionary = {}       # товар текущего города (Shops.make_town), пусто — не в городе
+var _next_town := false
 var zone_time := 0.0
 var orbs_spawned := 0
 
@@ -120,6 +128,7 @@ func start_run() -> void:
 	Game.seed_value = Game.seed_from(str(Game.run["seed"]))
 	rng.seed = Game.seed_value
 	Game.new_run()
+	Quests.reset()
 	player.reset()
 	# По умолчанию стартовый пистолет — Синергис: бесконечные патроны, чтобы было чем стрелять
 	var arch := str(Game.run["arch"])
@@ -128,13 +137,15 @@ func start_run() -> void:
 	maker = "synergis" if maker == "" else ("" if maker == "random" else maker)
 	var starter := GunGen.generate(1, rng, 0.0, 0, GunData.R_COMMON, arch, maker)
 	player.add_gun(starter)
-	player.add_gun(GunGen.generate(1, rng, 0.0, 0, GunData.R_UNCOMMON))
 	for o in player.guns:
 		if o != null:
 			Game.note_gun(o)
 			var sg: Gun = o
 			player.add_ammo(sg.ammo_type(), GunData.ammo_cap(sg.ammo_type()))
-	load_zone(1)
+	if Game.town_before(1):
+		load_town(1)
+	else:
+		load_zone(1)
 	hud.on_run_start()
 
 
@@ -161,6 +172,20 @@ func _clear_zone() -> void:
 		if is_instance_valid(c):
 			c.queue_free()
 	chests.clear()
+	for o in coins:
+		if is_instance_valid(o):
+			o.queue_free()
+	coins.clear()
+	for o in stalls:
+		if is_instance_valid(o):
+			o.queue_free()
+	stalls.clear()
+	near_stall = null
+	if reset_stone != null and is_instance_valid(reset_stone):
+		reset_stone.queue_free()
+	reset_stone = null
+	near_reset = false
+	hud.close_stall()
 	if portal != null and is_instance_valid(portal):
 		portal.queue_free()
 	portal = null
@@ -174,6 +199,9 @@ func _clear_zone() -> void:
 
 func load_zone(level: int) -> void:
 	Game.zone_level = level
+	Game.in_town = false
+	town = {}
+	player.hurt_this_zone = false
 	zone_time = 0.0
 	orbs_spawned = 0
 	if level > 1:
@@ -183,15 +211,7 @@ func load_zone(level: int) -> void:
 			player.heal(ZONE_HEAL)
 	_clear_zone()
 	var data: Dictionary = ZoneGen.generate(level, rng)
-	zone.setup(data)
-	player.position = zone.cell_center(data["spawn"])
-	var ws := zone.world_size()
-	camera.limit_left = 0
-	camera.limit_top = 0
-	camera.limit_right = int(ws.x)
-	camera.limit_bottom = int(ws.y)
-	camera.position = player.position
-	camera.reset_smoothing()
+	_enter(data)
 	var boss_title := ""
 	if bool(data["boss"]):
 		var b := Boss.new()
@@ -217,10 +237,59 @@ func load_zone(level: int) -> void:
 	hud.zone_banner(level, U.t(str(data["biome"]["name"])), boss_title)
 
 
-func next_zone() -> void:
+## Город перед зоной next_level: лавки, портал дальше, врагов нет.
+func load_town(next_level: int) -> void:
+	var data: Dictionary = TownGen.generate(next_level, rng)
+	if data.is_empty():   # не должно случаться, но лучше без города, чем падение
+		load_zone(next_level)
+		return
+	Game.in_town = true
+	_clear_zone()
+	town = Shops.make_town(next_level, rng)
+	Game.town_name = str(data["name"])
+	_enter(data)
+	for o in data["stalls"]:
+		var st := Stall.new()
+		st.kind = str(o[0])
+		st.position = zone.cell_center(o[1])
+		item_layer.add_child(st)
+		stalls.append(st)
+	_spawn_portal(zone.cell_center(data["portal"]), next_level)
+	if next_level == 1:
+		reset_stone = ResetStone.new()
+		reset_stone.position = zone.random_free_near(player.position, 80.0, 120.0)
+		item_layer.add_child(reset_stone)
+	zone.explore(player.position, 11)
+	music.on_town()
+	if next_level > 1:
+		Sfx.ui("world/zone", -8.0)
+	hud.town_banner(Game.town_name, next_level, U.t(str(Biomes.for_level(next_level)["name"])))
+
+
+## Общее для зоны и города: карта, игрок на входе, границы камеры.
+func _enter(data: Dictionary) -> void:
+	zone.setup(data)
+	player.position = zone.cell_center(data["spawn"])
+	var ws := zone.world_size()
+	camera.limit_left = 0
+	camera.limit_top = 0
+	camera.limit_right = int(ws.x)
+	camera.limit_bottom = int(ws.y)
+	camera.position = player.position
+	camera.reset_smoothing()
+
+
+## Портал: в зону level или (to_town) сначала в город перед ней.
+func next_zone(level: int = -1, to_town: bool = false) -> void:
 	if transitioning:
 		return
+	_next_level = level if level > 0 else Game.zone_level + 1
+	_next_town = to_town
 	transitioning = true
+	if not Game.in_town and not player.dead:
+		Quests.progress("zones")
+		if not player.hurt_this_zone:
+			Quests.progress("flawless")
 	player.invuln = 99.0
 	Sfx.ui("world/portal", -4.0)
 	var tw := create_tween()
@@ -230,8 +299,25 @@ func next_zone() -> void:
 	tw.tween_callback(_end_transition)
 
 
+## Камень перезапуска: новый забег с нуля в новом стартовом городе (с затемнением, как портал).
+func restart_from_stone() -> void:
+	if transitioning:
+		return
+	transitioning = true
+	player.invuln = 99.0
+	Sfx.ui("world/portal", -4.0, 1.3)
+	var tw := create_tween()
+	tw.tween_property(hud, "fade", 1.0, 0.3)
+	tw.tween_callback(start_run)
+	tw.tween_property(hud, "fade", 0.0, 0.4)
+	tw.tween_callback(_end_transition)
+
+
 func _do_next_zone() -> void:
-	load_zone(Game.zone_level + 1)
+	if _next_town:
+		load_town(_next_level)
+	else:
+		load_zone(_next_level)
 
 
 func _end_transition() -> void:
@@ -315,6 +401,7 @@ func _spawn_portal(pos: Vector2, target: int) -> void:
 	portal = Portal.new()
 	portal.position = pos
 	portal.target_level = target
+	portal.to_town = not Game.in_town and Game.town_before(target)
 	item_layer.add_child(portal)
 
 
@@ -332,6 +419,39 @@ func drop_gun(g: Gun, pos: Vector2, pop: bool = true) -> void:
 		Sfx.ui("pickup/legendary", -3.0, 1.0, 0.3)
 		Game.say("%s! %s" % [g.rarity_name().to_upper(), g.gun_name], g.rarity_color())
 		fx.ring(pos, 80.0, g.rarity_color(), 0.6)
+
+
+## total монет россыпью из pieces штук (не больше 8 — чтобы не плодить узлы). meta — древние.
+func drop_coins(pos: Vector2, total: int, pieces: int = 1, meta: bool = false) -> void:
+	if total <= 0:
+		return
+	var n := clampi(pieces, 1, mini(8, total))
+	var left := total
+	for i in n:
+		var c := Coin.new()
+		c.meta = meta
+		c.value = left / (n - i)
+		left -= c.value
+		c.position = pos
+		c.vel = Vector2.from_angle(randf() * TAU) * randf_range(70.0, 170.0)
+		item_layer.add_child(c)
+		coins.append(c)
+
+
+## Монета долетела до игрока.
+func pick_coin(c: Coin) -> void:
+	coins.erase(c)
+	if c.meta:
+		Game.add_meta(c.value)
+		Sfx.ui("pickup/relic", -6.0, 1.0, 0.05)
+		fx.text(c.position + Vector2(0, -20), "+%d %s" % [c.value, U.t("ancient")], Color(0.6, 1.0, 1.0), 14, 1.0)
+	else:
+		var v := maxi(c.value, roundi(float(c.value) * player.stat_mult("coins")))
+		Game.add_coins(v)
+		Quests.progress("coins", v)
+		Sfx.at("pickup/coin", c.position, -12.0, 1.0, 0.06, 3, 0.03)
+		fx.text(c.position + Vector2(0, -16), "+%d" % v, Color(1.0, 0.85, 0.3), 14, 0.7)
+	c.queue_free()
 
 
 func spawn_orb(pos: Vector2) -> void:
@@ -377,7 +497,7 @@ func spawn_ammo(pos: Vector2, mags: float, t: String = "") -> void:
 	var at := t if t != "" else _pick_ammo_type()
 	var b := AmmoBox.new()
 	b.ammo_type = at
-	b.amount = maxi(1, ceili(float(GunData.base_mag(at)) * mags))
+	b.amount = maxi(1, ceili(float(GunData.base_mag(at)) * mags * player.stat_mult("ammo")))
 	b.position = pos
 	b.vel = Vector2.from_angle(randf() * TAU) * randf_range(60.0, 150.0)
 	item_layer.add_child(b)
@@ -413,6 +533,7 @@ func open_chest(c: Chest) -> void:
 		return
 	c.opened = true
 	c.queue_redraw()
+	Quests.progress("chests")
 	Sfx.at("world/chest", c.position, -2.0, 0.9, 0.05, 2, 0.1)
 	var lvl: int = Game.zone_level
 	var n := rng.randi_range(2, 3) + (1 if c.golden else 0)
@@ -421,6 +542,10 @@ func open_chest(c: Chest) -> void:
 		drop_gun(g, c.position + Vector2(0, 8))
 	if rng.randf() < 0.25:
 		spawn_orb(c.position)
+	var cv := Game.coin_value(lvl)
+	drop_coins(c.position, cv * rng.randi_range(4, 7) * (2 if c.golden else 1), 5)
+	if c.golden:
+		drop_coins(c.position, 1, 1, true)
 	fx.ring(c.position, 50.0, Color(1.0, 0.85, 0.4))
 	near_chest = null
 
@@ -458,6 +583,19 @@ func player_interact(swap: bool) -> void:
 		return
 	if near_chest != null and is_instance_valid(near_chest) and not near_chest.opened:
 		open_chest(near_chest)
+		return
+	if near_reset:
+		restart_from_stone()
+		return
+	if near_stall != null and is_instance_valid(near_stall):
+		var scr := str(near_stall.info().get("menu", ""))
+		if scr != "":
+			hud.close_stall()
+			menu.open_town(scr, near_stall.line(), near_stall.color())
+		elif hud.stall == near_stall:
+			hud.close_stall()
+		else:
+			hud.open_stall(near_stall)
 
 
 # --- События ---------------------------------------------------------------------
@@ -474,6 +612,9 @@ func on_enemy_killed(e: Enemy, by_player: bool = true) -> void:
 	if not by_player:
 		return
 	Game.kills += 1
+	Quests.progress("kills")
+	if e.elite == 1 or e.elite == 2:
+		Quests.progress("elites")
 	var lvl: int = Game.zone_level
 	var chance := 0.055
 	var bonus := 0.0
@@ -490,6 +631,17 @@ func on_enemy_killed(e: Enemy, by_player: bool = true) -> void:
 	var orb_chance := 0.03 if e.elite == 0 else 0.25
 	if rng.randf() < orb_chance:
 		spawn_orb(e.position)
+	# монеты: обычный — 35% на одну, чемпион — 2–4, вожак — 5–8 и иногда древняя
+	var cv := Game.coin_value(lvl)
+	if e.elite == 0:
+		if rng.randf() < 0.35:
+			drop_coins(e.position, cv)
+	elif e.elite == 1:
+		drop_coins(e.position, cv * rng.randi_range(2, 4), 3)
+	else:
+		drop_coins(e.position, cv * rng.randi_range(5, 8), 5)
+		if rng.randf() < 0.15:
+			drop_coins(e.position, 1, 1, true)
 	# патроны: обычный — 15% на полмагазина, чемпион — 60% на магазин, вожак — 2 магазина
 	if e.elite == 0:
 		if rng.randf() < 0.15:
@@ -507,6 +659,9 @@ func _boss_dead(b: Enemy) -> void:
 		boss = null
 	Game.kills += 1
 	Game.bosses += 1
+	Quests.progress("kills")
+	if Game.is_boss_zone(Game.zone_level):
+		Quests.progress("boss")
 	var lvl: int = Game.zone_level
 	fx.explosion(b.position, 220.0, b.color, true)
 	fx.shake(18.0)
@@ -517,6 +672,8 @@ func _boss_dead(b: Enemy) -> void:
 		# бродячий босс хаоса: лут поскромнее, без портала и смены музыки
 		drop_gun(_loot(GunGen.generate(lvl + 1, rng, 3.0, GunData.R_EPIC if rng.randf() < 0.3 else GunData.R_RARE)), b.position)
 		spawn_orb(b.position)
+		drop_coins(b.position, Game.coin_value(lvl) * 15, 6)
+		drop_coins(b.position, 1, 1, true)
 		for i in 2:
 			spawn_ammo(b.position, 1.0)
 		return
@@ -529,6 +686,9 @@ func _boss_dead(b: Enemy) -> void:
 		spawn_orb(b.position)
 	for i in 4:
 		spawn_ammo(b.position, 1.0)
+	# босс этапа: горсть монет и древние монеты (чем глубже, тем больше)
+	drop_coins(b.position, Game.coin_value(lvl) * 30, 8)
+	drop_coins(b.position, 3 + lvl / 5, mini(5, 3 + lvl / 5), true)
 	_spawn_portal(zone.random_free_near(b.position + Vector2(0, -90), 0.0, 60.0), lvl + 1)
 
 
@@ -603,6 +763,27 @@ func _update_near() -> void:
 			if not c.opened and c.position.distance_to(player.position) < 60.0:
 				near_chest = c
 				break
+	var was_reset := near_reset
+	near_reset = near_item == null and near_chest == null and reset_stone != null and \
+		is_instance_valid(reset_stone) and reset_stone.position.distance_to(player.position) < ResetStone.TALK_DIST
+	if was_reset != near_reset and reset_stone != null and is_instance_valid(reset_stone):
+		reset_stone.highlight = near_reset
+	var prev_stall := near_stall
+	near_stall = null
+	if near_item == null and near_chest == null and not near_reset:
+		for o in stalls:
+			var st: Stall = o
+			if st.position.distance_to(player.position) < Stall.TALK_DIST:
+				near_stall = st
+				break
+	if prev_stall != near_stall:
+		if prev_stall != null and is_instance_valid(prev_stall):
+			prev_stall.highlight = false
+		if near_stall != null:
+			near_stall.highlight = true
+	# отошёл от лавки — окно закрывается
+	if hud.stall != null and (not is_instance_valid(hud.stall) or hud.stall.position.distance_to(player.position) > Stall.CLOSE_DIST):
+		hud.close_stall()
 
 
 func _process(delta: float) -> void:

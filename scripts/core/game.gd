@@ -39,6 +39,13 @@ var best_zone: int = 0
 var best_kills: int = 0
 var best_rating: int = 0
 var bosses: int = 0                 # боссов убито за забег
+var coins: int = 0                  # монеты забега (тратятся в городе, после смерти сгорают)
+var meta_coins: int = 0             # древние монеты — мета-прогрессия, копятся между забегами (deviant.cfg)
+var meta_run: int = 0               # древних монет подобрано за этот забег (для экрана смерти)
+var hero := Heroes.DEFAULT          # выбранный герой (Heroes), сохраняется
+var heroes_open: Array = [Heroes.DEFAULT]   # открытые герои, сохраняются
+var in_town := false                # сейчас в городе между этапами
+var town_name := ""
 var new_rating_record := false      # для экрана смерти
 var debug: bool = false
 var settings: Dictionary = DEFAULTS.duplicate()
@@ -48,8 +55,11 @@ var settings: Dictionary = DEFAULTS.duplicate()
 ##  "random" — случайно); seed — текст сида ("" — случайный).
 const RUN_DEFAULTS := {
 	"hp": 1.0, "dmg": 1.0, "zone_heal": false, "no_normals": false, "chests": true,
-	"no_heal": false, "chaos": false, "arch": "", "maker": "", "seed": "",
+	"no_heal": false, "chaos": false, "arch": "", "maker": "", "seed": "", "towns": true,
 }
+## Этап = TOWN_EVERY зон (последняя — с боссом). Перед каждым этапом, и в начале забега, — город.
+const TOWN_EVERY := 5
+const START_COINS := 100
 const DIFFICULTY := [
 	{"n": "Easy", "hp": 0.8, "dmg": 0.5},
 	{"n": "Normal", "hp": 1.0, "dmg": 1.0},
@@ -91,12 +101,9 @@ var debug_console: DebugConsole = null
 
 func _start_debugger() -> void:
 	DebugLog.enabled = true
-	# перехват ошибок движка (Godot 4.5+): ошибки скриптов модов, push_warning, print
-	if ClassDB.class_exists("Logger"):
-		var scr: Script = load("res://scripts/core/debug_logger.gd")
-		if scr != null:
-			OS.call("add_logger", scr.new())
-			DebugLog.logger_active = true
+	# ошибки движка (скрипты модов, push_warning, print) — читаем из файла журнала Godot.
+	# Не через Logger (Godot 4.5+): на 4.7 свой Logger на GDScript ронял игру без следа в журнале.
+	DebugLog.start_engine_log()
 	debug_console = DebugConsole.new()
 	add_child.call_deferred(debug_console)
 	# полная проверка — когда поднимется main (нужны загруженные звуки)
@@ -157,6 +164,10 @@ func new_run() -> void:
 	guns_found = 0
 	best_gun = null
 	bosses = 0
+	coins = START_COINS
+	meta_run = 0
+	in_town = false
+	town_name = ""
 	new_rating_record = false
 	biome_offset = rng.randi_range(0, 10)
 
@@ -168,6 +179,60 @@ func new_run() -> void:
 
 func is_boss_zone(level: int) -> bool:
 	return level % 5 == 0
+
+
+## Город перед этой зоной? — в начале забега и после каждого этапа (зоны 1, 6, 11...).
+func town_before(level: int) -> bool:
+	return bool(run.get("towns", true)) and (level - 1) % TOWN_EVERY == 0
+
+
+# --- Монеты ---------------------------------------------------------------------
+
+## Сколько стоит одна монетка, выпавшая в зоне level: глубже — дороже (цены в городе будут расти так же).
+func coin_value(level: int) -> int:
+	return 1 + maxi(0, level - 1) / 3
+
+
+func add_coins(n: int) -> void:
+	coins = maxi(0, coins + n)
+
+
+## Герой открыт (бесплатный — всегда).
+func hero_unlocked(id: String) -> bool:
+	return id in heroes_open or int(Heroes.get_hero(id).get("price", 0)) <= 0
+
+
+## Открыть героя за древние монеты. free — без оплаты (команда отладчика). true — открыт.
+func unlock_hero(id: String, free: bool = false) -> bool:
+	if not Heroes.LIST.has(id) or hero_unlocked(id):
+		return Heroes.LIST.has(id)
+	var price := int(Heroes.LIST[id]["price"])
+	if not free:
+		if meta_coins < price:
+			return false
+		meta_coins -= price
+	heroes_open.append(id)
+	_save()
+	return true
+
+
+## Выбрать героя (только открытого). Текущий забег подхватывает сразу — см. Player.set_hero.
+func select_hero(id: String) -> bool:
+	if not hero_unlocked(id):
+		return false
+	hero = id
+	_save()
+	if main != null and main.player != null:
+		main.player.set_hero(id)
+	return true
+
+
+## Древние монеты сохраняются сразу при подборе — их не теряешь ни при смерти, ни при вылете.
+func add_meta(n: int) -> void:
+	meta_coins = maxi(0, meta_coins + n)
+	if n > 0:
+		meta_run += n
+	_save()
 
 
 func enemy_hp_mult(level: int) -> float:
@@ -278,6 +343,15 @@ func _load() -> void:
 		best_zone = int(cf.get_value("records", "best_zone", 0))
 		best_kills = int(cf.get_value("records", "best_kills", 0))
 		best_rating = int(cf.get_value("records", "best_rating", 0))
+		meta_coins = int(cf.get_value("meta", "coins", 0))
+		hero = str(cf.get_value("meta", "hero", Heroes.DEFAULT))
+		if not Heroes.LIST.has(hero):
+			hero = Heroes.DEFAULT
+		for h in str(cf.get_value("meta", "heroes", "")).split(",", false):
+			if Heroes.LIST.has(h) and not (h in heroes_open):
+				heroes_open.append(h)
+		if not hero_unlocked(hero):
+			hero = Heroes.DEFAULT
 		for k in DEFAULTS:
 			settings[k] = _typed(DEFAULTS[k], cf.get_value("settings", str(k), DEFAULTS[k]))
 		for k in RUN_DEFAULTS:
@@ -298,6 +372,9 @@ func _save() -> void:
 	cf.set_value("records", "best_zone", best_zone)
 	cf.set_value("records", "best_kills", best_kills)
 	cf.set_value("records", "best_rating", best_rating)
+	cf.set_value("meta", "coins", meta_coins)
+	cf.set_value("meta", "hero", hero)
+	cf.set_value("meta", "heroes", ",".join(PackedStringArray(heroes_open)))
 	for k in settings:
 		cf.set_value("settings", str(k), settings[k])
 	for k in custom:

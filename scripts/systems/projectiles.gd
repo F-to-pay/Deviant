@@ -99,10 +99,35 @@ func _add(p: Proj) -> void:
 # --- Создание снарядов ---------------------------------------------------------
 
 ## Мина в конкретную точку (миномёт). Цель уже с учётом разброса — её считает стрелок.
-func fire_shell(g: Gun, pos: Vector2, target: Vector2, dmg_mult: float = 1.0) -> void:
+func fire_shell(g: Gun, pos: Vector2, target: Vector2, dmg_mult: float = 1.0) -> Proj:
 	var p := fire_gun(g, pos, (target - pos).normalized(), 0, dmg_mult)
 	if p != null:
 		p.target = target
+	return p
+
+
+## Граната героя (навык Первопроходца): летит дугой, как мина, и взрывается в точке падения.
+## Урон фиксированный — от уровня зоны не зависит.
+func throw_grenade(pos: Vector2, target: Vector2, dmg: float, r: float, col: Color) -> void:
+	if count() >= MAX_PROJ:
+		return
+	var p := Proj.new()
+	p.team = 0
+	p.kind = K_SHELL
+	p.pos = pos
+	p.start = pos
+	p.target = target
+	p.dmg = dmg
+	p.explode_r = r
+	p.size = 5.0
+	p.radius = 8.0
+	p.color = col
+	p.life = clampf(pos.distance_to(target) / 650.0, 0.3, 0.7)
+	p.max_life = p.life
+	p.eff_range = FAR
+	p.crit_chance = 0.0
+	p.knock = 60.0
+	_add(p)
 
 
 func fire_gun(g: Gun, pos: Vector2, dir: Vector2, team: int, dmg_mult: float = 1.0) -> Proj:

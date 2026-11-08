@@ -15,6 +15,7 @@ var h: int = 0
 var level: int = 1
 var grid: PackedByteArray
 var explored: PackedByteArray
+var paved := PackedByteArray()  # мостовая (город), пусто — нет
 var _astar := {}             # класс размера -> AStarGrid2D (см. find_path)
 var biome: Dictionary = {}
 var decor: Array = []
@@ -31,6 +32,7 @@ func setup(data: Dictionary) -> void:
 	grid = data["grid"]
 	biome = data["biome"]
 	decor = data["decor"]
+	paved = data.get("paved", PackedByteArray())
 	explored = PackedByteArray()
 	explored.resize(w * h)
 	explored.fill(0)
@@ -96,6 +98,10 @@ func blocks_move_cell(cx: int, cy: int) -> bool:
 
 func blocks_shot_at(p: Vector2) -> bool:
 	return get_cell(floori(p.x / T), floori(p.y / T)) == ROCK
+
+
+func is_paved(cx: int, cy: int) -> bool:
+	return not paved.is_empty() and cx >= 0 and cy >= 0 and cx < w and cy < h and paved[cy * w + cx] == 1
 
 
 func is_hazard_at(p: Vector2) -> bool:

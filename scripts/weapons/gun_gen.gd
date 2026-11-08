@@ -5,6 +5,7 @@ extends RefCounted
 ## -> легендарная фишка -> разброс статов -> масштаб по уровню -> имя.
 ## Все таблицы — в GunData (из data/*.json и модов); эффекты — операции GunOps.
 
+const BURST_MAX := 7    # дольше очередь не бывает (перк «Залповый» кидает 2–7)
 const CURSE_DMG := 0.8   # проклятая пушка бьёт на 20% слабее
 
 ## Отладчик: следующая легендарка будет именно этой (id), "" — случайная.
@@ -82,7 +83,13 @@ static func generate(level: int, rng: RandomNumberGenerator, bonus: float = 0.0,
 		var pa := str(_maker(g).get("projectile_arch", ""))
 		if pa != "" and GunData.ARCH.has(pa) and g.archetype != pa and force_arch == "":
 			g.archetype2 = pa
+	_build(g, rng, leg)
+	return g
 
+
+## Всё после выбора «личности» пушки (редкость, основа, марка, легендарка): статы, перки, разброс, имя.
+## keep — перки, которые надо оставить (пересборка в Мастерской), ban — какие не выдавать.
+static func _build(g: Gun, rng: RandomNumberGenerator, leg: Dictionary, keep: Array = [], ban: Array = []) -> void:
 	_apply_base(g)
 	var leg_ops: Array = []
 	if not leg.is_empty():
@@ -96,13 +103,18 @@ static func generate(level: int, rng: RandomNumberGenerator, bonus: float = 0.0,
 			if not (str(m) in g.mods):
 				_add_mod(g, str(m), rng)
 	var n := int(GunData.RARITIES[g.rarity].get("perks", 0))
+	for m in keep:
+		var kid := str(m)
+		if kid != "slug" and not (kid in g.mods) and not GunData.perk(kid).is_empty():
+			_add_mod(g, kid, rng)
+			n -= 1
 	# Сначала ставим «статовые» моды (они меняют скорострельность и число пуль),
 	# моды-эффекты (тег proc) откладываем и проверяем по итоговому числу пуль в секунду.
 	var deferred: Array = []
 	var tries := 0
 	while n > 0 and tries < 40:
 		tries += 1
-		var id := _roll_mod(g, rng, deferred)
+		var id := _roll_mod(g, rng, deferred + ban)
 		if id == "":
 			break
 		if GunData.perk_has_tag(id, "proc"):
@@ -115,7 +127,7 @@ static func generate(level: int, rng: RandomNumberGenerator, bonus: float = 0.0,
 			_add_mod(g, str(d), rng)
 		else:
 			# не прошёл — слот достаётся обычному моду
-			var alt := _roll_mod(g, rng, [], true)
+			var alt := _roll_mod(g, rng, ban, true)
 			if alt != "":
 				_add_mod(g, alt, rng)
 
@@ -125,6 +137,54 @@ static func generate(level: int, rng: RandomNumberGenerator, bonus: float = 0.0,
 		Mods.run_entry_script(l, g, rng)
 	_randomize(g, rng)
 	_finalize(g, rng, leg)
+
+
+# --- Мастерская --------------------------------------------------------------------
+
+## Подтянуть пушку до уровня lvl: урон растёт так же, как у пушек этого уровня.
+static func upgrade_level(g: Gun, lvl: int) -> void:
+	if lvl <= g.level:
+		return
+	g.damage *= Game.gun_dmg_mult(lvl) / Game.gun_dmg_mult(g.level)
+	g.level = lvl
+
+
+## Перки, которые можно перебросить: без перков марки и легендарки (они вернутся сами) и без «пули».
+static func rerollable(g: Gun) -> Array:
+	var fixed: Array = ["slug"]
+	fixed.append_array(_maker(g).get("perks", []))
+	for l in GunData.LEGENDARIES:
+		if str(l["id"]) == g.legendary:
+			fixed.append_array(l.get("perks", []))
+	var out: Array = []
+	for m in g.mods:
+		if not (str(m) in fixed) and not GunData.perk(str(m)).is_empty():
+			out.append(str(m))
+	return out
+
+
+## Пересобрать пушку с той же основой, маркой, легендаркой и уровнем, но редкостью rarity:
+## перки сохраняются, кроме drop (он меняется на другой случайный). Разброс статов и имя — новые.
+static func rebuild(old: Gun, rarity: int, drop: String, rng: RandomNumberGenerator) -> Gun:
+	var g := Gun.new()
+	g.level = old.level
+	g.rarity = rarity
+	g.maker = old.maker
+	g.archetype = old.archetype
+	g.archetype2 = old.archetype2
+	var leg: Dictionary = {}
+	for l in GunData.LEGENDARIES:
+		if str(l["id"]) == old.legendary:
+			leg = l
+	if not leg.is_empty():
+		g.legendary = old.legendary
+		g.special = str(leg.get("special", ""))
+	var keep: Array = []
+	for m in old.mods:
+		if str(m) != drop:
+			keep.append(m)
+	_build(g, rng, leg, keep, [drop] if drop != "" else [])
+	g.ammo = mini(old.ammo, g.mag_size)
 	return g
 
 
@@ -358,8 +418,12 @@ static func _finalize(g: Gun, rng: RandomNumberGenerator, leg: Dictionary) -> vo
 	g.spread = clampf(g.spread, 0.0, 110.0)
 	g.pellets = clampi(g.pellets, 1, 40)
 	g.ammo_per_shot = maxi(1, g.ammo_per_shot)
-	# магазин кратен расходу на выстрел (двуствольная снайперка Бога силы: x6 -> 6, 12...)
-	g.mag_size = maxi(g.ammo_per_shot, ceili(float(g.mag_size) / float(g.ammo_per_shot)) * g.ammo_per_shot)
+	# очередь не длиннее 7 и не растягивает паузу между очередями дольше ~2.5 с (очередь из n при скорострельности f — n/f)
+	g.burst = clampi(g.burst, 1, mini(BURST_MAX, maxi(2, floori(g.fire_rate * 2.5))))
+	# магазин кратен расходу очереди = выстрелов в очереди × патронов на выстрел, чтобы очередь не обрывалась
+	# (двуствольная снайперка Бога силы: x6 -> 6, 12...; очередь по 3 с x2 -> 6, 12...)
+	var unit := g.ammo_per_shot * g.burst
+	g.mag_size = maxi(unit, ceili(float(g.mag_size) / float(unit)) * unit)
 	g.reload_time = clampf(g.reload_time, 0.35, 6.0)
 	g.crit_chance = clampf(g.crit_chance, 0.0, 0.75)
 	g.elem_chance = clampf(g.elem_chance, 0.0, 1.0)

@@ -23,7 +23,8 @@ const DEFAULTS := {
 	"aim_left": {"kb": [], "pad": [[JOY_AXIS_RIGHT_X, -1]]},
 	"aim_right": {"kb": [], "pad": [[JOY_AXIS_RIGHT_X, 1]]},
 	"shoot": {"kb": ["m1"], "pad": [[JOY_AXIS_TRIGGER_RIGHT, 1]]},
-	"dodge": {"kb": [KEY_SPACE, KEY_SHIFT, "m2"], "pad": [JOY_BUTTON_A, [JOY_AXIS_TRIGGER_LEFT, 1]]},
+	"dodge": {"kb": [KEY_SPACE, KEY_SHIFT], "pad": [JOY_BUTTON_A]},
+	"skill": {"kb": ["m2"], "pad": [[JOY_AXIS_TRIGGER_LEFT, 1]]},   # активный навык героя (Heroes)
 	"reload": {"kb": [KEY_R], "pad": [JOY_BUTTON_X]},
 	"interact": {"kb": [KEY_E], "pad": [JOY_BUTTON_Y]},
 	"swap": {"kb": [KEY_F], "pad": [JOY_BUTTON_RIGHT_STICK]},
@@ -44,14 +45,14 @@ const DEFAULTS := {
 	"music_mute": {"kb": [KEY_M], "pad": []},
 	"sfx_down": {"kb": [KEY_BRACKETLEFT], "pad": []},
 	"sfx_up": {"kb": [KEY_BRACKETRIGHT], "pad": []},
-	"mod_console": {"kb": [KEY_F8], "pad": []},
+	"mod_console": {"kb": [KEY_F8, KEY_QUOTELEFT], "pad": []},   # ` — в редакторе F8 = «Стоп»
 }
 
 ## Что можно переназначить в меню, по порядку: [действие, подпись].
 const REBINDABLE := [
 	["move_up", "Move up"], ["move_down", "Move down"], ["move_left", "Move left"], ["move_right", "Move right"],
 	["aim_up", "Aim up"], ["aim_down", "Aim down"], ["aim_left", "Aim left"], ["aim_right", "Aim right"],
-	["shoot", "Shoot"], ["dodge", "Dodge"], ["reload", "Reload"],
+	["shoot", "Shoot"], ["dodge", "Dodge"], ["skill", "Skill"], ["reload", "Reload"],
 	["interact", "Pick up / open"], ["swap", "Swap with current"], ["scrap", "Scrap for ammo"],
 	["next_weapon", "Next weapon"], ["prev_weapon", "Previous weapon"], ["last_weapon", "Last weapon"],
 	["slot_1", "Weapon 1"], ["slot_2", "Weapon 2"], ["slot_3", "Weapon 3"], ["slot_4", "Weapon 4"],
@@ -135,18 +136,18 @@ static func _default_event(v: Variant, col: String) -> InputEvent:
 	if v is int:
 		if col == "pad":
 			var jb := InputEventJoypadButton.new()
-			jb.button_index = int(v)
+			jb.button_index = int(v) as JoyButton
 			return jb
 		var k := InputEventKey.new()
-		k.physical_keycode = int(v)
+		k.physical_keycode = int(v) as Key
 		return k
 	if v is String and (v as String).begins_with("m"):
 		var mb := InputEventMouseButton.new()
-		mb.button_index = int((v as String).substr(1))
+		mb.button_index = int((v as String).substr(1)) as MouseButton
 		return mb
 	if v is Array:
 		var jm := InputEventJoypadMotion.new()
-		jm.axis = int(v[0])
+		jm.axis = int(v[0]) as JoyAxis
 		jm.axis_value = float(v[1])
 		return jm
 	return null
@@ -184,19 +185,19 @@ static func from_dict(d: Variant) -> InputEvent:
 	match str(d.get("t", "")):
 		"key":
 			var k := InputEventKey.new()
-			k.physical_keycode = int(d.get("k", 0))
+			k.physical_keycode = int(d.get("k", 0)) as Key
 			return k
 		"mouse":
 			var mb := InputEventMouseButton.new()
-			mb.button_index = int(d.get("b", 1))
+			mb.button_index = int(d.get("b", 1)) as MouseButton
 			return mb
 		"jb":
 			var jb := InputEventJoypadButton.new()
-			jb.button_index = int(d.get("b", 0))
+			jb.button_index = int(d.get("b", 0)) as JoyButton
 			return jb
 		"ja":
 			var jm := InputEventJoypadMotion.new()
-			jm.axis = int(d.get("a", 0))
+			jm.axis = int(d.get("a", 0)) as JoyAxis
 			jm.axis_value = float(d.get("v", 1))
 			return jm
 	return null

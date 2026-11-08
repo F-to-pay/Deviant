@@ -113,7 +113,7 @@
 		"ammo_name": "sniper",
 		"ammo_color": "#bf8cff",
 		"icon": {"body": 46.0, "bh": 10.0, "barrel": 38.0, "bt": 4.0, "stock": 20.0, "scope": true},
-		"sound": {"vol": -2.0, "pitch": 1.0, "reload": "reload/rifle", "reload_done": "reload/done"}
+		"sound": {"vol": -2.0, "pitch": 1.0, "reload": "reload/sniper", "reload_done": "reload/sniper_done"}
 	},
 	"rocket": {
 		"name": "Rocket Launcher",
@@ -232,7 +232,7 @@
 		"move": 0.9,
 		"shake": 5.0,
 		"explode": 95.0,
-		"ammo": "launcher",
+		"ammo": "rocket",
 		"explosive": true,
 		"icon": {"body": 34.0, "bh": 14.0, "barrel": 26.0, "bt": 12.0, "stock": 0.0, "mortar": true},
 		"sound": {"vol": -3.0, "pitch": 1.0, "reload": "reload/launcher", "reload_done": "reload/done"}

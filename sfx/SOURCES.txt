@@ -7,6 +7,7 @@ guns/rocket, explosion, explosion_big — Kenney Sci-Fi Sounds (CC0), kenney.nl
 guns/launcher, guns/mortar — "25 CC0 bang / firework SFX" (CC0) — https://opengameart.org/content/25-cc0-bang-firework-sfx
 reload/pistol — https://opengameart.org/content/handgun-reload-sound-effect (CC0)
 reload/pistol_2, rifle, launcher — https://opengameart.org/content/gun-reload-sounds (CC0)
+reload/sniper, sniper_done — нарезаны из reload/rifle (0–0.55 с: вынимание магазина; 0.72–1.32 с: магазин на место + затвор)
 reload/shotgun, shotgun_done — https://opengameart.org/content/shotgun-reload-sound-effects (CC0)
 reload/done, ui/empty — https://opengameart.org/content/gun-reload-lock-or-click-sound (CC0)
 
@@ -20,3 +21,6 @@ Sonniss #GameAudioGDC Bundle (royalty-free, без атрибуции), 344 Audi
   boss/enrage, boss/death — Dinosaurs
 Пустые папки (звук не найден — просто кинь файлы): hit/enemy, enemy/death, enemy/windup,
   enemy/summon, el/fire, fx/vortex
+
+pickup/coin, pickup/relic
+  синтезировано для Deviant (синусы с затуханием), CC0

@@ -35,6 +35,14 @@ func _draw() -> void:
 					Controls.label("interact"), Controls.label("swap"), Controls.label("scrap")], 18, Color(1, 1, 1), 4)
 		elif main.near_chest != null and is_instance_valid(main.near_chest) and Controls.mode != "touch":
 			U.draw_text_c(self, fb, Vector2(vp.x * 0.5, vp.y - 170.0), U.t("[%s] Open chest") % Controls.label("interact"), 18, Color(1.0, 0.9, 0.5), 4)
+		elif main.near_reset and Controls.mode != "touch":
+			U.draw_text_c(self, fb, Vector2(vp.x * 0.5, vp.y - 170.0), U.t("[%s] Restart: new starting town, new stock") % Controls.label("interact"),
+				18, Color(0.55, 0.9, 1.0), 4)
+		elif hud.stall == null and main.near_stall != null and is_instance_valid(main.near_stall) and Controls.mode != "touch":
+			U.draw_text_c(self, fb, Vector2(vp.x * 0.5, vp.y - 170.0), U.t("[%s] Talk") % Controls.label("interact"),
+				18, main.near_stall.color().lightened(0.3), 4)
+		if hud.stall != null and is_instance_valid(hud.stall):
+			_draw_stall(hud.stall, vp, f, fb)
 	_draw_messages(vp, fb)
 	_draw_banner(vp, fb, f)
 	if hud.help_t > 0.0 and Game.zone_level == 1 and Controls.mode != "touch":
@@ -68,19 +76,65 @@ func _draw_hp(p: Player, f: Font, fb: Font) -> void:
 	_bar(r, p.hp / p.max_hp, col)
 	U.draw_text_c(self, fb, Vector2(r.position.x + r.size.x * 0.5, r.position.y + 17), "%s / %s" % [U.fmt(ceilf(p.hp)), U.fmt(p.max_hp)], 15, Color.WHITE, 3)
 	# Перезарядка переката
-	var dk := 1.0 - clampf(p.dodge_cd / Player.DODGE_CD, 0.0, 1.0)
+	var dk := 1.0 - clampf(p.dodge_cd / p.dodge_max_cd(), 0.0, 1.0)
 	var dodge_ready := p.dodge_cd <= 0.0
 	_bar(Rect2(24, 52, 120, 6), dk, Color(0.4, 0.85, 1.0) if dodge_ready else Color(0.3, 0.5, 0.7))
 	var dl := U.t("dodge ready") if dodge_ready else U.t("dodge %.1f s") % p.dodge_cd
 	U.draw_text(self, f, Vector2(150, 59), dl, 12, Color(0.7, 0.85, 1.0, 0.9 if dodge_ready else 0.6), 2)
+	# Навык героя
+	var hc := Heroes.color(p.hero)
+	var sk_ready := p.skill_cd <= 0.0
+	var sk := 1.0 - clampf(p.skill_cd / p.skill_max_cd(), 0.0, 1.0)
+	_bar(Rect2(24, 66, 120, 6), sk, hc if sk_ready else hc.darkened(0.4))
+	var sname := U.t(str(Heroes.get_hero(p.hero)["skill_name"]))
+	var sl := (sname + (" !" if p.blessed else "")) if sk_ready or p.blessed else sname + " " + U.t("%.1f s") % p.skill_cd
+	U.draw_text(self, f, Vector2(150, 73), sl, 12, Color(hc.lightened(0.4), 0.9 if sk_ready else 0.6), 2)
 
 
 func _draw_zone_info(main: Main, f: Font, fb: Font) -> void:
 	var zname := U.t(str(main.zone.biome.get("name", "")))
-	U.draw_text(self, fb, Vector2(24, 86), U.t("Zone %d · %s") % [Game.zone_level, zname], 17, Color(1, 1, 1), 3)
-	U.draw_text(self, f, Vector2(24, 108), U.t("Kills: %d   Time: %s") % [Game.kills, U.fmt_time(Game.run_time)], 14, Color(0.8, 0.8, 0.85), 3)
+	if Game.in_town:
+		U.draw_text(self, fb, Vector2(24, 86), U.t("Town · %s") % Game.town_name, 17, Color(1.0, 0.85, 0.5), 3)
+		U.draw_text(self, f, Vector2(24, 108), U.t("Next: zone %d · %s") % [main.zone.level, zname], 14, Color(0.8, 0.8, 0.85), 3)
+	else:
+		U.draw_text(self, fb, Vector2(24, 86), U.t("Zone %d · %s") % [Game.zone_level, zname], 17, Color(1, 1, 1), 3)
+		U.draw_text(self, f, Vector2(24, 108), U.t("Kills: %d   Time: %s") % [Game.kills, U.fmt_time(Game.run_time)], 14, Color(0.8, 0.8, 0.85), 3)
 	if Game.best_zone > 0:
 		U.draw_text(self, f, Vector2(24, 128), U.t("Best: zone %d") % Game.best_zone, 13, Color(0.7, 0.7, 0.75), 3)
+	# монеты забега и древние (мета)
+	var y := 152.0
+	Coin.draw_icon(self, Vector2(32, y - 5.0), 7.0, false)
+	var cs := U.fmt(float(Game.coins))
+	U.draw_text(self, fb, Vector2(44, y), cs, 15, Color(1.0, 0.85, 0.35), 3)
+	var x := 44.0 + U.text_w(fb, cs, 15) + 22.0
+	Coin.draw_icon(self, Vector2(x, y - 5.0), 7.0, true)
+	U.draw_text(self, fb, Vector2(x + 12.0, y), U.fmt(float(Game.meta_coins)), 15, Color(0.6, 1.0, 1.0), 3)
+	# задания Гильдии
+	var qy := y + 22.0
+	for q in Quests.active:
+		U.draw_text(self, f, Vector2(24, qy), "• " + Quests.line(q), 13, Color(0.75, 0.95, 0.95, 0.9), 3)
+		qy += 18.0
+
+
+## Окно лавки (заглушка): вывеска, реплика торговца, что здесь будет.
+func _draw_stall(st: Stall, vp: Vector2, f: Font, fb: Font) -> void:
+	var col := st.color()
+	var soon: Array = st.info().get("soon", [])
+	var pw := 600.0
+	var ph := 150.0 + float(soon.size()) * 28.0
+	var r := Rect2(vp.x * 0.5 - pw * 0.5, vp.y - 250.0 - ph, pw, ph)
+	draw_rect(r.grow(3.0), Color(0, 0, 0, 0.7))
+	draw_rect(r, Color(0.07, 0.06, 0.09, 0.94))
+	draw_rect(Rect2(r.position, Vector2(pw, 4)), col)
+	var cx := r.position.x + pw * 0.5
+	U.draw_text_c(self, fb, Vector2(cx, r.position.y + 38.0), st.title(), 22, col.lightened(0.2), 4)
+	U.draw_text_c(self, f, Vector2(cx, r.position.y + 72.0), "«%s»" % hud.stall_line, 18, Color(0.92, 0.9, 0.85), 3)
+	var y := r.position.y + 108.0
+	for s in soon:
+		U.draw_text_c(self, f, Vector2(cx, y), U.t("%s — soon") % U.t(str(s)), 16, Color(0.6, 0.6, 0.65), 0)
+		y += 28.0
+	var close := U.t("Walk away to close") if Controls.mode == "touch" else U.t("[%s] Close") % Controls.label("interact")
+	U.draw_text_c(self, f, Vector2(cx, r.end.y - 14.0), close, 14, Color(0.7, 0.7, 0.75), 3)
 
 
 func _draw_weapons(p: Player, vp: Vector2, f: Font, fb: Font) -> void:
@@ -153,6 +207,9 @@ func _draw_minimap(main: Main, vp: Vector2, f: Font) -> void:
 		if e.elite >= 1 and e.awake and z.is_explored(e.position):
 			draw_circle(r.position + e.position * k, 3.0 if e.elite < 3 else 5.0,
 				Color(1.0, 0.85, 0.3) if e.elite == 2 else (Color(0.5, 0.7, 1.0) if e.elite == 1 else Color(1, 0.2, 0.2)))
+	for o in main.stalls:
+		var st: Stall = o
+		draw_rect(Rect2(r.position + st.position * k - Vector2(3, 6), Vector2(6, 6)), st.color())
 	if main.portal != null and is_instance_valid(main.portal):
 		var pp := r.position + main.portal.position * k
 		var pulse := 4.0 + sin(Time.get_ticks_msec() * 0.006) * 1.5
@@ -197,6 +254,7 @@ func _draw_death(vp: Vector2, f: Font, fb: Font) -> void:
 	var lines: Array = [
 		U.t("Reached zone %d") % Game.zone_level,
 		U.t("Kills: %d   ·   Time: %s   ·   Guns found: %d") % [Game.kills, U.fmt_time(Game.run_time), Game.guns_found],
+		U.t("Ancient coins: +%d (total %d)") % [Game.meta_run, Game.meta_coins],
 		Menu.run_info(),
 		U.t("Rating: %s   (points %s × %.2f)%s") % [U.fmt(float(Game.rating())), U.fmt(float(Game.run_points())), Game.rating_mult(),
 			U.t("   — NEW BEST!") if Game.new_rating_record else U.t("   · best: ") + U.fmt(float(Game.best_rating))],

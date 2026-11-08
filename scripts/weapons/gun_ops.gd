@@ -8,6 +8,7 @@ extends RefCounted
 ##   ["min", "armor", 0.5]            не больше
 ##   ["max", "mag_size", 3]           не меньше
 ##   ["pellets", 5, 1.3]              +5 дробин, общий урон залпа ×1.3 (урон одной дробины пересчитается)
+##   ["rand", "burst", 2, 7]          случайное целое от 2 до 7 включительно (из rng пушки — по сиду воспроизводится)
 ##   ["if", условие, [операции], [операции иначе]]
 ## Условие: ["stat", "<", 12] — сравнение (==, !=, <, <=, >, >=); ["arch", "==", "shotgun"] — основа;
 ##   ["and", усл, усл...], ["or", усл, усл...], ["not", усл].
@@ -58,6 +59,12 @@ static func run(g: Gun, ops: Variant, rng: RandomNumberGenerator) -> void:
 				g.pellets = maxi(1, g.pellets + int(o[1]))
 				var keep := float(o[2]) if o.size() >= 3 else 1.0
 				g.damage *= float(old) * keep / float(g.pellets)
+			"rand":
+				if o.size() >= 4:
+					var lo := mini(int(o[2]), int(o[3]))
+					var hi := maxi(int(o[2]), int(o[3]))
+					var n := rng.randi_range(lo, hi) if rng != null else randi_range(lo, hi)
+					_stat(g, "set", str(o[1]), n, rng)
 			"set", "add", "mul", "min", "max":
 				if o.size() >= 3:
 					_stat(g, kind, str(o[1]), o[2], rng)
@@ -150,7 +157,7 @@ static func check(g: Gun, cond: Variant, rng: RandomNumberGenerator = null) -> b
 
 # --- Проверка (для отладчика модов) -------------------------------------------------
 
-const OPS := ["set", "add", "mul", "min", "max", "pellets", "if"]
+const OPS := ["set", "add", "mul", "min", "max", "pellets", "rand", "if"]
 const CMPS := ["==", "!=", "<", "<=", ">", ">="]
 static var _probe: Gun = null
 
@@ -188,6 +195,11 @@ static func problems(ops: Variant) -> Array:
 		elif kind == "pellets":
 			if o.size() < 2 or not (o[1] is float or o[1] is int):
 				out.append("'pellets' needs [\"pellets\", count, damage_keep]: %s" % str(o))
+		elif kind == "rand":
+			if o.size() < 4 or not (o[2] is float or o[2] is int) or not (o[3] is float or o[3] is int):
+				out.append("'rand' needs [\"rand\", stat, min, max]: %s" % str(o))
+			elif not _has_stat(str(o[1])):
+				out.append("unknown stat '%s' in %s" % [str(o[1]), str(o)])
 		else:
 			if o.size() < 3:
 				out.append("'%s' needs [\"%s\", stat, value]: %s" % [kind, kind, str(o)])
@@ -324,6 +336,9 @@ static func describe(ops: Variant) -> Array:
 				if o.size() >= 3 and not is_equal_approx(float(o[2]), 1.0):
 					s += " (" + U.t("volley damage ×%s") % _num("", float(o[2]), false) + ")"
 				out.append(s)
+			"rand":
+				if o.size() >= 4:
+					out.append("%s: %d–%d" % [_lbl(str(o[1])), mini(int(o[2]), int(o[3])), maxi(int(o[2]), int(o[3]))])
 			"mul":
 				if o.size() >= 3:
 					var v := float(o[2])

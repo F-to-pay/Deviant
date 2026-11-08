@@ -19,6 +19,8 @@ var death_title := ""
 var new_record := false
 var paused := false
 var death_t := 0.0
+var stall: Stall = null       # открытое окно лавки (в городе)
+var stall_line := ""          # что сказал торговец
 
 
 func _ready() -> void:
@@ -74,12 +76,32 @@ func zone_banner(level: int, biome_name: String, boss_title: String) -> void:
 	banner_t = 3.2
 
 
+func town_banner(town: String, next_level: int, biome_name: String) -> void:
+	banner_text = town.to_upper()
+	banner_sub = U.t("Town · next: zone %d — %s") % [next_level, biome_name]
+	banner_t = 3.2
+
+
+## Окно лавки: пока заглушка — реплика торговца и что тут будет.
+func open_stall(st: Stall) -> void:
+	stall = st
+	stall_line = st.line()
+	Sfx.ui("ui/open", -8.0)
+
+
+func close_stall() -> void:
+	if stall != null:
+		stall = null
+		Sfx.ui("ui/close", -8.0)
+
+
 func show_death(record: bool) -> void:
 	dead_screen = true
 	new_record = record
 	death_t = 0.0
 	death_title = DEATH_TITLES[randi() % DEATH_TITLES.size()]
 	inv.visible = false
+	stall = null
 
 
 func _on_message(text: String, color: Color) -> void:
@@ -124,6 +146,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause"):
 		if inv.visible:
 			toggle_inventory()
+		elif stall != null:
+			close_stall()
 		else:
 			toggle_pause()
 		get_viewport().set_input_as_handled()

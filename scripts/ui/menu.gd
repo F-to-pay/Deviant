@@ -1,7 +1,8 @@
 class_name Menu
 extends CanvasLayer
 ## Главное меню, пауза и настройки. Обычные Control-ы с темой из кода.
-## Режимы: "main" — главное меню (фон MenuBg), "pause" — поверх игры (затемнение).
+## Режимы: "main" — главное меню (фон MenuBg), "pause" — поверх игры (затемнение),
+## "town" — экран, открытый лавкой в городе (герои, настраиваемый старт): «Назад» возвращает в игру.
 ## Экран настроек общий, «Назад» возвращает в текущий режим.
 
 const ACCENT := Color(1.0, 0.55, 0.2)
@@ -21,6 +22,26 @@ var _custom_ui := {}      # ключ Game.custom -> [контрол, ...]
 var _custom_preset: Label
 var _custom_seed: LineEdit
 var _custom_rating: Label
+var _heroes_list: VBoxContainer
+var _heroes_coins: Label
+var _town_sub := {}       # экран лавки -> Label с репликой торговца
+var _town_coins := {}     # экран лавки -> Label с монетами
+var _shop_buy: VBoxContainer
+var _shop_sell: VBoxContainer
+var _shop_prev: GunPreview
+var _shop_reroll: Button
+var _shop_ammo: VBoxContainer
+var _shop_status: Label
+var _mystic_box: VBoxContainer
+var _mystic_owned: Label
+var _ws_list: VBoxContainer
+var _ws_actions: VBoxContainer
+var _ws_prev: GunPreview
+var _ws_status: Label
+var _ws_gun: Gun = null
+var _guild_offers: VBoxContainer
+var _guild_active: VBoxContainer
+var _guild_active_title: Label
 var _pause_info: Label
 var _help_box: VBoxContainer
 var _root: Control
@@ -89,6 +110,11 @@ func _build_ui() -> void:
 	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_build_main(root)
 	_build_custom(root)
+	_build_heroes(root)
+	_build_shop(root)
+	_build_mystic(root)
+	_build_workshop(root)
+	_build_guild(root)
 	_build_settings(root)
 	_build_pause(root)
 	_build_mods(root)
@@ -130,6 +156,8 @@ func _rebuild() -> void:
 	_settings_ui.clear()
 	_first_focus.clear()
 	_custom_ui.clear()
+	_town_sub.clear()
+	_town_coins.clear()
 	_codex_buttons.clear()
 	_bind_buttons.clear()
 	_listening = ""
@@ -178,6 +206,42 @@ func close() -> void:
 	visible = false
 
 
+## Экран меню из лавки в городе: игра на паузе, «Назад» / Esc — обратно в город.
+## line — реплика торговца (подпись под заголовком), col — её цвет.
+func open_town(sname: String, line: String = "", col: Color = DIM) -> void:
+	var sub: Label = _town_sub.get(sname)
+	if sub != null:
+		sub.text = "«%s»" % line if line != "" else ""
+		sub.add_theme_color_override("font_color", col.lightened(0.2))
+	if sname in ["shop", "workshop"]:
+		_shop_status.text = ""
+		_ws_status.text = ""
+	mode = "town"
+	visible = true
+	bg.visible = false
+	dim.visible = true
+	get_tree().paused = true
+	Game.main.music.set_muffled(true)
+	Sfx.ui("ui/open", -8.0)
+	show_screen(sname)
+
+
+func close_town() -> void:
+	visible = false
+	mode = "pause"
+	get_tree().paused = false
+	Game.main.music.set_muffled(false)
+	Sfx.ui("ui/close", -8.0)
+
+
+## «Назад» с экрана: в город, если пришли из лавки, иначе на экран режима.
+func _back() -> void:
+	if mode == "town":
+		close_town()
+	else:
+		show_screen(mode)
+
+
 func show_screen(sname: String) -> void:
 	current = sname
 	for k in screens:
@@ -186,6 +250,16 @@ func show_screen(sname: String) -> void:
 		_refresh_settings()
 	elif sname == "custom":
 		_refresh_custom()
+	elif sname == "heroes":
+		_refresh_heroes()
+	elif sname == "shop":
+		_refresh_shop()
+	elif sname == "mystic":
+		_refresh_mystic()
+	elif sname == "workshop":
+		_refresh_workshop()
+	elif sname == "guild":
+		_refresh_guild()
 	elif sname == "codex":
 		_codex_open(_codex_page)
 	elif sname == "controls":
@@ -223,6 +297,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			return   # в меню «Управление» ждём кнопку — Esc/B тоже можно назначить
 		if current == "custom":
 			_back_custom()
+		elif mode == "town":
+			close_town()
 		elif current == "controls":
 			show_screen("settings")
 		elif current != mode:
@@ -708,6 +784,576 @@ func _reset_binds() -> void:
 	_refresh_controls()
 
 
+# --- Лавки города: Оружейная, Мистик, Мастерская, Гильдия ------------------------------
+## Товар — Game.main.town (Shops.make_town), цены — Shops, задания — Quests.
+
+## Заголовок лавки: название, реплика торговца (подставляется при открытии), монеты.
+func _shop_head(box: VBoxContainer, sname: String, title: String) -> void:
+	box.add_child(_label(title, 48, ACCENT, true))
+	var sub := _label("", 18, DIM)
+	box.add_child(sub)
+	_town_sub[sname] = sub
+	var coins := _label("", 20, Color(1.0, 0.85, 0.35))
+	box.add_child(coins)
+	_town_coins[sname] = coins
+
+
+func _shop_coins_text() -> String:
+	return U.t("Coins: %s") % U.fmt(float(Game.coins)) + "   ·   " + U.t("Ancient coins: %s") % U.fmt(float(Game.meta_coins))
+
+
+## Обновить шапку лавки (монеты) после покупки.
+func _shop_refresh_head(sname: String) -> void:
+	var l: Label = _town_coins.get(sname)
+	if l != null:
+		l.text = _shop_coins_text()
+
+
+func _list_box(minw: float, minh: float) -> Array:
+	var sc := ScrollContainer.new()
+	sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	sc.follow_focus = true
+	sc.custom_minimum_size = Vector2(minw, minh)
+	var vb := VBoxContainer.new()
+	vb.add_theme_constant_override("separation", 6)
+	vb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sc.add_child(vb)
+	return [sc, vb]
+
+
+func _clear_box(b: Container) -> void:
+	for c in b.get_children():
+		b.remove_child(c)
+		c.queue_free()
+
+
+## Кнопка-строка пушки: цвет редкости, наведение/фокус — карточка в preview.
+func _gun_row(g: Gun, text: String, cb: Callable, preview: GunPreview) -> Button:
+	var b := _button(text, cb)
+	b.custom_minimum_size = Vector2(440, 44)
+	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	b.clip_text = true
+	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	b.add_theme_font_size_override("font_size", 17)
+	b.add_theme_color_override("font_color", g.rarity_color())
+	var show_card := func() -> void: preview.show_gun(g, Game.main.player.gun() if Game.main.player.gun() != g else null)
+	b.mouse_entered.connect(show_card)
+	b.focus_entered.connect(show_card)
+	return b
+
+
+func _small_button(text: String, cb: Callable, w: float = 440.0) -> Button:
+	var b := _button(text, cb)
+	b.custom_minimum_size = Vector2(w, 44)
+	b.add_theme_font_size_override("font_size", 17)
+	return b
+
+
+## Все пушки игрока: [пушка, "slot"/"bag", индекс].
+func _player_guns() -> Array:
+	var p: Player = Game.main.player
+	var out: Array = []
+	for i in 4:
+		if p.guns[i] != null:
+			out.append([p.guns[i], "slot", i])
+	for i in p.backpack.size():
+		out.append([p.backpack[i], "bag", i])
+	return out
+
+
+func _gun_where(e: Array) -> String:
+	return (U.t("slot %d") % (int(e[2]) + 1)) if str(e[1]) == "slot" else U.t("backpack")
+
+
+func _grab_first(box: Container) -> void:
+	if Controls.mode != "pad":
+		return
+	for c in box.get_children():
+		if c is Button and not (c as Button).disabled:
+			(c as Button).grab_focus.call_deferred()
+			return
+
+
+# --- Оружейная ---
+
+func _build_shop(root: Control) -> void:
+	var box := _screen(root, "shop")
+	_shop_head(box, "shop", U.t("GUN SHOP"))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 24)
+	box.add_child(row)
+	var left := VBoxContainer.new()
+	left.add_child(_label(U.t("For sale"), 22, TEXT))
+	var lb := _list_box(460, 400)
+	left.add_child(lb[0])
+	_shop_buy = lb[1]
+	_shop_reroll = _small_button("", _reroll_stock, 460.0)
+	left.add_child(_shop_reroll)
+	left.add_child(_label(U.t("Ammo — one magazine"), 22, TEXT))
+	var ab := _list_box(460, 150)
+	left.add_child(ab[0])
+	_shop_ammo = ab[1]
+	row.add_child(left)
+	var mid := VBoxContainer.new()
+	mid.add_child(_label(U.t("Your guns — sell"), 22, TEXT))
+	var mb := _list_box(460, 560)
+	mid.add_child(mb[0])
+	_shop_sell = mb[1]
+	row.add_child(mid)
+	_shop_prev = GunPreview.new()
+	row.add_child(_shop_prev)
+	_shop_status = _label("", 18, DIM)
+	box.add_child(_shop_status)
+	var back := _button(U.t("Back"), _back)
+	box.add_child(back)
+	_first_focus["shop"] = back
+
+
+func _refresh_shop() -> void:
+	_shop_refresh_head("shop")
+	_clear_box(_shop_buy)
+	_clear_box(_shop_sell)
+	var town: Dictionary = Game.main.town
+	var stock: Array = town.get("stock", [])
+	if stock.is_empty():
+		_shop_buy.add_child(_label(U.t("Sold out"), 18, DIM))
+	for o in stock:
+		var g: Gun = o
+		var price := Shops.gun_price(g)
+		var b := _gun_row(g, "%s — %d" % [g.gun_name, price], _buy_gun.bind(g), _shop_prev)
+		b.disabled = Game.coins < price
+		_shop_buy.add_child(b)
+	var p: Player = Game.main.player
+	for e in _player_guns():
+		var g: Gun = e[0]
+		var b := _gun_row(g, "+%d · %s (%s)" % [Shops.sell_price(g), g.gun_name, _gun_where(e)], _sell_gun.bind(g), _shop_prev)
+		# последнюю пушку в руках не продать — стрелять будет нечем
+		b.disabled = str(e[1]) == "slot" and p.gun_count() <= 1
+		_shop_sell.add_child(b)
+	var lvl := int(town.get("level", 1))
+	var rp := Shops.stock_reroll_price(lvl, int(town.get("rerolls", 0)))
+	_shop_reroll.text = U.t("New stock — %d") % rp
+	_shop_reroll.disabled = Game.coins < rp
+	# патроны: по магазину к каждой пушке в слотах
+	_clear_box(_shop_ammo)
+	for i in 4:
+		var g: Gun = p.guns[i]
+		if g == null or g.free_ammo:
+			continue
+		var t := g.ammo_type()
+		var n := mini(g.mag_size, GunData.ammo_cap(t) - p.reserve_of(t))
+		var b: Button
+		if n <= 0:
+			b = _gun_row(g, U.t("%s: reserve full") % g.ammo_name(), func() -> void: pass, _shop_prev)
+			b.disabled = true
+		else:
+			var price := Shops.ammo_price(g, n)
+			b = _gun_row(g, "+%d %s — %d  (%s)" % [n, g.ammo_name(), price, g.gun_name], _buy_ammo.bind(g), _shop_prev)
+			b.disabled = Game.coins < price
+		_shop_ammo.add_child(b)
+	if _shop_ammo.get_child_count() == 0:
+		_shop_ammo.add_child(_label(U.t("Your guns don't need ammo"), 16, DIM))
+	if not stock.is_empty():
+		_shop_prev.show_gun(stock[0], p.gun())
+	_grab_first(_shop_buy)
+
+
+func _reroll_stock() -> void:
+	var town: Dictionary = Game.main.town
+	var lvl := int(town.get("level", 1))
+	var rp := Shops.stock_reroll_price(lvl, int(town.get("rerolls", 0)))
+	if Game.coins < rp:
+		Sfx.ui("ui/error", -6.0)
+		return
+	Game.add_coins(-rp)
+	town["rerolls"] = int(town.get("rerolls", 0)) + 1
+	town["stock"] = Shops.make_stock(lvl, Game.main.rng)
+	_shop_status.text = U.t("New stock arrived")
+	Sfx.ui("world/chest", -6.0)
+	_refresh_shop()
+
+
+## Один магазин патронов к пушке (сколько влезет в запас).
+func _buy_ammo(g: Gun) -> void:
+	var p: Player = Game.main.player
+	var t := g.ammo_type()
+	var n := mini(g.mag_size, GunData.ammo_cap(t) - p.reserve_of(t))
+	var price := Shops.ammo_price(g, n)
+	if n <= 0 or Game.coins < price:
+		Sfx.ui("ui/error", -6.0)
+		return
+	Game.add_coins(-price)
+	p.add_ammo(t, n)
+	_shop_status.text = U.t("Bought: +%d %s") % [n, g.ammo_name()]
+	Sfx.ui("pickup/ammo", -6.0)
+	_refresh_shop()
+
+
+func _buy_gun(g: Gun) -> void:
+	var price := Shops.gun_price(g)
+	var stock: Array = Game.main.town.get("stock", [])
+	if Game.coins < price or not (g in stock):
+		Sfx.ui("ui/error", -6.0)
+		return
+	Game.add_coins(-price)
+	stock.erase(g)
+	var p: Player = Game.main.player
+	if p.add_gun(g):
+		_shop_status.text = U.t("Bought: %s") % g.gun_name
+	else:
+		Game.main.drop_gun(g, p.position + p.aim * 30.0, true)
+		_shop_status.text = U.t("Backpack full — %s is on the ground") % g.gun_name
+	Game.note_gun(g)
+	Sfx.ui("pickup/gun", -4.0)
+	_refresh_shop()
+
+
+func _sell_gun(g: Gun) -> void:
+	var p: Player = Game.main.player
+	var i := p.guns.find(g)
+	if i >= 0:
+		if p.gun_count() <= 1:
+			return
+		p.guns[i] = null
+		p.on_gun_changed()
+	else:
+		i = p.backpack.find(g)
+		if i < 0:
+			return
+		p.backpack.remove_at(i)
+	Game.add_coins(Shops.sell_price(g))
+	_shop_status.text = U.t("Sold: %s (+%d)") % [g.gun_name, Shops.sell_price(g)]
+	Sfx.at("pickup/coin", p.position, -6.0)
+	_refresh_shop()
+
+
+# --- Мистик ---
+
+func _build_mystic(root: Control) -> void:
+	var box := _screen(root, "mystic")
+	_shop_head(box, "mystic", U.t("MYSTIC"))
+	box.add_child(_label(U.t("One gift per town. Gifts last until the end of the run."), 18, DIM))
+	box.add_child(_gap(6))
+	_mystic_box = VBoxContainer.new()
+	_mystic_box.add_theme_constant_override("separation", 10)
+	box.add_child(_mystic_box)
+	box.add_child(_gap(6))
+	_mystic_owned = _label("", 18, TEXT)
+	_mystic_owned.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_mystic_owned.custom_minimum_size = Vector2(900, 0)
+	box.add_child(_mystic_owned)
+	var back := _button(U.t("Back"), _back)
+	box.add_child(back)
+	_first_focus["mystic"] = back
+
+
+func _refresh_mystic() -> void:
+	_shop_refresh_head("mystic")
+	_clear_box(_mystic_box)
+	var town: Dictionary = Game.main.town
+	var p: Player = Game.main.player
+	var price := Shops.mystic_price(int(town.get("level", 1)), p.run_perk_count())
+	var done := bool(town.get("mystic_done", false))
+	for o in town.get("mystic", []):
+		var id := str(o)
+		var have := int(p.run_perks.get(id, 0))
+		var t := "%s — %s%s   ·   %d" % [Shops.mystic_name(id), Shops.mystic_desc(id),
+			(" (×%d)" % have) if have > 0 else "", price]
+		var b := _small_button(t, _buy_mystic.bind(id), 900.0)
+		b.disabled = done or Game.coins < price
+		_mystic_box.add_child(b)
+	if done:
+		_mystic_box.add_child(_label(U.t("The spirits are tired. Come back in the next town."), 18, DIM))
+	var owned := PackedStringArray()
+	for id in p.run_perks:
+		owned.append("%s ×%d" % [Shops.mystic_name(str(id)), int(p.run_perks[id])])
+	_mystic_owned.text = U.t("Your gifts: %s") % (", ".join(owned) if not owned.is_empty() else U.t("none"))
+	_grab_first(_mystic_box)
+
+
+func _buy_mystic(id: String) -> void:
+	var town: Dictionary = Game.main.town
+	var p: Player = Game.main.player
+	var price := Shops.mystic_price(int(town.get("level", 1)), p.run_perk_count())
+	if bool(town.get("mystic_done", false)) or Game.coins < price:
+		Sfx.ui("ui/error", -6.0)
+		return
+	Game.add_coins(-price)
+	p.add_run_perk(id)
+	town["mystic_done"] = true
+	Sfx.ui("pickup/legendary", -6.0)
+	Game.say(U.t("Gift: %s") % Shops.mystic_name(id), Color(0.78, 0.45, 1.0))
+	_refresh_mystic()
+
+
+# --- Мастерская ---
+
+func _build_workshop(root: Control) -> void:
+	var box := _screen(root, "workshop")
+	_shop_head(box, "workshop", U.t("WORKSHOP"))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 24)
+	box.add_child(row)
+	var left := VBoxContainer.new()
+	left.add_child(_label(U.t("Your guns"), 22, TEXT))
+	var lb := _list_box(440, 560)
+	left.add_child(lb[0])
+	_ws_list = lb[1]
+	row.add_child(left)
+	_ws_prev = GunPreview.new()
+	row.add_child(_ws_prev)
+	var right := VBoxContainer.new()
+	right.add_child(_label(U.t("Work"), 22, TEXT))
+	_ws_actions = VBoxContainer.new()
+	_ws_actions.add_theme_constant_override("separation", 6)
+	right.add_child(_ws_actions)
+	row.add_child(right)
+	_ws_status = _label("", 18, DIM)
+	box.add_child(_ws_status)
+	var back := _button(U.t("Back"), _back)
+	box.add_child(back)
+	_first_focus["workshop"] = back
+
+
+func _refresh_workshop() -> void:
+	_shop_refresh_head("workshop")
+	_clear_box(_ws_list)
+	var guns := _player_guns()
+	var still := false
+	for e in guns:
+		var g: Gun = e[0]
+		if g == _ws_gun:
+			still = true
+		var b := _gun_row(g, "%s (%s)" % [g.gun_name, _gun_where(e)], _ws_select.bind(g), _ws_prev)
+		_ws_list.add_child(b)
+	if not still:
+		_ws_gun = Game.main.player.gun()
+	_ws_fill_actions()
+	_grab_first(_ws_list)
+
+
+func _ws_select(g: Gun) -> void:
+	_ws_gun = g
+	_ws_fill_actions()
+
+
+func _ws_fill_actions() -> void:
+	_clear_box(_ws_actions)
+	var g := _ws_gun
+	if g == null:
+		return
+	_ws_prev.show_gun(g)
+	_ws_actions.add_child(_label(g.gun_name, 18, g.rarity_color(), false, HORIZONTAL_ALIGNMENT_LEFT))
+	var lvl := int(Game.main.town.get("level", Game.zone_level))
+	var up := Shops.upgrade_price(g, lvl)
+	var b := _small_button(U.t("Upgrade to level %d — %d") % [lvl, up] if up > 0 else U.t("Level %d — up to date") % g.level,
+		_ws_upgrade, 460.0)
+	b.disabled = up <= 0 or Game.coins < up
+	_ws_actions.add_child(b)
+	if Shops.can_rarity_up(g):
+		var rp := Shops.rarity_up_price(g)
+		var rb := _small_button(U.t("Raise rarity: %s — %d") % [U.t(str(GunData.RARITIES[g.rarity + 1]["name"])), rp],
+			_ws_rarity, 460.0)
+		rb.disabled = Game.coins < rp
+		_ws_actions.add_child(rb)
+	var rr := Shops.reroll_price(g)
+	var perks := GunGen.rerollable(g)
+	if perks.is_empty():
+		_ws_actions.add_child(_label(U.t("No perks to reroll"), 16, DIM, false, HORIZONTAL_ALIGNMENT_LEFT))
+	for id in perks:
+		var nm := I18n.word(str(GunData.perk(str(id)).get("name", id)), "m")
+		var pb := _small_button(U.t("Reroll «%s» — %d") % [nm, rr], _ws_reroll.bind(str(id)), 460.0)
+		pb.disabled = Game.coins < rr
+		_ws_actions.add_child(pb)
+
+
+## Заменить пушку игрока (там же, где лежала) на новую.
+func _ws_replace(old: Gun, g: Gun) -> void:
+	var p: Player = Game.main.player
+	var i := p.guns.find(old)
+	if i >= 0:
+		p.guns[i] = g
+		p.on_gun_changed()
+	else:
+		i = p.backpack.find(old)
+		if i >= 0:
+			p.backpack[i] = g
+	_ws_gun = g
+	Game.note_gun(g)
+
+
+func _ws_pay(price: int) -> bool:
+	if price <= 0 or Game.coins < price:
+		Sfx.ui("ui/error", -6.0)
+		return false
+	Game.add_coins(-price)
+	Sfx.ui("ui/scrap", -4.0)
+	return true
+
+
+func _ws_upgrade() -> void:
+	var g := _ws_gun
+	var lvl := int(Game.main.town.get("level", Game.zone_level))
+	if g == null or not _ws_pay(Shops.upgrade_price(g, lvl)):
+		return
+	GunGen.upgrade_level(g, lvl)
+	_ws_status.text = U.t("%s is now level %d") % [g.gun_name, lvl]
+	_refresh_workshop()
+
+
+func _ws_rarity() -> void:
+	var g := _ws_gun
+	if g == null or not Shops.can_rarity_up(g) or not _ws_pay(Shops.rarity_up_price(g)):
+		return
+	var ng := GunGen.rebuild(g, g.rarity + 1, "", Game.main.rng)
+	_ws_replace(g, ng)
+	_ws_status.text = U.t("Rebuilt: %s") % ng.gun_name
+	_refresh_workshop()
+
+
+func _ws_reroll(id: String) -> void:
+	var g := _ws_gun
+	if g == null or not (id in g.mods) or not _ws_pay(Shops.reroll_price(g)):
+		return
+	var ng := GunGen.rebuild(g, g.rarity, id, Game.main.rng)
+	_ws_replace(g, ng)
+	_ws_status.text = U.t("Rebuilt: %s") % ng.gun_name
+	_refresh_workshop()
+
+
+# --- Гильдия ---
+
+func _build_guild(root: Control) -> void:
+	var box := _screen(root, "guild")
+	_shop_head(box, "guild", U.t("GUILD"))
+	box.add_child(_label(U.t("Contracts pay ancient coins the moment they are done. Up to %d at once.") % Quests.MAX_ACTIVE, 18, DIM))
+	box.add_child(_gap(6))
+	box.add_child(_label(U.t("Contracts on the board"), 22, TEXT))
+	_guild_offers = VBoxContainer.new()
+	_guild_offers.add_theme_constant_override("separation", 6)
+	box.add_child(_guild_offers)
+	box.add_child(_gap(6))
+	_guild_active_title = _label("", 22, TEXT)
+	box.add_child(_guild_active_title)
+	_guild_active = VBoxContainer.new()
+	_guild_active.add_theme_constant_override("separation", 6)
+	box.add_child(_guild_active)
+	var back := _button(U.t("Back"), _back)
+	box.add_child(back)
+	_first_focus["guild"] = back
+
+
+func _refresh_guild() -> void:
+	_shop_refresh_head("guild")
+	_clear_box(_guild_offers)
+	_clear_box(_guild_active)
+	var offers: Array = Game.main.town.get("guild", [])
+	if offers.is_empty():
+		_guild_offers.add_child(_label(U.t("The board is empty."), 18, DIM))
+	for q in offers:
+		var b := _small_button(U.t("Take: %s — +%d ancient coins") % [Quests.text(q), int(q["reward"])], _take_quest.bind(q), 900.0)
+		b.disabled = not Quests.can_take() or Quests.has_type(str(q["type"]))
+		_guild_offers.add_child(b)
+	_guild_active_title.text = U.t("Your contracts (%d/%d)") % [Quests.active.size(), Quests.MAX_ACTIVE]
+	for i in Quests.active.size():
+		var q: Dictionary = Quests.active[i]
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 12)
+		var l := _label("%s — +%d" % [Quests.line(q), int(q["reward"])], 18, Color(0.6, 1.0, 1.0), false, HORIZONTAL_ALIGNMENT_LEFT)
+		l.custom_minimum_size = Vector2(700, 0)
+		row.add_child(l)
+		row.add_child(_small_button(U.t("Abandon"), _abandon_quest.bind(i), 190.0))
+		_guild_active.add_child(row)
+	_grab_first(_guild_offers)
+
+
+func _take_quest(q: Dictionary) -> void:
+	if Quests.take(q):
+		var offers: Array = Game.main.town.get("guild", [])
+		offers.erase(q)
+		Sfx.ui("ui/put", -6.0)
+	else:
+		Sfx.ui("ui/error", -6.0)
+	_refresh_guild()
+
+
+func _abandon_quest(i: int) -> void:
+	Quests.abandon(i)
+	Sfx.ui("ui/close", -8.0)
+	_refresh_guild()
+
+
+## Вербовщик в стартовом городе: герои, их навыки, открытие за древние монеты, выбор.
+## Список строится заново при каждом открытии (_refresh_heroes).
+func _build_heroes(root: Control) -> void:
+	var box := _screen(root, "heroes")
+	box.add_child(_label(U.t("HEROES"), 52, ACCENT, true))
+	_heroes_coins = _label("", 20, Color(0.6, 1.0, 1.0))
+	box.add_child(_heroes_coins)
+	box.add_child(_gap(8))
+	_heroes_list = VBoxContainer.new()
+	_heroes_list.add_theme_constant_override("separation", 12)
+	box.add_child(_heroes_list)
+	box.add_child(_gap(8))
+	var back := _button(U.t("Back"), _back)
+	box.add_child(back)
+	_first_focus["heroes"] = back
+
+
+func _refresh_heroes() -> void:
+	_heroes_coins.text = U.t("Ancient coins: %s") % U.fmt(float(Game.meta_coins))
+	for c in _heroes_list.get_children():
+		_heroes_list.remove_child(c)
+		c.queue_free()
+	var first: Button = null
+	for id in Heroes.ORDER:
+		var h := Heroes.get_hero(str(id))
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 18)
+		var info := VBoxContainer.new()
+		info.custom_minimum_size = Vector2(720, 0)
+		info.add_child(_label(Heroes.hero_name(str(id)), 26, Heroes.color(str(id)), true, HORIZONTAL_ALIGNMENT_LEFT))
+		var d := _label(U.t(str(h["skill_name"])) + ": " + Heroes.describe(str(id)), 18, TEXT, false, HORIZONTAL_ALIGNMENT_LEFT)
+		d.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		d.custom_minimum_size = Vector2(720, 0)
+		info.add_child(d)
+		row.add_child(info)
+		var b: Button
+		if Game.hero == str(id):
+			b = _button(U.t("Selected"), func() -> void: pass)
+			b.disabled = true
+		elif Game.hero_unlocked(str(id)):
+			b = _button(U.t("Choose"), _choose_hero.bind(str(id)))
+		else:
+			var price := int(h["price"])
+			b = _button(U.t("Unlock: %d ancient coins") % price, _unlock_hero.bind(str(id)))
+			b.disabled = Game.meta_coins < price
+		b.custom_minimum_size = Vector2(340, 58)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(b)
+		_heroes_list.add_child(row)
+		if first == null and not b.disabled:
+			first = b
+	if first != null and Controls.mode == "pad":
+		first.grab_focus.call_deferred()
+
+
+func _choose_hero(id: String) -> void:
+	if Game.select_hero(id):
+		Game.say(U.t("Hero: %s") % Heroes.hero_name(id), Heroes.color(id))
+	_refresh_heroes()
+
+
+func _unlock_hero(id: String) -> void:
+	if Game.unlock_hero(id):
+		Sfx.ui("pickup/relic", -4.0)
+		Game.select_hero(id)
+		Game.say(U.t("Unlocked: %s") % Heroes.hero_name(id), Heroes.color(id))
+	else:
+		Sfx.ui("ui/error", -6.0)
+	_refresh_heroes()
+
+
 ## Настраиваемый старт: сложность, переключатели, стартовая пушка, сид.
 ## Значения правятся прямо в Game.custom и сохраняются при старте.
 func _build_custom(root: Control) -> void:
@@ -742,6 +1388,7 @@ func _build_custom(root: Control) -> void:
 	_custom_check(grid, "chests", U.t("Chests"))
 	_custom_check(grid, "no_heal", U.t("Hardcore: no health orbs or lifesteal"))
 	_custom_check(grid, "chaos", U.t("Chaos: all gun rarities and enemy types equally likely"))
+	_custom_check(grid, "towns", U.t("Towns between stages"))
 
 	# Стартовая пушка
 	var arch_ids: Array = ["random"]
@@ -877,7 +1524,7 @@ func _reset_custom() -> void:
 
 func _back_custom() -> void:
 	Game.save_custom()
-	show_screen(mode)
+	_back()
 
 
 func _start_custom() -> void:
@@ -959,6 +1606,7 @@ func _fill_help() -> void:
 			lines = [
 				U.t("%s — move, mouse — aim, %s — shoot") % [Controls.move_label(), Controls.label("shoot")],
 				U.t("%s — dodge: 4 s cooldown, 0.5 s if you actually dodged something") % Controls.label("dodge"),
+				_skill_help(Controls.label("skill")),
 				U.t("%s — reload · %s, %s — switch weapons") % [Controls.label("reload"), Controls.weapons_label(), Controls.label("last_weapon")],
 				U.t("%s — pick up / open chest · %s — swap with current · %s — scrap for ammo") % [
 					Controls.label("interact"), Controls.label("swap"), Controls.label("scrap")],
@@ -969,6 +1617,7 @@ func _fill_help() -> void:
 			lines = [
 				U.t("Left stick — move, right stick — aim, %s — shoot") % Controls.label("shoot"),
 				U.t("%s — dodge: 4 s cooldown, 0.5 s if you actually dodged something") % Controls.label("dodge"),
+				_skill_help(Controls.label("skill")),
 				U.t("%s — reload · %s — switch weapons") % [Controls.label("reload"), Controls.weapons_label()],
 				U.t("%s — pick up / open chest · %s — swap with current · %s — scrap for ammo") % [
 					Controls.label("interact"), Controls.label("swap"), Controls.label("scrap")],
@@ -980,6 +1629,7 @@ func _fill_help() -> void:
 			lines = [
 				U.t("Left stick — move, right stick — aim and shoot"),
 				U.t("Dodge: 4 s cooldown, 0.5 s if you actually dodged something"),
+				_skill_help(U.t("Skill")),
 			]
 			if bool(Game.setting("auto_aim")):
 				lines[0] = U.t("Left stick — move, hold FIRE — shoot at the nearest enemy")
@@ -987,6 +1637,12 @@ func _fill_help() -> void:
 	lines.append(U.t("No regen. Max 2 health orbs per zone. No levels — only guns."))
 	for l in lines:
 		_help_box.add_child(_label(str(l), 17, DIM))
+
+
+## Строка помощи про навык героя: «ПКМ — Граната (Первопроходец): ...».
+func _skill_help(key: String) -> String:
+	var id := Game.main.player.hero if Game.main != null and Game.main.player != null else Game.hero
+	return U.t("%s — %s (%s): %s") % [key, U.t(str(Heroes.get_hero(id)["skill_name"])), Heroes.hero_name(id), Heroes.describe(id)]
 
 
 # --- Настройки: строки ------------------------------------------------------------
@@ -1060,14 +1716,17 @@ static func run_info() -> String:
 		parts.append(U.t("hardcore"))
 	if bool(r["chaos"]):
 		parts.append(U.t("chaos"))
+	if not bool(r.get("towns", true)):
+		parts.append(U.t("no towns"))
 	return " · ".join(parts)
 
 
 func _records_text() -> String:
+	var meta := U.t("Ancient coins: %s") % U.fmt(float(Game.meta_coins)) if Game.meta_coins > 0 else ""
 	if Game.best_zone <= 0 and Game.best_rating <= 0:
-		return U.t("No records yet")
+		return U.t("No records yet") + ("  ·  " + meta if meta != "" else "")
 	return U.t("Best: zone %d · kills in a run: %d · best rating: %s") % [
-		Game.best_zone, Game.best_kills, U.fmt(float(Game.best_rating))]
+		Game.best_zone, Game.best_kills, U.fmt(float(Game.best_rating))] + ("  ·  " + meta if meta != "" else "")
 
 
 # --- Конструкторы ---------------------------------------------------------------

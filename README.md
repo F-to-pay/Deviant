@@ -37,7 +37,8 @@ The only assets are audio: music in `music/` (classical recordings from Wikimedi
 | Action | Keyboard & mouse | Gamepad |
 |---|---|---|
 | Move / aim / shoot | WASD, mouse, LMB | left stick (or D-pad), right stick, RT |
-| Dodge (invulnerable, 4 s cooldown; 0.5 s if you actually dodged something) | Space / Shift / RMB | A / LT |
+| Dodge (invulnerable, 4 s cooldown; 0.5 s if you actually dodged something) | Space / Shift | A |
+| Hero skill (grenade / blessing / slash — depends on the hero) | RMB | LT |
 | Reload | R | X |
 | Switch weapon | 1–4, wheel, Q — last one | LB / RB, left stick click — last one |
 | Pick up to backpack / open chest | E | Y |
@@ -47,7 +48,7 @@ The only assets are audio: music in `music/` (classical recordings from Wikimedi
 | Pause menu / debug overlay | Esc / F3 | Start |
 | Music volume / mute | − and + (or numpad) / M | |
 | Sound volume | [ and ] | |
-| Mod debugger (if enabled in the Mods menu) | F8 | |
+| Mod debugger (if enabled in the Mods menu) | F8 or ` (in the Godot editor only ` — F8 stops the game there) | |
 
 Everything except music/sound/debug keys can be rebound: Settings → Controls (keyboard and gamepad columns,
 stored in the `binds` setting, `core/input_setup.gd`). Menus are navigable with A / B / D-pad / left stick.
@@ -136,13 +137,29 @@ next to the exe — the text from `data/guide.json` plus a reference of every lo
   (teleport, shield, orbitals, frost aura, explode on death...).
 - No passive regen. Health orbs heal 10 HP, at most 2 per zone. Lifesteal is rare and capped at 4 HP/s.
   If it gets truly impossible — `ZONE_HEAL` in `main.gd` (heal on entering a zone).
+- **Bursts**: the Volley perk gives a burst of 2–7 shots per trigger pull (no more than ~2.5 s of fire rate per burst). The magazine is always
+  a multiple of *burst × rounds per shot*, so a burst is never cut off by an empty magazine.
 - Every gun has "infinite" range (flies until it hits a wall), but past its effective range damage falls off sharply:
   +33% range → 37% damage, ×2 → 5%. Effective range is shown on the gun card.
 - **Ammo** is shared per projectile type (a hybrid uses the second type's ammo: a shotgun-grenade launcher eats grenades).
   The reserve holds 4 base magazines of a type (`RESERVE_MAGS` in `gun_data.gd`). Sources: enemy drops
   (mostly for guns in your slots) and scrapping guns (X on the ground or over a gun in the inventory).
   New guns arrive with an empty magazine (`LOOT_GUN_LOADED`). The magazine is always a multiple of rounds per shot.
-- Death = start over. The best zone is saved.
+- **Stages and towns**: 5 zones (the last with a boss) make a stage. Before every stage — and at the start of a run —
+  you visit a procedural **town**: a plaza with four stalls: the **Gun Shop** (8 guns, buy / sell, new stock for coins,
+  one magazine of ammo for 1.5× its scrap value),
+  the **Mystic** (one run-long hero perk per town), the **Workshop** (upgrade a gun to the current level, reroll a perk,
+  raise rarity up to Epic) and the **Guild** (contracts that pay ancient coins the moment they are done)
+  and a rift onward. The town takes its colors, layout and name from the zone that comes next.
+  Custom start can turn towns off. The **starting town** also has the Recruiter (pick a hero), the Relic Keeper
+  (meta perks — stub), the Oddsmaker (custom start) and a Restart stone at the entrance: a new run in a new
+  starting town, to reroll the stock.
+- **Heroes**, each with an active skill (RMB / LT): Pioneer — grenade (35 damage, radius 60, 6 s),
+  Cultist of Strength — the next shot deals +40 (6 s), Assassin — melee slash for 15 (0.7 s, slowed while striking).
+  The Pioneer is free, the others are unlocked with ancient coins. Skill damage does not grow with depth.
+- **Coins**: you start with 100 and a single gun; enemies, chests and bosses drop more, deeper coins are worth more. Lost on death.
+  **Ancient coins** (meta-progression) drop from bosses, leaders and golden chests and are saved forever.
+- Death = start over. The best zone and ancient coins are saved.
 
 ## Inventory
 
@@ -157,7 +174,7 @@ X over a gun — recycle. You can't drop or recycle your last gun in hand.
 
 - **10 types**: pistol, revolver, SMG, assault rifle, shotgun, sniper rifle, rocket launcher, machine gun, grenade launcher, mortar.
   - **Revolver** — slower than the pistol, hits twice as hard, its own ammo.
-  - **Mortar** — uses grenades. A shell flies in an arc to the aim point (no farther than its range) and explodes
+  - **Mortar** — uses rockets. A shell flies in an arc to the aim point (no farther than its range) and explodes
     after 1 s. Spread = deviation of the landing point. Highest damage per shot, a magazine of 1 shell.
   - **Shotgun** — 30% chance to be born a "slug gun": one projectile with the whole volley's damage (×0.85), spread ×0.12, range ×2.
 - **Hybrids** (from Rare and up): firing pattern from the first type, projectile from the second.
@@ -242,7 +259,8 @@ scripts/
                         gun (stats), gun_icon (drawing)
   systems/              projectiles (all bullets as data), combat (damage/explosions/chains), fx, music, sfx,
                         controls (input devices, aiming), codex, warmup (loading screen)
-  world/                zone (grid, collisions, flow field), zone_gen, biomes, rift, chests, loot
+  world/                zone (grid, collisions, A* pathfinding), zone_gen, town_gen, biomes, rift, chests,
+                        loot, coins, stalls
   entities/             actor (statuses), player, enemy, boss, enemy_data
   ui/                   hud, hud_draw, gun_card, inventory_ui, cursor_draw, menu, menu_bg, touch_controls,
                         ui_fit (interface size and margins), debug_console
@@ -263,5 +281,5 @@ Mods/                   mods (+ README for modders, ExampleMod)
 
 ## Not there yet
 
-Meta-progression between runs, zone events (traders, timed waves, mimics), character builds/passives,
+Meta perks for ancient coins (the Relic Keeper is a stub), zone events (traders, timed waves, mimics), character builds/passives,
 saving a run mid-game, balance testing past the first dozen zones.

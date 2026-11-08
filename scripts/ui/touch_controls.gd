@@ -25,11 +25,12 @@ const COL_DIM := Color(1, 1, 1, 0.18)
 const ACCENT := Color(1.0, 0.55, 0.2)
 ## Элементы раскладки: id -> [x, y (доли области внутри отступов), базовый радиус, подпись].
 ## Радиус -1 — «пилюля» (прямоугольная кнопка PILL × масштаб). Пилюли interact/swap/scrap видны в игре,
-## только когда рядом пушка (или сундук — тогда interact = «Открыть»), в редакторе — всегда.
+## только когда рядом пушка (или сундук — тогда interact = «Открыть», лавка — «Говорить»), в редакторе — всегда.
 const ELEMENTS := {
 	"move": [0.125, 0.78, STICK_R, ""],
 	"aim": [0.875, 0.78, STICK_R, ""],
 	"dodge": [0.758, 0.78, BTN_R, "Dodge"],
+	"skill": [0.712, 0.635, BTN_R, "Skill"],
 	"reload": [0.792, 0.633, BTN_R, "Reload"],
 	"next_weapon": [0.875, 0.572, BTN_R, ""],
 	"inventory": [0.465, 0.06, SMALL_R, "Bag"],
@@ -177,13 +178,17 @@ func _buttons() -> Array:
 			out.append(["restart", U.t("One more time"), Vector2(vp.x * 0.5 - 130 * s, vp.y - 150 * s), -s])
 			out.append(["pause", U.t("Main menu"), Vector2(vp.x * 0.5 + 130 * s, vp.y - 150 * s), -s])
 		return out
-	for id in ["dodge", "reload", "next_weapon", "inventory", "pause"]:
+	for id in ["dodge", "skill", "reload", "next_weapon", "inventory", "pause"]:
 		out.append([id, _label_of(id), _pos(id), _radius(id)])
 	if main.near_item != null and is_instance_valid(main.near_item):
 		for id in ["interact", "swap", "scrap"]:
 			out.append([id, _label_of(id), _pos(id), _radius(id)])
 	elif main.near_chest != null and is_instance_valid(main.near_chest):
 		out.append(["interact", U.t("Open"), _pos("interact"), _radius("interact")])
+	elif main.near_reset:
+		out.append(["interact", U.t("Restart"), _pos("interact"), _radius("interact")])
+	elif main.near_stall != null and is_instance_valid(main.near_stall):
+		out.append(["interact", U.t("Close") if main.hud.stall == main.near_stall else U.t("Talk"), _pos("interact"), _radius("interact")])
 	return out
 
 
@@ -481,7 +486,7 @@ func _draw_ui() -> void:
 		_draw_button(c, b, held.has(str(b[0])), fb, s)
 
 
-func _draw_button(c: CanvasItem, b: Array, on: bool, fb: Font, s: float) -> void:
+func _draw_button(c: CanvasItem, b: Array, on: bool, fb: Font, _s: float) -> void:
 	var main: Main = Game.main
 	var act := str(b[0])
 	var ctr: Vector2 = b[2]
@@ -499,8 +504,15 @@ func _draw_button(c: CanvasItem, b: Array, on: bool, fb: Font, s: float) -> void
 	if act == "next_weapon":
 		label = str(main.player.active + 1) + " »"
 	elif act == "dodge" and main.player.dodge_cd > 0.0 and not _editing:
-		var k := clampf(main.player.dodge_cd / Player.DODGE_CD, 0.0, 1.0)
+		var k := clampf(main.player.dodge_cd / main.player.dodge_max_cd(), 0.0, 1.0)
 		c.draw_arc(ctr, r - 5.0, -PI * 0.5, -PI * 0.5 + TAU * k, 32, Color(ACCENT, 0.9), 5.0)
+	elif act == "skill" and not _editing:
+		var hc := Heroes.color(main.player.hero)
+		if main.player.skill_cd > 0.0:
+			var k := clampf(main.player.skill_cd / main.player.skill_max_cd(), 0.0, 1.0)
+			c.draw_arc(ctr, r - 5.0, -PI * 0.5, -PI * 0.5 + TAU * k, 32, Color(hc, 0.9), 5.0)
+		else:
+			c.draw_arc(ctr, r - 4.0, 0.0, TAU, 32, Color(hc, 0.6), 3.0)
 	U.draw_text_c(c, fb, ctr + Vector2(0, 6), label, 16 if label.length() > 3 else 20, Color.WHITE, 3)
 
 

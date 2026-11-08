@@ -1,6 +1,7 @@
 class_name DebugConsole
 extends CanvasLayer
-## Отладчик модов: журнал DebugLog + командная строка. Открывается по F8.
+## Отладчик модов: журнал DebugLog + командная строка. Открывается по F8 или ` (клавиша под Esc).
+## При запуске из редактора F8 — это «Остановить проект» самого Godot, там только `.
 ## Создаётся, только если в меню «Моды» включён отладчик (после перезапуска игры).
 ## Пока открыт — игра на паузе. Закрыт, но есть предупреждения/ошибки — в углу значок.
 
@@ -16,6 +17,11 @@ const HELP := [
 	"perk <perk_id> [arch]         — drop a rare gun with this perk",
 	"legendary <id>                — drop this legendary",
 	"missing [lang]                — strings seen in game without translation",
+	"coins <n>                     — add coins of this run (negative — take away)",
+	"ancient <n>                   — add ancient coins (meta, saved)",
+	"town                          — go to the town before the next zone (in a run)",
+	"unlock <hero|all>             — unlock a hero for free (pioneer, cultist, assassin)",
+	"hero <id>                     — play as this hero (unlocks it if needed)",
 ]
 
 var panel: PanelContainer
@@ -28,6 +34,7 @@ var _ver := -1
 var _paused_by_me := false
 var _history: Array = []
 var _hist_i := 0
+var _poll_t := 0.0
 
 
 func _ready() -> void:
@@ -56,7 +63,7 @@ func _ready() -> void:
 	top.add_theme_constant_override("separation", 12)
 	vb.add_child(top)
 	var title := Label.new()
-	title.text = U.t("Mod debugger") + "  [F8]"
+	title.text = U.t("Mod debugger") + "  [F8 / `]"
 	title.add_theme_font_override("font", U.font_bold())
 	title.add_theme_font_size_override("font_size", 18)
 	title.add_theme_color_override("font_color", Color(1.0, 0.6, 0.25))
@@ -104,7 +111,7 @@ func _ready() -> void:
 
 	panel.visible = false
 	cursor.visible = false
-	DebugLog.info("mod debugger on — F8 to open, type help", "debug")
+	DebugLog.info("mod debugger on — F8 or ` to open (in the Godot editor only `: F8 stops the game there), type help", "debug")
 
 
 func _input(event: InputEvent) -> void:
@@ -133,12 +140,16 @@ func toggle() -> void:
 			_paused_by_me = false
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	_poll_t -= delta
+	if _poll_t <= 0.0:
+		_poll_t = 0.3
+		DebugLog.poll_engine_log()
 	var w := DebugLog.warns
 	var e := DebugLog.errors
 	badge.visible = not panel.visible and (w > 0 or e > 0)
 	if badge.visible:
-		badge.text = U.t("Mods") + ": %s%s — F8" % [("⚠ %d  " % w) if w > 0 else "", ("✖ %d" % e) if e > 0 else ""]
+		badge.text = U.t("Mods") + ": %s%s — F8 / `" % [("⚠ %d  " % w) if w > 0 else "", ("✖ %d" % e) if e > 0 else ""]
 		badge.add_theme_color_override("font_color", Color(1.0, 0.4, 0.35) if e > 0 else Color(1.0, 0.8, 0.35))
 	if panel.visible:
 		cursor.queue_redraw()
@@ -225,6 +236,34 @@ func _on_submit(text: String) -> void:
 				_say("which one? — try: list legendaries")
 			else:
 				_give("random", "random", GunData.R_LEGENDARY, "", args[0])
+		"coins":
+			Game.add_coins(int(args[0]) if not args.is_empty() else 100)
+			_say("coins: %d" % Game.coins)
+		"ancient":
+			Game.add_meta(int(args[0]) if not args.is_empty() else 10)
+			_say("ancient coins: %d" % Game.meta_coins)
+		"town":
+			var main: Main = Game.main
+			if main == null or main.menu.visible and main.menu.mode == "main" or main.player.dead:
+				_say("start a run first")
+			else:
+				main.next_zone(main.zone.level if Game.in_town else Game.zone_level + 1, true)
+		"unlock":
+			var which: String = args[0] if not args.is_empty() else "all"
+			var ids: Array = Heroes.ORDER if which == "all" else [which]
+			for h in ids:
+				if Game.unlock_hero(str(h), true):
+					_say("unlocked: %s" % str(h))
+				else:
+					_say("unknown hero '%s' — heroes: %s" % [str(h), ", ".join(PackedStringArray(Heroes.ORDER))])
+		"hero":
+			var hid: String = args[0] if not args.is_empty() else ""
+			if not Heroes.LIST.has(hid):
+				_say("heroes: " + ", ".join(PackedStringArray(Heroes.ORDER)))
+			else:
+				Game.unlock_hero(hid, true)
+				Game.select_hero(hid)
+				_say("hero: %s" % hid)
 		"missing":
 			var code: String = args[0] if not args.is_empty() else I18n.current()
 			var d: Dictionary = DebugLog.missing_tr.get(code, {})

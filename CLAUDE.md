@@ -24,8 +24,10 @@ godot --headless --path . --quit          # загрузить проект: в�
 - **Порядок старта:** `Game._ready` → `InputSetup.setup()` → загрузка настроек → `load_content()`
   (`Mods.scan`, `GunData`, `EnemyData`, `Codex`, `I18n`) → применение настроек → `Main._ready` строит мир →
   `Warmup` (экран загрузки: скрипты модов, музыка, глифы шрифтов, шейдеры, все пушки) → `Main.to_menu()`.
-- **Забег:** `Main.start_game(cfg)` → `start_run()` → `load_zone(level)` (`ZoneGen.generate` → `Zone.setup` →
-  стаи/сундуки/портал или босс). Портал → следующая зона. Смерть → `HUD` экран смерти → `start_run` или меню.
+- **Забег:** `Main.start_game(cfg)` → `start_run()` → `load_town(1)` (город) или `load_zone(level)`
+  (`ZoneGen.generate` → `Zone.setup` → стаи/сундуки/портал или босс). Портал → `next_zone(level, to_town)`:
+  в конце этапа (`Game.TOWN_EVERY` = 5 зон, `Game.town_before`) — сначала город (`TownGen` + `Stall`), из него — в зону.
+  Смерть → `HUD` экран смерти → `start_run` или меню.
 
 ## Подсистемы и где они
 
@@ -40,7 +42,12 @@ godot --headless --path . --quit          # загрузить проект: в�
 | Враги | `entities/enemy_data.gd` (TYPES, AFFIXES, стаи — **в коде**), `entities/enemy.gd` (`_behave` — `match etype`), `entities/boss.gd` |
 | Поиск пути | `world/zone.gd` `find_path()` — AStarGrid2D по классам размера тела (`size_class`) |
 | Карта | `world/zone_gen.gd` (генерация), `world/zone.gd` (сетка T=40, коллизии `move_circle`, лучи `ray_clear`, миникарта), `world/biomes.gd` |
-| Игрок | `entities/player.gd` (движение, рывок, оружие, патроны, рюкзак) |
+| Город между этапами | `world/town_gen.gd` (площадь, улицы, дома по `town_style` биома, имя), `world/stall.gd` (лавки: `KINDS` — вывеска, реплики, `menu` — экран меню; без него — окно-заглушка `HudDraw._draw_stall`) |
+| Торговля, Мистик, Мастерская | цены и товар — `systems/shops.gd` (`make_town` при входе в город → `Main.town`), перки Мистика — `Shops.MYSTIC` → `Player.stat_mult`; пересборка пушки — `GunGen.rebuild` / `upgrade_level`; экраны — `Menu._build_shop/_mystic/_workshop` |
+| Задания Гильдии | `systems/quests.gd` (`TYPES`, `active`, `progress(тип)` — зовётся из `Main`); экран — `Menu._build_guild`, строки на HUD — `HudDraw._draw_zone_info` |
+| Монеты | `Game.coins` (забег, `START_COINS`, `coin_value`), `Game.meta_coins` (древние, мета, сохраняются в `[meta]` deviant.cfg сразу); `world/coin.gd`; дроп — `Main.drop_coins` в `on_enemy_killed` / `open_chest` / `_boss_dead` |
+| Игрок | `entities/player.gd` (движение, рывок, навык героя `_use_skill`, оружие, патроны, рюкзак) |
+| Герои и навыки | `entities/heroes.gd` (`LIST`: имя, цена в древних монетах, навык и числа); выбор — `Game.hero`, открытые — `Game.heroes_open` (`[meta]` deviant.cfg); экран Вербовщика — `Menu._build_heroes` |
 | Ввод | `core/input_setup.gd` (действия, умолчания kb/pad, переназначение), `systems/controls.gd` (чем играют, прицел, огонь, автоприцел/автоогонь), `ui/touch_controls.gd` |
 | HUD | `ui/hud.gd` (состояние), `ui/hud_draw.gd` (всё рисуется в `_draw`), `ui/inventory_ui.gd`, `ui/cursor_draw.gd` |
 | Меню | `ui/menu.gd` — все экраны (главное, пауза, настройки, управление, настраиваемый старт, моды, справочник) на Control-ах |
@@ -77,6 +84,8 @@ godot --headless --path . --quit          # загрузить проект: в�
 - `:=` с выражением типа Variant не выводит тип — указывай явно (`var b: bool = ...`).
 - Лямбды в `static func` — лучше обычная static-функция.
 - Пауза: меню и HUD работают с `PROCESS_MODE_ALWAYS`; новые узлы интерфейса — тоже.
+- Запуск из редактора: F8 — шорткат Godot «Остановить проект», игра закрывается без ошибок в журнале.
+  Консоль отладчика там открывать клавишей ` (тоже `mod_console`). Новые горячие клавиши — не F5–F8.
 
 ## Где что править — быстрые ответы
 
@@ -89,7 +98,12 @@ godot --headless --path . --quit          # загрузить проект: в�
 | Свойство элитки | `EnemyData.AFFIXES` + `Enemy._tick_affixes` + `data/codex.json` (`affixes`) |
 | Атака босса | `Boss.PATTERNS` / `DURATION` + обработка в `boss.gd` |
 | Новый биом | `Biomes.LIST` |
-| Лут с врагов/сундуков/боссов | `Main` (обработчики смерти врага/босса, `open_chest`) |
+| Лут и монеты с врагов/сундуков/боссов | `Main` (обработчики смерти врага/босса, `open_chest`) |
+| Новый перк Мистика | `Shops.MYSTIC` (stat — новый? тогда ещё `Player.stat_mult(...)` там, где он влияет) + строки |
+| Новый вид задания | `Quests.TYPES` + вызов `Quests.progress("вид")` в нужном месте + строки |
+| Новый герой / навык | `Heroes.LIST` + ветка в `Player._use_skill` (+ рисунок в `Player._draw`) + строки в `lang/*.json` + страница `heroes` в `data/codex.json` |
+| Лавка, открывающая экран меню | `Stall.KINDS[...]["menu"]` → `Menu.open_town(экран)`; «Назад» — `Menu._back()` |
+| Вид/имена городов | `Biomes.LIST` (`town`, `town_style`), `TownGen.SUFFIXES`; переводы ключей `"Dust-"`, `"-ville"` |
 | Управление по умолчанию | `InputSetup.DEFAULTS` (+ `REBINDABLE` для меню) |
 | Экранные кнопки | `TouchControls.ELEMENTS` |
 | Страница справочника | `data/codex.json` |
