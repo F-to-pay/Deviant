@@ -6,6 +6,7 @@
 		"arch": "shotgun",
 		"arch2": "launcher",
 		"perks": ["cluster"],
+		"maker": "dandy",
 		"special": ""
 	},
 	{
@@ -24,6 +25,8 @@
 		"arch": "smg",
 		"arch2": "",
 		"perks": ["homing", "scatter"],
+		"maker": "erosion",
+		"ops": [["set", "element", "acid"], ["max", "elem_chance", 0.35]],
 		"special": ""
 	},
 	{
@@ -89,6 +92,8 @@
 		"arch": "shotgun",
 		"arch2": "sniper",
 		"perks": ["cryo", "pierce"],
+		"maker": "dandy",
+		"min_accuracy": 85,
 		"special": ""
 	},
 	{
@@ -98,14 +103,14 @@
 		"arch": "lmg",
 		"arch2": "",
 		"perks": ["ricochet", "rapid"],
-		"special": ""
+		"special": "bounce_keep"
 	},
 	{
 		"id": "hedgehog",
 		"name": "Hedgehog in the Fog",
 		"flavor": "There was a little horse around here somewhere...",
-		"arch": "launcher",
-		"arch2": "smg",
+		"arch": "smg",
+		"arch2": "launcher",
 		"perks": ["seeder"],
 		"special": ""
 	}

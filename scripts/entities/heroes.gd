@@ -15,7 +15,7 @@ const DEFAULT := "pioneer"
 const ORDER := ["pioneer", "sheriff", "assassin"]
 const LIST := {
 	"pioneer": {"name": "Pioneer", "price": 0, "color": Color(0.35, 0.85, 1.0),
-		"skill": "grenade", "skill_name": "Hand grenade", "cd": 6.0, "dmg": 35.0, "r": 60.0, "range": 420.0, "aimed": true,
+		"skill": "grenade", "skill_name": "Hand grenade", "cd": 6.0, "dmg": 30.0, "r": 60.0, "range": 420.0, "aimed": true,
 		"desc": "Throws a grenade at the aim point: %d damage in radius %d. Cooldown %s s."},
 	"sheriff": {"name": "Sheriff", "price": 25, "color": Color(1.0, 0.45, 0.3),
 		"skill": "bless", "skill_name": "Blessing", "cd": 6.0, "dmg": 40.0,
@@ -38,7 +38,7 @@ const PERKS := {
 	"wounds": {"name": "Grievous Wounds", "heroes": [], "max": 1,
 		"desc": "Skill hits slow the target by 10% for good, up to 30%. Elites need 2 hits for each step, bosses 3."},
 	"poison": {"name": "Poison Shell", "name_slash": "Poison Cut", "heroes": ["pioneer", "sheriff", "assassin"], "max": 0,
-		"desc": "Skill damage lands 5 s later, but is 30% higher.", "more": "+2 s delay, +30% damage."},
+		"desc": "Skill damage lands 5 s later, but is 50% higher.", "more": "+2 s delay, +50% damage."},
 	"heavy": {"name": "Heavy Shell", "heroes": ["pioneer", "sheriff"], "max": 0,
 		"desc": "+1 s skill cooldown, +20% damage, the hit stuns for 0.7 s.", "more": "+1 s cooldown, +20% damage, +0.4 s stun."},
 	"parry": {"name": "Parry", "heroes": ["assassin"], "max": 0,

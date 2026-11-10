@@ -115,7 +115,7 @@ func perk(id: String) -> int:
 
 ## Множитель урона навыка от перков: разделение, тяжёлый, яд, точный, трофеи, вандализм.
 func skill_dmg_mult() -> float:
-	var k := (1.0 + 0.2 * perk("split")) * (1.0 + 0.2 * perk("heavy")) * (1.0 + 0.3 * perk("poison")) \
+	var k := (1.0 + 0.2 * perk("split")) * (1.0 + 0.2 * perk("heavy")) * (1.0 + 0.5 * perk("poison")) \
 		* (1.0 + 0.1 * perk("precise")) * (1.0 + trophy_bonus)
 	if perk("vandal") > 0:
 		k *= 0.5
@@ -720,7 +720,7 @@ func _fire(g: Gun) -> void:
 	if g.special == "ring" and randf() < GunGen.proc_keep_chance(g):
 		for k in 8:
 			var dir := Vector2.from_angle(base + TAU * float(k) / 8.0)
-			main.projectiles.fire_gun(g, position + dir * 18.0, dir, 0, 0.4)
+			main.projectiles.fire_gun(g, position + dir * 18.0, dir, 0, 1.0)
 	if g.special == "nuke10":
 		# заряд копится от «веса» выстрела, а не от их количества
 		g.nuke_charge += g.norm_damage() * float(n) / Gun.NUKE_COST

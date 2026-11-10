@@ -217,9 +217,16 @@ func load_zone(level: int) -> void:
 	_enter(data)
 	var boss_title := ""
 	if bool(data["boss"]):
-		var b := Boss.new()
-		b.position = zone.cell_center(data["boss_cell"])
-		b.setup_boss(level, rng)
+		var b: Boss
+		if AntiPlayer.roll(level, rng):
+			var ap := AntiPlayer.new()   # зеркало игрока: его лучшая пушка и навык его героя
+			ap.position = zone.cell_center(data["boss_cell"])
+			ap.setup_anti(level, rng)
+			b = ap
+		else:
+			b = Boss.new()
+			b.position = zone.cell_center(data["boss_cell"])
+			b.setup_boss(level, rng)
 		enemy_layer.add_child(b)
 		enemies.append(b)
 		boss = b
@@ -302,6 +309,69 @@ func next_zone(level: int = -1, to_town: bool = false) -> void:
 	tw.tween_callback(_do_next_zone)
 	tw.tween_property(hud, "fade", 0.0, 0.45)
 	tw.tween_callback(_end_transition)
+
+
+## Отладка (команда skip [n] [--boss]): убить всех врагов текущей зоны без лута на земле и перейти дальше.
+## n зон вперёд (по умолчанию 1) или to_boss — до ближайшей боссовой зоны. Опыт, убийства и монеты начисляются сразу
+## (текущая зона — по реальным врагам, пропущенные — по средним значениям зоны; призванные ничего не дают).
+## В городе текущей зоны нет: считается, что пройдено на одну зону меньше номера города.
+## Древние монеты и предметы не выдаются.
+func skip_zone(n: int = 1, to_boss: bool = false) -> void:
+	if transitioning or player.dead:
+		return
+	var base: int = (zone.level - 1) if Game.in_town else Game.zone_level
+	var target := (base / 5 + 1) * 5 if to_boss else base + maxi(1, n)
+	var kills := 0
+	var xp := 0.0
+	var gold := 0
+	if not Game.in_town:
+		var lvl: int = Game.zone_level
+		for o in enemies.duplicate():
+			var e: Enemy = o
+			if not is_instance_valid(e) or e.dead:
+				continue
+			if not e.summoned:
+				kills += 1
+				xp += Game.enemy_xp(e.level, e.elite)
+				gold += _skip_coins(lvl, e.elite)
+				if e.elite == 3:
+					Game.bosses += 1
+			e.dead = true
+			e.queue_free()
+		enemies.clear()
+		boss = null
+	# пропущенные зоны между текущей и целевой — по средним
+	for l in range(base + 1, target):
+		if Game.is_boss_zone(l):
+			kills += 1
+			xp += Game.enemy_xp(l, 3)
+			gold += _skip_coins(l, 3)
+			Game.bosses += 1
+		else:
+			var cnt := roundi(Game.expected_enemies(l))
+			kills += cnt
+			xp += float(cnt) * Game.enemy_xp(l, 0)
+			for i in cnt:
+				gold += _skip_coins(l, 0)
+	Game.kills += kills
+	Quests.progress("kills", kills)
+	var ups := Game.add_xp(xp)
+	Game.add_coins(gold)
+	Game.say("skip → zone %d: %d kills, +%.0f XP%s, +%d coins" % [target, kills, xp, (" (level up ×%d)" % ups) if ups > 0 else "", gold],
+		Color(0.7, 1.0, 0.7))
+	next_zone(target, Game.town_before(target))
+
+
+## Монеты за одного убитого врага уровня lvl (elite 0..3) — как в on_enemy_killed / _boss_dead, но сразу числом.
+func _skip_coins(lvl: int, elite: int) -> int:
+	match elite:
+		0:
+			return Game.kill_coins(lvl, 0.35, Game.rng)
+		1:
+			return Game.kill_coins(lvl, float(Game.rng.randi_range(2, 4)), Game.rng)
+		2:
+			return Game.kill_coins(lvl, float(Game.rng.randi_range(5, 8)), Game.rng)
+	return Game.coins_for(lvl, 15.0, Game.rng)
 
 
 ## Камень перезапуска: новый забег с нуля в новом стартовом городе (с затемнением, как портал).

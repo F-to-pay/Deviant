@@ -208,7 +208,7 @@ static func _src(entry: Dictionary) -> String:
 
 
 const KNOWN_TAGS := ["proc", "explosive", "heal", "no_shell"]
-const KNOWN_SPECIALS := ["", "ring", "nuke10", "chaos", "expert", "singularity"]
+const KNOWN_SPECIALS := ["", "ring", "nuke10", "chaos", "expert", "singularity", "bounce_keep"]
 const KNOWN_TEMPLATES := ["gun_plain", "gun_adj", "gun_nick", "gun_nick2", "gun_legendary", "type_hybrid", "elite", "rare", "boss"]
 
 

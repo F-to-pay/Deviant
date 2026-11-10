@@ -34,6 +34,7 @@ var frozen_time: float = 0.0
 var shock_time: float = 0.0
 var stun_time: float = 0.0
 var _stun_cd: float = 0.0
+var elem_res: int = -1          # врождённое сопротивление стихии (EnemyData.TYPES "res"), -1 — нет
 var status_resist: float = 1.0   # 1 — обычный, больше — стаки копятся медленнее
 var wound: float = 0.0           # «Опасные раны» (перк навыка): вечное замедление, до 0.3
 var delayed: Array = []          # «Ядовитый снаряд»: отложенный урон [осталось секунд, урон, стихия]
@@ -57,38 +58,41 @@ func delay_damage(dmg: float, t: float, el: int) -> void:
 
 ## st — сколько кислоты/холода добавляет попадание (0.1 = секунда стрельбы).
 func apply_element(el: int, hit_dmg: float, st: float = 0.1) -> void:
+	# врождённое сопротивление: эффект этой стихии слабее; r — общий делитель накопления (с учётом status_resist элиток)
+	var k := 1.0 - EnemyData.INNATE_RESIST if el == elem_res and el >= 0 else 1.0
+	var r := status_resist / k
 	if el == U.EL_FIRE:
 		var cur := burn_dps if burn_time > 0.0 else 0.0
 		if burn_time <= 0.0:
 			Sfx.at("el/fire", position, -10.0, 1.0, 0.08, 3, 0.08)
-		burn_dps = maxf(cur, hit_dmg * 0.45)
+		burn_dps = maxf(cur, hit_dmg * 0.45 * k)
 		burn_time = 3.0
 	elif el == U.EL_ACID:
 		if acid <= 0.0:
 			Sfx.at("el/acid", position, -11.0, 1.0, 0.1, 3, 0.08)
-		acid = minf(ACID_MAX, acid + st / status_resist)
+		acid = minf(ACID_MAX, acid + st / r)
 		acid_time = 3.0
 	elif el == U.EL_CRYO:
 		if frozen_time <= 0.0:
-			cryo += st / status_resist
+			cryo += st / r
 			cryo_time = 3.0
 			if cryo >= CRYO_FREEZE:
 				cryo = 0.0
 				frozen_time = 1.3
 				Sfx.at("el/cryo", position, -6.0, 1.0, 0.08, 3, 0.06)
 	elif el == U.EL_CURSE:
-		curse += st * (CURSE_RATE / 0.1) / status_resist
+		curse += st * (CURSE_RATE / 0.1) / r
 		curse_time = 3.0
 		if curse >= 1.0:
 			curse = 0.0
 			Sfx.at("el/curse", position, -6.0, 1.0, 0.08, 2, 0.1)
 			var missing := maxf(0.0, max_hp - hp)
-			on_curse(missing * CURSE_HIT / status_resist)
+			on_curse(missing * CURSE_HIT / r)
 	elif el == U.EL_SHOCK:
 		shock_time = 0.35
 		if _stun_cd <= 0.0:
 			# стан короче у элиток/боссов; иммунитет у них, наоборот, длиннее
-			stun_time = STUN_TIME / status_resist
+			stun_time = STUN_TIME * k / status_resist
 			Sfx.at("el/shock", position, -10.0, 1.0, 0.1, 3, 0.06)
 			_stun_cd = stun_time + STUN_IMMUNE * status_resist
 			shock_time = maxf(shock_time, stun_time)

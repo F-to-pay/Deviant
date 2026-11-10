@@ -292,7 +292,7 @@ func perk_lines() -> Array:
 		out.append([U.t("−%d%% move speed") % roundi((1.0 - move_mult) * 100.0), bad])
 	match special:
 		"ring":
-			out.append([U.t("Bullet ring (40%% damage), %d%% chance per shot") % roundi(GunGen.proc_keep_chance(self) * 100.0), Color(1.0, 0.7, 0.3)])
+			out.append([U.t("Bullet ring (100%% damage), %d%% chance per shot") % roundi(GunGen.proc_keep_chance(self) * 100.0), Color(1.0, 0.7, 0.3)])
 		"nuke10":
 			out.append([U.t("Stores damage: a nuke every ~%d shots") % shots_per_nuke(), Color(1.0, 0.7, 0.3)])
 		"chaos":
@@ -301,4 +301,6 @@ func perk_lines() -> Array:
 			out.append([U.t("Lightning hits everyone nearby"), Color(1.0, 0.7, 0.3)])
 		"singularity":
 			out.append([U.t("Every orb is a black hole"), Color(1.0, 0.7, 0.3)])
+		"bounce_keep":
+			out.append([U.t("Ricochets do not reduce damage"), Color(1.0, 0.7, 0.3)])
 	return out

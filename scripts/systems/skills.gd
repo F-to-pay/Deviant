@@ -16,18 +16,31 @@ const SMOKE_R := 300.0
 const SMOKE_TICK := 0.25     # доля урона гранаты за секунду дыма
 const SMOKE_RATE := 5.0      # тиков дыма в секунду (урон и стихия делятся на них)
 const SMOKE_TIME := 4.0
-## Сколько стихии (кислоты/холода/проклятия) даёт попадание навыком: как 2 секунды стрельбы пушкой (у пушки 0.1 = 1 с).
-## Дым за секунду даёт столько же, сколько одно попадание гранаты (по SKILL_ST / SMOKE_RATE за тик).
-const SKILL_ST := 0.2
+## Стихия навыка — как у обычной пушки: шанс наложить на попадание = 0.35 (шанс пушки по умолчанию), а накопление
+## (кислота, холод, проклятие) зависит от «скорострельности» навыка: пушка копит 0.1 за секунду стрельбы,
+## навык — 0.1 за секунду своей перезарядки на одно попадание (skill_st). Шанс общий для всех стихий, включая огонь;
+## огонь не копится, поэтому сила его поджога (45% урона попадания в секунду) от перезарядки не зависит.
+const SKILL_ELEM_CHANCE := 0.35
+
+
+## Сколько стихии даёт одно попадание навыком: 0.1 × перезарядка навыка (с «Тяжёлым снарядом» — с учётом его +1 с).
+static func skill_st(p: Player) -> float:
+	return 0.1 * p.skill_max_cd()
 
 
 ## Ударить врага навыком. stun — можно ли оглушить (у дыма — только на первом тике).
 ## st — сколько стихии накладывает удар; tick — тик дыма: без цифр урона и без цепных молний шока.
-static func hit(e: Enemy, dmg: float, kb: Vector2, stun: bool = true, st: float = SKILL_ST, tick: bool = false) -> void:
+## st < 0 — по умолчанию (skill_st); у тиков дыма накопление уже пересчитано и шанс не бросается.
+static func hit(e: Enemy, dmg: float, kb: Vector2, stun: bool = true, st: float = -1.0, tick: bool = false) -> void:
 	if e == null or e.dead:
 		return
 	var p: Player = Game.main.player
+	if st < 0.0:
+		st = skill_st(p)
 	var el := p.skill_element
+	# шанс стихии как у пушек; тики дыма — без броска (там шанс уже учтён в накоплении, а огонь за 3 с и так держится)
+	if el >= 0 and not tick and randf() >= SKILL_ELEM_CHANCE:
+		el = -1
 	if p.perk("vandal") > 0:
 		kb *= VANDAL_KNOCK
 	var poison := p.perk("poison")
@@ -68,7 +81,7 @@ static func explode(pos: Vector2, r: float, dmg: float, col: Color) -> void:
 	var sm := p.perk("smoke")
 	if sm > 0:
 		main.projectiles.add_smoke(pos, SMOKE_R, dmg * SMOKE_TICK / SMOKE_RATE, SMOKE_TIME + float(sm - 1),
-			1.0 / SMOKE_RATE, SKILL_ST / SMOKE_RATE)
+			1.0 / SMOKE_RATE, skill_st(p) * SKILL_ELEM_CHANCE / SMOKE_RATE)
 		main.fx.ring(pos, 60.0, Color(0.75, 0.75, 0.8), 0.4)
 		Sfx.at("player/dodge", pos, -4.0, 0.5, 0.06, 2, 0.1)
 		return

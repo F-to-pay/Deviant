@@ -298,11 +298,12 @@ static func _rar_name(i: int) -> String:
 
 
 const SPECIALS := {
-	"ring": "Shoots a ring of 8 bullets (40% damage) by chance",
+	"ring": "Shoots a ring of 8 bullets (100% damage) by chance",
 	"nuke10": "Stores damage and fires a nuke",
 	"chaos": "Each bullet deals ×0 to ×2 damage",
 	"expert": "Lightning hits everyone nearby",
 	"singularity": "Every orb is a black hole",
+	"bounce_keep": "Ricochets do not reduce damage",
 }
 
 
@@ -331,15 +332,17 @@ static func _auto_legendaries() -> String:
 
 
 static func _auto_enemies() -> String:
-	var t := "[table=5]"
-	for h in ["Enemy", "Health", "Damage", "Speed", "From zone"]:
+	var t := "[table=6]"
+	for h in ["Enemy", "Health", "Damage", "Speed", "From zone", "Resists"]:
 		t += "[cell]%s  [/cell]" % (H % U.t(h))
 	for k in EnemyData.TYPES:
 		var e: Dictionary = EnemyData.TYPES[k]
 		t += "[cell]%s  [/cell][cell]%d[/cell][cell]%d[/cell][cell]%d[/cell][cell]%d[/cell]" % [
 			_c(e["col"], "[b]%s[/b]" % _esc(U.t(str(e["n"])))), roundi(float(e["hp"])), roundi(float(e["dmg"])),
 			roundi(float(e["speed"])), int(e["lvl"])]
-	t += "[/table]\n" + DIMC % U.t("Health and damage at zone 1; they grow every zone.") + "\n"
+		var rs := int(e.get("res", -1))
+		t += "[cell]%s[/cell]" % (_c(U.el_color(rs), U.el_name(rs)) if rs >= 0 else "—")
+	t += "[/table]\n" + DIMC % (U.t("Health and damage at zone 1; they grow every zone.") + "  " + U.t("Resists: that element works %d%% weaker on the enemy.") % roundi(EnemyData.INNATE_RESIST * 100.0)) + "\n"
 	for k in EnemyData.TYPES:
 		var desc := describe("enemies", str(k))
 		if desc != "":

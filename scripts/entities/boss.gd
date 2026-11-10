@@ -2,6 +2,9 @@ class_name Boss
 extends Enemy
 ## Босс каждые 5 зон. Набор паттернов случайный, на 50% HP — ярость.
 
+## Здоровье босса: BASE_HP × рост по зонам.
+const BASE_HP := 3200.0
+
 const PATTERNS := ["radial", "spiral", "shotgun", "charge", "summon", "mortar", "wall", "seekers"]
 const DURATION := {"radial": 3.0, "spiral": 3.5, "shotgun": 3.0, "charge": 5.0, "summon": 0.6, "mortar": 2.6, "wall": 3.6,
 		"seekers": 4.0}
@@ -29,10 +32,11 @@ var charge_wait: float = 0.0    # сколько уже ищем позицию 
 
 func setup_boss(lvl: int, rng: RandomNumberGenerator) -> void:
 	setup("brute", lvl, 3, [])
+	elem_res = -1   # босс не наследует сопротивление громилы (у него и так status_resist 3)
 	radius = 46.0
 	var hpm: float = Game.enemy_hp_mult(lvl)
 	var dmgm: float = Game.enemy_dmg_mult(lvl)
-	max_hp = 3200.0 * hpm
+	max_hp = BASE_HP * hpm
 	hp = max_hp
 	dmg = 16.0 * dmgm
 	speed = 85.0

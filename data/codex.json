@@ -122,7 +122,7 @@
 					"Skill damage is fixed and does not grow with depth — deeper in, it is a tool, not your main weapon.",
 					"",
 					"[color=#ff9a40][b]Pioneer — free[/b][/color]",
-					"• [b]Hand grenade[/b]: thrown at the aim point (up to 420 away), 35 damage in radius 60, the same across the whole radius. Cooldown 6 s.",
+					"• [b]Hand grenade[/b]: thrown at the aim point (up to 420 away), 30 damage in radius 60, the same across the whole radius. Cooldown 6 s.",
 					"",
 					"[color=#ff9a40][b]Sheriff — 25 ancient coins[/b][/color]",
 					"• [b]Blessing[/b]: the next shot deals +40 damage (split between the pellets of a shotgun or the shells of a mortar volley). Cooldown 6 s.",
@@ -134,12 +134,12 @@
 					"One gift per town from the [b]Mystic[/b], for coins, until the end of the run. Only perks of your hero are offered.",
 					"• [b]Split[/b] (Pioneer, Sheriff): ×3 projectiles (+3 per take), +20% total damage (+20%), split evenly. Grenades land in a spot around the aim point, like mortar shells.",
 					"• [b]Grievous Wounds[/b] (all, once): skill hits slow the target by 10% for good, up to 30%; elites need 2 hits per step, bosses 3.",
-					"• [b]Poison Shell / Poison Cut[/b] (all): damage lands 5 s later (+2 s), but is 30% higher (+30%).",
+					"• [b]Poison Shell / Poison Cut[/b] (all): damage lands 5 s later (+2 s), but is 50% higher (+50%).",
 					"• [b]Heavy Shell[/b] (Pioneer, Sheriff): +1 s cooldown (+1 s), +20% damage (+20%), stuns for 0.7 s (+0.4 s).",
 					"• [b]Parry[/b] (Assassin): every 4 s the next strike reflects enemy projectiles back; each extra take — +30% damage of reflected projectiles.",
 					"• [b]Extra Hand[/b] (all): +1 skill charge (+1).",
 					"• [b]Vandalism[/b] (Assassin, once): huge knockback, −50% damage.",
-					"• [b]Element[/b] (all, once): the skill gets an element of your choice. Every skill hit applies it for sure and as strongly as 2 seconds of gun fire (acid +20%, cold +20%, a curse proc every 2 hits); smoke — as much per second as one grenade hit.",
+					"• [b]Element[/b] (all, once): the skill gets an element of your choice. Like on guns, a skill hit applies it with a 35% chance. Fire burns as strongly as always; acid, cold and curse build up by 10% per second of the skill's cooldown per hit (grenade 6 s → +60%, slash 0.7 s → +7%); smoke gives the same on average as one grenade hit per second.",
 					"• [b]Trophies[/b] (Assassin): a skill kill gives 1 coin and +0.2% skill damage (+0.05% per extra take).",
 					"• [b]Smoke Grenade[/b] (Pioneer): the grenade becomes smoke of radius 300 dealing 25% of its damage per second (5 ticks a second) for 4 s (+1 s).",
 					"• [b]Precise Shot[/b] (Sheriff): the blessed shot homes in, +20% range (+20%), +10% damage (+10%).",
@@ -153,7 +153,7 @@
 					"Урон навыков фиксированный и не растёт с глубиной: дальше это подспорье, а не главное оружие.",
 					"",
 					"[color=#ff9a40][b]Первопроходец — бесплатно[/b][/color]",
-					"• [b]Граната[/b]: летит в точку прицела (до 420), 35 урона в радиусе 60, одинаково по всему радиусу. Перезарядка 6 с.",
+					"• [b]Граната[/b]: летит в точку прицела (до 420), 30 урона в радиусе 60, одинаково по всему радиусу. Перезарядка 6 с.",
 					"",
 					"[color=#ff9a40][b]Шериф — 25 древних монет[/b][/color]",
 					"• [b]Благословение[/b]: следующий выстрел наносит +40 урона (делится между дробинами дробовика или минами залпа). Перезарядка 6 с.",
@@ -165,12 +165,12 @@
 					"Один дар за город у [b]Мистика[/b], за монеты, до конца забега. Предлагаются только перки твоего героя.",
 					"• [b]Разделение[/b] (Первопроходец, Шериф): ×3 снаряда (+3 за взятие), +20% общего урона (+20%), поровну на все. Гранаты ложатся пятном вокруг точки прицела, как мины миномёта.",
 					"• [b]Опасные раны[/b] (все, 1 раз): попадания навыком навсегда замедляют цель на 10%, до 30%; элиткам нужно 2 попадания на ступень, боссам — 3.",
-					"• [b]Ядовитый снаряд / Ядовитый разрез[/b] (все): урон проходит через 5 с (+2 с), но на 30% больше (+30%).",
+					"• [b]Ядовитый снаряд / Ядовитый разрез[/b] (все): урон проходит через 5 с (+2 с), но на 50% больше (+50%).",
 					"• [b]Тяжёлый снаряд[/b] (Первопроходец, Шериф): +1 с перезарядки (+1 с), +20% урона (+20%), оглушение на 0,7 с (+0,4 с).",
 					"• [b]Парирование[/b] (Ассасин): раз в 4 с следующий удар отражает вражеские снаряды; каждое следующее взятие — +30% урона отражённых.",
 					"• [b]Дополнительная рука[/b] (все): +1 заряд навыка (+1).",
 					"• [b]Вандализм[/b] (Ассасин, 1 раз): огромное отбрасывание, −50% урона.",
-					"• [b]Стихия[/b] (все, 1 раз): навык получает стихию на выбор. Каждое попадание навыком накладывает её гарантированно и как 2 секунды стрельбы пушкой (кислота +20%, холод +20%, проклятие срабатывает раз в 2 попадания); дым — за секунду столько же, сколько одно попадание гранаты.",
+					"• [b]Стихия[/b] (все, 1 раз): навык получает стихию на выбор. Как у пушек, попадание навыком накладывает её с шансом 35%. Огонь жжёт с прежней силой; кислота, холод и проклятие копятся на 10% за каждую секунду перезарядки навыка за попадание (граната 6 с → +60%, удар 0,7 с → +7%); дым в среднем даёт столько же, сколько одно попадание гранаты за секунду.",
 					"• [b]Трофеи[/b] (Ассасин): убийство навыком даёт 1 монету и +0,2% урона навыка (+0,05% за следующее взятие).",
 					"• [b]Дымовая граната[/b] (Первопроходец): граната превращается в дым радиусом 300, 25% её урона в секунду (5 тиков в секунду), 4 с (+1 с).",
 					"• [b]Точный выстрел[/b] (Шериф): благословлённый выстрел самонаводится, +20% дальности (+20%), +10% урона (+10%).",
@@ -184,7 +184,7 @@
 					"Skaden fra ferdigheter er fast og vokser ikke med dybden — dypere ned er de et hjelpemiddel, ikke hovedvåpenet.",
 					"",
 					"[color=#ff9a40][b]Pioner — gratis[/b][/color]",
-					"• [b]Håndgranat[/b]: kastes mot siktepunktet (opptil 420 unna), 35 skade i radius 60, lik i hele radiusen. Nedkjøling 6 s.",
+					"• [b]Håndgranat[/b]: kastes mot siktepunktet (opptil 420 unna), 30 skade i radius 60, lik i hele radiusen. Nedkjøling 6 s.",
 					"",
 					"[color=#ff9a40][b]Sheriff — 25 eldgamle mynter[/b][/color]",
 					"• [b]Velsignelse[/b]: neste skudd gjør +40 skade (fordeles på haglene i et hagleskudd eller minene i en mortersalve). Nedkjøling 6 s.",
@@ -196,12 +196,12 @@
 					"Én gave per by fra [b]Mystikeren[/b], for mynter, til løpet er over. Bare egenskaper for helten din tilbys.",
 					"• [b]Deling[/b] (Pioner, Sheriff): ×3 prosjektiler (+3 per gang), +20 % total skade (+20 %), fordelt likt. Granatene lander i et felt rundt siktepunktet, som morsermine.",
 					"• [b]Farlige sår[/b] (alle, én gang): treff med ferdigheten bremser målet med 10 % for godt, opptil 30 %; eliter trenger 2 treff per trinn, bosser 3.",
-					"• [b]Giftprosjektil / Giftkutt[/b] (alle): skaden kommer 5 s senere (+2 s), men er 30 % høyere (+30 %).",
+					"• [b]Giftprosjektil / Giftkutt[/b] (alle): skaden kommer 5 s senere (+2 s), men er 50 % høyere (+50 %).",
 					"• [b]Tungt prosjektil[/b] (Pioner, Sheriff): +1 s nedkjøling (+1 s), +20 % skade (+20 %), lammer i 0,7 s (+0,4 s).",
 					"• [b]Parering[/b] (Snikmorder): hvert 4. sekund sender neste slag fiendens prosjektiler tilbake; hver ny gang — +30 % skade på dem.",
 					"• [b]Ekstra hånd[/b] (alle): +1 ferdighetsladning (+1).",
 					"• [b]Hærverk[/b] (Snikmorder, én gang): enormt tilbakeslag, −50 % skade.",
-					"• [b]Element[/b] (alle, én gang): ferdigheten får et element du velger. Hvert treff legger det på sikkert og like sterkt som 2 sekunder med våpenild (syre +20 %, kulde +20 %, forbannelsen utløses hvert 2. treff); røyk — like mye per sekund som ett granattreff.",
+					"• [b]Element[/b] (alle, én gang): ferdigheten får et element du velger. Som på våpen legger et treff det på med 35 % sjanse. Ild brenner like sterkt som før; syre, kulde og forbannelse bygges opp med 10 % per sekund av ferdighetens nedkjøling per treff (granat 6 s → +60 %, slag 0,7 s → +7 %); røyk gir i snitt like mye som ett granattreff per sekund.",
 					"• [b]Trofeer[/b] (Snikmorder): et drap med ferdigheten gir 1 mynt og +0,2 % ferdighetsskade (+0,05 % per ny gang).",
 					"• [b]Røykgranat[/b] (Pioner): granaten blir til røyk med radius 300, 25 % av skaden per sekund (5 tikk i sekundet) i 4 s (+1 s).",
 					"• [b]Presist skudd[/b] (Sheriff): det velsignede skuddet søker mål, +20 % rekkevidde (+20 %), +10 % skade (+10 %).",
@@ -842,9 +842,9 @@
 			"nb": "Prosjektilene skyter små kuler til sidene underveis."
 		},
 		"quantum": {
-			"en": "Projectiles teleport forward in jumps.",
-			"ru": "Снаряды прыгают вперёд телепортом.",
-			"nb": "Prosjektilene teleporterer fremover i hopp."
+			"en": "Projectiles blink to the nearest enemy ahead and land right in front of it.",
+			"ru": "Снаряды прыгают к ближайшему врагу впереди и встают прямо перед ним.",
+			"nb": "Prosjektilene hopper til nærmeste fiende foran og lander rett foran den."
 		},
 		"nuke": {
 			"en": "Three times the blast radius.",
@@ -1007,6 +1007,14 @@
 				"en": "A ring of 8 slow orbs (12 when enraged) that slowly curve toward you, about 10° per second. Walk in circles around them.",
 				"ru": "Кольцо из 8 медленных шаров (12 в ярости), которые плавно доворачивают к тебе, примерно 10° в секунду. Ходи вокруг них кругами.",
 				"nb": "En ring av 8 trege kuler (12 i raseri) som sakte svinger mot deg, omtrent 10° per sekund. Gå i sirkler rundt dem."
+			}
+		},
+		"anti": {
+			"name": {"en": "Anti-Player", "ru": "Антиигрок", "nb": "Antispiller"},
+			"text": {
+				"en": "A rare replacement for the usual boss (from zone 10): a mirror of you. Shoots the best gun you have found, keeps to its effective range (at most 15 m), backs off when you get close and dashes aside. Uses your hero's skill: grenade (delayed mines), blessing (next volley ×3) or a melee slash with a wind-up. Health grows with the zone like any enemy's.",
+				"ru": "Редкая замена обычному боссу (с зоны 10): твоё зеркало. Стреляет из лучшей пушки, которую ты нашёл, держится на её эффективной дальности (не больше 15 м), пятится, если подошёл вплотную, и уходит рывком в сторону. Пользуется навыком твоего героя: граната (мины с задержкой), благословение (следующий залп ×3) или удар с замахом. Здоровье растёт с зоной, как у любого врага.",
+				"nb": "En sjelden erstatning for den vanlige sjefen (fra sone 10): et speil av deg. Skyter med det beste våpenet du har funnet, holder seg på effektiv rekkevidde (maks 15 m), rygger når du kommer nær og drar til siden i et sprang. Bruker heltens ferdighet: granat (miner med forsinkelse), velsignelse (neste salve ×3) eller et slag med oppladning. Livet vokser med sonen som hos alle fiender."
 			}
 		},
 		"wall": {

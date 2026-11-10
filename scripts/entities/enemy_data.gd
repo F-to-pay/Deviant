@@ -2,25 +2,30 @@ class_name EnemyData
 extends RefCounted
 ## Типы врагов, аффиксы элиток, генерация паков и имён.
 
+## res — врождённое сопротивление стихии (U.EL_*): эффект этой стихии на нём слабее на INNATE_RESIST.
 ## sides: 0 — круг, иначе число сторон. lvl — с какой зоны появляется.
 const TYPES := {
 	"runner": {"n": "Runner", "hp": 32.0, "dmg": 12.0, "speed": 185.0, "r": 13.0, "col": Color(0.92, 0.32, 0.3),
-		"lvl": 1, "sides": 3, "star": false, "w": 10.0},
+		"lvl": 1, "sides": 3, "star": false, "w": 10.0, "res": U.EL_ACID},
 	"gunner": {"n": "Gunner", "hp": 38.0, "dmg": 10.0, "speed": 120.0, "r": 14.0, "col": Color(0.95, 0.75, 0.25),
-		"lvl": 1, "sides": 4, "star": false, "w": 7.0},
+		"lvl": 1, "sides": 4, "star": false, "w": 7.0, "res": U.EL_SHOCK},
 	"brute": {"n": "Brute", "hp": 150.0, "dmg": 28.0, "speed": 95.0, "r": 22.0, "col": Color(0.62, 0.36, 0.82),
-		"lvl": 2, "sides": 6, "star": false, "w": 4.0},
+		"lvl": 2, "sides": 6, "star": false, "w": 4.0, "res": U.EL_CRYO},
 	"bomber": {"n": "Kamikaze", "hp": 22.0, "dmg": 38.0, "speed": 220.0, "r": 12.0, "col": Color(1.0, 0.52, 0.12),
-		"lvl": 2, "sides": 0, "star": false, "w": 5.0},
+		"lvl": 2, "sides": 0, "star": false, "w": 5.0, "res": U.EL_FIRE},
 	"spreader": {"n": "Spreader", "hp": 60.0, "dmg": 9.0, "speed": 105.0, "r": 16.0, "col": Color(0.3, 0.82, 0.5),
-		"lvl": 3, "sides": 5, "star": false, "w": 5.0},
+		"lvl": 3, "sides": 5, "star": false, "w": 5.0, "res": U.EL_SHOCK},
 	"charger": {"n": "Charger", "hp": 95.0, "dmg": 30.0, "speed": 125.0, "r": 18.0, "col": Color(0.88, 0.22, 0.56),
-		"lvl": 4, "sides": 4, "star": true, "w": 4.0},
+		"lvl": 4, "sides": 4, "star": true, "w": 4.0, "res": U.EL_ACID},
 	"mortar": {"n": "Mortarman", "hp": 50.0, "dmg": 32.0, "speed": 90.0, "r": 15.0, "col": Color(0.5, 0.62, 0.95),
-		"lvl": 6, "sides": 8, "star": false, "w": 3.0},
+		"lvl": 6, "sides": 8, "star": false, "w": 3.0, "res": U.EL_SHOCK},
 	"summoner": {"n": "Shaman", "hp": 75.0, "dmg": 8.0, "speed": 110.0, "r": 15.0, "col": Color(0.4, 0.95, 0.9),
-		"lvl": 8, "sides": 5, "star": true, "w": 2.0},
+		"lvl": 8, "sides": 5, "star": true, "w": 2.0, "res": U.EL_CURSE},
 }
+
+## Насколько врождённое сопротивление режет стихию: накопление кислоты/холода/проклятия, силу поджога,
+## длину оглушения шока, удар проклятия. Элитки и боссы с их status_resist — поверх этого.
+const INNATE_RESIST := 0.5
 
 const AFFIXES := {
 	"fast": "Fast",

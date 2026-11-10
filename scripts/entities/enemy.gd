@@ -56,6 +56,7 @@ func setup(t: String, lvl: int, el: int, affs: Array) -> void:
 	elite = el
 	affixes = affs
 	radius = def["r"]
+	elem_res = int(def.get("res", -1))
 	color = def["col"]
 	speed = float(def["speed"]) * randf_range(0.92, 1.08)
 	var hpm: float = Game.enemy_hp_mult(lvl)

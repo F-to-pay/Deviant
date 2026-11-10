@@ -4,7 +4,12 @@ extends Node2D
 ## Тут же отложенные взрывы-предупреждения (миномёты, босс) и чёрные дыры.
 
 const MAX_PROJ := 2600
-const MAX_VORTEX := 10
+const MAX_VORTEX := 4
+const VORTEX_R := 120.0        # радиус чёрной дыры
+const VORTEX_DUR := 1.2
+const VORTEX_PULL := 140.0     # px/с втягивания (было 280)
+const TELE_RANGE := 260.0      # дальность квантового прыжка
+const TELE_MIN := 50.0
 const MAX_LIFE := 5.0      # «бесконечная» дальность: летим до стены или 5 с
 const FAR := 1.0e9
 const RICOCHET_MULT := 0.7   # каждый рикошет пули срезает 30% урона (гранаты — нет)
@@ -35,6 +40,7 @@ class Proj:
 	var age := 0.0
 	var pierce := 0
 	var bounces := 0
+	var bounce_keep := false   # рикошет не режет урон (особенность «bounce_keep»)
 	var explode_r := 0.0
 	var explode_chance := 1.0
 	var explode_on_expire := false
@@ -173,6 +179,7 @@ func fire_gun(g: Gun, pos: Vector2, dir: Vector2, team: int, dmg_mult: float = 1
 	p.max_life = p.life
 	p.pierce = g.pierce
 	p.bounces = g.bounces
+	p.bounce_keep = g.special == "bounce_keep"
 	p.explode_r = g.explode_r
 	p.explode_chance = g.explode_chance
 	p.explode_on_expire = g.explode_on_expire
@@ -267,12 +274,53 @@ func enemy_seeker(pos: Vector2, dir: Vector2, speed: float, dmg: float, size: fl
 	_add(p)
 
 
+## Вражеский снаряд с взрывом (ракета, граната, пуля с взрывом из пушки Антиигрока): вместо урона касанием — мина.
+func _enemy_explodes(p: Proj) -> bool:
+	return p.team == 1 and (p.explode_r > 0.0 or p.kind == K_ROCKET or p.kind == K_GRENADE)
+
+
+func _enemy_explode(p: Proj) -> void:
+	add_blast(p.pos, p.explode_r if p.explode_r > 0.0 else 85.0, p.dmg, 0.05, 1)
+	p.dead = true
+
+
 func add_blast(pos: Vector2, r: float, dmg: float, delay: float, team: int) -> void:
 	blasts.append({"pos": pos, "r": r, "dmg": dmg, "t": delay, "max": delay, "team": team})
 
 
+## Квантовый прыжок: снаряд скачет только к ближайшему врагу впереди (до TELE_RANGE, узкий конус)
+## и встаёт прямо перед ним — не перелетает цели, не сбивает прицел и не обнуляет список поражённых.
+func _blink_to_target(p: Proj, main: Main, zone) -> void:
+	var dir := p.vel.normalized()
+	var best: Enemy = null
+	var best_d := TELE_RANGE
+	for o in main.grid_hash.query(p.pos, TELE_RANGE + 40.0):
+		var e: Enemy = o
+		if e.dead or p.hit.has(e.get_instance_id()):
+			continue
+		var d := e.position - p.pos
+		var l := d.length()
+		if l < TELE_MIN or l > best_d or d.normalized().dot(dir) < 0.93:
+			continue
+		best = e
+		best_d = l
+	if best == null:
+		return
+	var land := p.pos + dir * (best_d - best.radius - p.radius - 6.0)
+	if main.zone.blocks_shot_at(land) or not main.zone.ray_clear(p.pos, land):
+		return
+	main.fx.blink(p.pos, land, p.color)
+	p.pos = land
+
+
 func add_vortex(pos: Vector2, r: float, dps: float, dur: float) -> void:
 	Sfx.at("fx/vortex", pos, -4.0, 1.0, 0.05, 2, 0.2)
+	# рядом уже есть дыра — не копим, а продлеваем (иначе несколько штук сливаются в сплошной контроль)
+	for v in vortices:
+		if (v["pos"] as Vector2).distance_to(pos) < r:
+			v["t"] = maxf(float(v["t"]), dur)
+			v["dps"] = maxf(float(v["dps"]), dps)
+			return
 	if vortices.size() >= MAX_VORTEX:
 		return
 	vortices.append({"pos": pos, "r": r, "dps": dps, "t": dur, "max": dur, "tick": 0.0})
@@ -292,6 +340,7 @@ func _clone(p: Proj) -> Proj:
 	c.max_life = p.max_life
 	c.pierce = p.pierce
 	c.bounces = p.bounces
+	c.bounce_keep = p.bounce_keep
 	c.explode_r = p.explode_r
 	c.explode_chance = p.explode_chance
 	c.explode_on_expire = p.explode_on_expire
@@ -416,6 +465,8 @@ func _step(p: Proj, delta: float, zone: Zone, player: Player, main: Main) -> voi
 	if p.life <= 0.0:
 		if p.team == 0 and (p.explode_on_expire or p.kind == K_ROCKET):
 			_detonate(p, p.pos, _falloff(p))
+		elif _enemy_explodes(p):
+			_enemy_explode(p)
 		p.dead = true
 		return
 
@@ -444,16 +495,12 @@ func _step(p: Proj, delta: float, zone: Zone, player: Player, main: Main) -> voi
 				if to.length() < 26.0:
 					p.dead = true
 					return
-		if p.teleport > 0.0:
+		if p.teleport > 0.0 and p.kind != K_GRENADE and p.kind != K_ROCKET and p.kind != K_SHELL:
 			p.tele_t -= delta
 			if p.tele_t <= 0.0:
 				p.tele_t = 0.2
 				if randf() < p.teleport:
-					var jump := p.pos + p.vel.normalized() * 110.0
-					if not zone.blocks_shot_at(jump):
-						main.fx.blink(p.pos, jump, p.color)
-						p.pos = jump
-						p.hit.clear()
+					_blink_to_target(p, main, zone)
 		if p.seeder > 0.0 and p.traveled <= p.eff_range:
 			p.seeder_t -= delta
 			if p.seeder_t <= 0.0:
@@ -489,7 +536,8 @@ func _step(p: Proj, delta: float, zone: Zone, player: Player, main: Main) -> voi
 			if p.kind == K_GRENADE or p.kind == K_BOMBLET:
 				p.vel *= 0.7  # гранаты катятся по полу — урон не теряют
 			else:
-				p.dmg *= RICOCHET_MULT
+				if not p.bounce_keep:
+					p.dmg *= RICOCHET_MULT
 				if p.team == 0:
 					Sfx.at("hit/wall", p.pos, -16.0, 1.3, 0.1, 2, 0.06)
 			return
@@ -497,6 +545,8 @@ func _step(p: Proj, delta: float, zone: Zone, player: Player, main: Main) -> voi
 			if p.explode_r <= 0.0 and p.kind != K_ROCKET and p.kind != K_GRENADE:
 				Sfx.at("hit/wall", p.pos, -14.0, 1.0, 0.1, 3, 0.05)
 			_impact(p, p.pos)
+		elif _enemy_explodes(p):
+			_enemy_explode(p)
 		else:
 			main.fx.spark(p.pos, -p.vel.normalized(), p.color, 3, 120.0)
 		p.dead = true
@@ -522,6 +572,9 @@ func _step(p: Proj, delta: float, zone: Zone, player: Player, main: Main) -> voi
 	elif not player.dead:
 		var rr := player.radius * 0.7 + p.radius
 		if p.pos.distance_squared_to(player.position) < rr * rr:
+			if _enemy_explodes(p):
+				_enemy_explode(p)   # взрывной снаряд ранит взрывом (мина с задержкой 0.05 с), а не касанием
+				return
 			# во время переката пуля пролетает насквозь (и засчитывает уклон)
 			if player.take_damage(p.dmg):
 				p.dead = true
@@ -571,7 +624,7 @@ func _hit_enemy(p: Proj, e: Enemy, main: Main) -> void:
 		if p.chain_n > 0 and randf() < p.proc:
 			Combat.chain(e, d * 0.6, p.chain_n, p.element if p.element >= 0 else U.EL_SHOCK, p.st)
 		if p.vortex > 0.0 and randf() < p.vortex:
-			add_vortex(e.position, 150.0, p.dmg * 0.8 * fo, 1.6)
+			add_vortex(e.position, VORTEX_R, p.dmg * 0.8 * fo, VORTEX_DUR)
 			p.vortex = 0.0
 		# взрыв по шансу — поверх обычного попадания
 		if p.explode_r > 0.0 and randf() < p.explode_chance * p.proc:
@@ -611,7 +664,7 @@ func _detonate(p: Proj, pos: Vector2, mult: float = 1.0, secondary: bool = false
 			if t != null:
 				Combat.chain(t, d * 0.5, p.chain_n, p.element if p.element >= 0 else U.EL_SHOCK, p.st)
 		if p.vortex > 0.0 and randf() < p.vortex:
-			add_vortex(pos, 160.0, p.dmg * 0.8 * mult, 1.6)
+			add_vortex(pos, VORTEX_R, p.dmg * 0.8 * mult, VORTEX_DUR)
 			p.vortex = 0.0
 	if p.cluster_n > 0 and p.kind != K_BOMBLET:
 		for i in p.cluster_n:
@@ -740,6 +793,7 @@ func _update_vortices(delta: float, main: Main) -> void:
 	var cur := vortices
 	vortices = []
 	var keep: Array = []
+	var pulled := {}   # враг -> уже тянут (одна дыра за кадр)
 	for v in cur:
 		v["t"] -= delta
 		v["tick"] -= delta
@@ -755,8 +809,11 @@ func _update_vortices(delta: float, main: Main) -> void:
 			var d := pos - e.position
 			var l := d.length()
 			if l < r:
-				if l > 6.0 and e.elite != 3:
-					e.position = main.zone.move_circle(e.position, d / l * minf(l, 280.0 * delta), e.radius)
+				# тянет слабее к краю и у элиток (status_resist); боссы не тянутся вовсе
+				if l > 6.0 and e.elite != 3 and pulled.get(e, 0) < 1:
+					pulled[e] = 1
+					var pull := VORTEX_PULL * clampf(l / r, 0.3, 1.0) / maxf(1.0, e.status_resist)
+					e.position = main.zone.move_circle(e.position, d / l * minf(l, pull * delta), e.radius)
 				if do_tick:
 					Combat.hit_enemy(e, float(v["dps"]) * 0.25, false, -1, Vector2.ZERO, true)
 		if float(v["t"]) > 0.0:

@@ -160,7 +160,7 @@ next to the exe — the text from `data/guide.json` plus a reference of every lo
   Custom start can turn towns off. The **starting town** also has the Recruiter (pick a hero), the Relic Keeper
   (meta perks — stub), the Oddsmaker (custom start) and a Restart stone at the entrance: a new run in a new
   starting town, to reroll the stock.
-- **Heroes**, each with an active skill (RMB / LT): Pioneer — grenade (35 damage, radius 60, 6 s),
+- **Heroes**, each with an active skill (RMB / LT): Pioneer — grenade (30 damage, radius 60, 6 s),
   Sheriff — the next shot deals +40 (6 s), Assassin — melee slash for 15, reach 95 (0.7 s, slowed while striking).
   The Pioneer is free, the others are unlocked with ancient coins. Skill damage does not grow with depth.
 - **Coins**: you start with 100 and a single gun; enemies, chests and bosses drop more, income and prices grow 20% per stage (10:12). Lost on death.

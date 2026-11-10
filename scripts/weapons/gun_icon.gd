@@ -39,7 +39,7 @@ static func draw_gun(ci: CanvasItem, g: Gun, at: Vector2, sc: float, rot: float 
 	# Стволы (под корпусом, чтобы стык был аккуратный)
 	var by := -bh * 0.82
 	for i in nb:
-		var yy := by + float(i) * (bt + 1.5)
+		var yy := by + float(i) * (bt + 2.5)   # зазор между стволами, чтобы на мелком размере не сливались
 		ci.draw_rect(Rect2(x_end - 2.0, yy, barrel + 2.0, bt), metal)
 		ci.draw_rect(Rect2(x_end + barrel - 3.0, yy - 1.0, 3.0, bt + 2.0), dark_c)
 	# Корпус

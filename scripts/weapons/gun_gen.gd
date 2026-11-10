@@ -58,6 +58,10 @@ static func generate(level: int, rng: RandomNumberGenerator, bonus: float = 0.0,
 		while bool(_maker(g).get("no_explosive", false)) and _leg_explosive(leg) and guard_m < 20:
 			g.maker = _pick_maker(g.rarity, rng)
 			guard_m += 1
+		# легендарка может быть привязана к марке ("maker": "dandy")
+		var lm := str(leg.get("maker", ""))
+		if lm != "" and GunData.MAKERS.has(lm):
+			g.maker = lm
 		g.legendary = str(leg["id"])
 		g.archetype = str(leg.get("arch", "pistol"))
 		g.archetype2 = str(leg.get("arch2", ""))
@@ -460,6 +464,10 @@ static func _finalize(g: Gun, rng: RandomNumberGenerator, leg: Dictionary) -> vo
 	g.elem_chance = clampf(g.elem_chance, 0.0, 1.0)
 	g.proj_speed = clampf(g.proj_speed, 120.0, 3200.0)
 	g.lifetime = clampf(g.lifetime, 0.2, 4.0)
+	# нижняя планка точности легендарки: точность = 100 - разброс * 2.2
+	var min_acc := float(leg.get("min_accuracy", 0.0))
+	if min_acc > 0.0:
+		g.spread = minf(g.spread, (100.0 - min_acc) / 2.2)
 	if g.element >= 0 and g.elem_chance <= 0.0:
 		g.elem_chance = 0.35
 	if bool(mk.get("no_explosive", false)):
@@ -505,11 +513,13 @@ static func _build_vis(g: Gun, rng: RandomNumberGenerator) -> void:
 	if "sawn" in g.mods:
 		barrel *= 0.55
 	var stock := float(a.get("stock", 0.0))
+	# Число стволов на иконке: «Двуствольный» — ровно 2 (иначе его дробины, удвоенные им же, дорисовывали бы третий);
+	# дробовик с разбросом или кучей дробин — тоже 2; три — только у обычного (не двуствольного) с 30+ дробинами.
 	var nb := 1
-	if "double" in g.mods:
-		nb += 1
-	if g.pellets >= 10 or "scatter" in g.mods:
-		nb += 1
+	if "double" in g.mods or "scatter" in g.mods or g.pellets >= 10:
+		nb = 2
+	if g.pellets >= 30 and not ("double" in g.mods):
+		nb = 3
 	v["body"] = body
 	v["bh"] = float(a.get("bh", 10.0)) * rng.randf_range(0.9, 1.1)
 	v["barrel"] = barrel

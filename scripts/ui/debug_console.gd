@@ -20,6 +20,7 @@ const HELP := [
 	"coins <n>                     — add coins of this run (negative — take away)",
 	"ancient <n>                   — add ancient coins (meta, saved)",
 	"town                          — go to the town before the next zone (in a run)",
+	"skip [n] [--boss]             — kill every enemy of the zone (XP, kills and coins are credited) and move on; n zones ahead, --boss — to the next boss zone",
 	"unlock <hero|all>             — unlock a hero for free (pioneer, sheriff, assassin)",
 	"hero <id>                     — play as this hero (unlocks it if needed)",
 	"skillperk <id> [element 0-4]  — take a skill perk for free (split, wounds, poison, heavy, parry, hand, vandal, element, trophies, smoke, precise, ready)",
@@ -243,6 +244,26 @@ func _on_submit(text: String) -> void:
 		"ancient":
 			Game.add_meta(int(args[0]) if not args.is_empty() else 10)
 			_say("ancient coins: %d" % Game.meta_coins)
+		"skip":
+			var mskip: Main = Game.main
+			if mskip == null or mskip.menu.visible and mskip.menu.mode == "main" or mskip.player.dead:
+				_say("start a run first")
+			else:
+				var skip_n := 1
+				var skip_boss := false
+				var skip_bad := ""
+				for skip_tok in args:
+					var sa := str(skip_tok)
+					if sa == "--boss" or sa == "-b" or sa == "boss":
+						skip_boss = true
+					elif sa.is_valid_int() and int(sa) >= 1:
+						skip_n = mini(int(sa), 200)
+					else:
+						skip_bad = sa
+				if skip_bad != "":
+					_say("usage: skip [n] [--boss]   (got '%s')" % skip_bad)
+				else:
+					mskip.skip_zone(skip_n, skip_boss)
 		"town":
 			var main: Main = Game.main
 			if main == null or main.menu.visible and main.menu.mode == "main" or main.player.dead:
