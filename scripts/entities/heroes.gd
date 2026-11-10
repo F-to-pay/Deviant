@@ -3,6 +3,9 @@ extends RefCounted
 ## Герои: у каждого свой активный навык (кнопка «Навык», по умолчанию ПКМ / LT).
 ## Выбираются у Вербовщика в стартовом городе, открываются за древние монеты (Game.unlock_hero).
 ## Урон навыков фиксированный — не растёт с глубиной, в отличие от пушек.
+##  aimed: true — на сенсоре у навыка свой стик прицела (кнопка навыка → тянешь, отпустил — бросок/удар;
+##         тап без протяжки — как обычно, по прицелу ствола); без него навык срабатывает сразу при нажатии
+##         (благословение Шерифа — у него нет направления).
 ##  skill: grenade — граната в точку прицела (dmg, r — радиус взрыва, range — дальность броска);
 ##         bless — следующий выстрел наносит +dmg (делится между дробинами);
 ##         slash — удар перед собой (dmg, r — дальность, arc — ширина дуги в градусах,
@@ -12,14 +15,14 @@ const DEFAULT := "pioneer"
 const ORDER := ["pioneer", "sheriff", "assassin"]
 const LIST := {
 	"pioneer": {"name": "Pioneer", "price": 0, "color": Color(0.35, 0.85, 1.0),
-		"skill": "grenade", "skill_name": "Hand grenade", "cd": 6.0, "dmg": 35.0, "r": 60.0, "range": 420.0,
+		"skill": "grenade", "skill_name": "Hand grenade", "cd": 6.0, "dmg": 35.0, "r": 60.0, "range": 420.0, "aimed": true,
 		"desc": "Throws a grenade at the aim point: %d damage in radius %d. Cooldown %s s."},
 	"sheriff": {"name": "Sheriff", "price": 25, "color": Color(1.0, 0.45, 0.3),
 		"skill": "bless", "skill_name": "Blessing", "cd": 6.0, "dmg": 40.0,
 		"desc": "Blesses the next shot: +%d damage. Cooldown %s s."},
 	"assassin": {"name": "Assassin", "price": 30, "color": Color(0.72, 0.5, 1.0),
 		"skill": "slash", "skill_name": "Slash", "cd": 0.7, "dmg": 15.0, "r": 95.0, "arc": 130.0,
-		"time": 0.25, "slow": 0.5,
+		"time": 0.25, "slow": 0.5, "aimed": true,
 		"desc": "A cleaving melee strike in front of you: %d damage. Cooldown %s s, you are slowed by %d%% while striking."},
 }
 
@@ -50,7 +53,7 @@ const PERKS := {
 		"desc": "A kill with the skill gives 1 coin and +0.2% skill damage until the end of the run.",
 		"more": "+0.05% skill damage per kill."},
 	"smoke": {"name": "Smoke Grenade", "heroes": ["pioneer"], "max": 0,
-		"desc": "The grenade turns into smoke of radius 300: 30% of its damage every second for 4 s.",
+		"desc": "The grenade turns into smoke of radius 300: 25% of its damage every second for 4 s.",
 		"more": "The smoke lasts 1 s longer."},
 	"precise": {"name": "Precise Shot", "heroes": ["sheriff"], "max": 0,
 		"desc": "The blessed shot homes in, flies 20% farther and deals 10% more damage.",

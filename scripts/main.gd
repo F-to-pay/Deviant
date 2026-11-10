@@ -22,6 +22,7 @@ var grid_hash := SpatialHash.new()
 var rng := RandomNumberGenerator.new()
 
 var enemies: Array = []
+var director := Director.new()   # судья: пока только считает запас XP в зоне (systems/director.gd)
 var items: Array = []
 var flask_drops: Array = []
 var ammo_boxes: Array = []
@@ -204,6 +205,7 @@ func load_zone(level: int) -> void:
 	town = {}
 	player.hurt_this_zone = false
 	zone_time = 0.0
+	director.begin_zone()
 	flasks_spawned = 0
 	if level > 1:
 		if bool(Game.run["zone_heal"]):
@@ -222,6 +224,7 @@ func load_zone(level: int) -> void:
 		enemies.append(b)
 		boss = b
 		boss_title = b.title
+		director.note_spawn(level, 3)
 	else:
 		for pk in data["packs"]:
 			_spawn_pack(level, zone.cell_center(pk))
@@ -344,6 +347,7 @@ func _spawn_pack(level: int, center: Vector2) -> void:
 	var affs: Array = EnemyData.roll_affixes(n_aff, rng)
 	var champ_affs: Array = EnemyData.roll_affixes(1, rng) if no_normals and elite == 2 else []
 	var pid := rng.randi() % 1000000
+	director.note_pack()
 	for i in members.size():
 		var pos := zone.random_free_near(center, 0.0, 90.0)
 		var el := 0
@@ -371,6 +375,8 @@ func _spawn_wander_boss(level: int, center: Vector2) -> void:
 	b.set_physics_process(false)
 	enemy_layer.add_child(b)
 	enemies.append(b)
+	director.note_pack()
+	director.note_spawn(level, 3)
 
 
 func spawn_enemy(t: String, pos: Vector2, level: int, elite: int, affixes: Array, pack_id: int = -1,
@@ -379,6 +385,10 @@ func spawn_enemy(t: String, pos: Vector2, level: int, elite: int, affixes: Array
 	e.position = pos
 	e.setup(t, level, elite, affixes)
 	e.pack = pack_id
+	if aggro:
+		e.summoned = true   # призванные (босс, шаман) опыта не дают — иначе ферма
+	else:
+		director.note_spawn(level, elite)
 	enemy_layer.add_child(e)
 	enemies.append(e)
 	if aggro:
@@ -611,6 +621,8 @@ func on_enemy_killed(e: Enemy, by_player: bool = true) -> void:
 		# крупные — ниже и громче
 		Sfx.at("enemy/death", e.position, -9.0 if e.elite == 0 else -5.0, clampf(18.0 / e.radius, 0.7, 1.3), 0.08, 3, 0.04)
 	fx.death_burst(e.position, e.color, e.radius)
+	if by_player and not e.summoned:
+		Game.add_xp(Game.enemy_xp(e.level, e.elite))
 	if e.elite == 3:
 		_boss_dead(e)
 		return

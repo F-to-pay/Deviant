@@ -8,6 +8,7 @@ const MAX_VORTEX := 10
 const MAX_LIFE := 5.0      # «бесконечная» дальность: летим до стены или 5 с
 const FAR := 1.0e9
 const RICOCHET_MULT := 0.7   # каждый рикошет пули срезает 30% урона (гранаты — нет)
+const PIERCE_MULT := 0.6     # каждое пробитие врага срезает 40% урона снаряда
 
 const K_BULLET := 0
 const K_PELLET := 1
@@ -79,7 +80,7 @@ var list: Array[Proj] = []
 var _pending: Array[Proj] = []
 var blasts: Array = []
 var vortices: Array = []
-var clouds: Array = []       # дым «Дымовой гранаты»: {pos, r, dmg (за тик), t, max, tick, first}
+var clouds: Array = []       # дым «Дымовой гранаты»: {pos, r, dmg (за тик), t, max, tick, every, st, first}
 var _t := 0.0
 
 
@@ -245,6 +246,27 @@ func enemy_shot(pos: Vector2, dir: Vector2, speed: float, dmg: float, size: floa
 	_add(p)
 
 
+## Медленный вражеский снаряд, который плавно доворачивает к игроку (turn_deg — градусов в секунду).
+## Пока летит — его можно обойти по дуге; живёт долго, поэтому висит над ареной и давит пространство.
+func enemy_seeker(pos: Vector2, dir: Vector2, speed: float, dmg: float, size: float, col: Color,
+		turn_deg: float, life: float) -> void:
+	if count() >= MAX_PROJ:
+		return
+	var p := Proj.new()
+	p.team = 1
+	p.kind = K_ENEMY
+	p.pos = pos
+	p.vel = dir * speed
+	p.dmg = dmg
+	p.size = size
+	p.radius = size
+	p.color = col
+	p.life = life
+	p.max_life = life
+	p.homing = deg_to_rad(turn_deg)
+	_add(p)
+
+
 func add_blast(pos: Vector2, r: float, dmg: float, delay: float, team: int) -> void:
 	blasts.append({"pos": pos, "r": r, "dmg": dmg, "t": delay, "max": delay, "team": team})
 
@@ -327,9 +349,9 @@ func _physics_process(delta: float) -> void:
 	queue_redraw()
 
 
-## Облако дыма навыка: dmg — урон за тик (раз в секунду) всем внутри.
-func add_smoke(pos: Vector2, r: float, dmg: float, dur: float) -> void:
-	clouds.append({"pos": pos, "r": r, "dmg": dmg, "t": dur, "max": dur, "tick": 0.0, "first": true})
+## Облако дыма навыка: dmg — урон за тик всем внутри, every — секунд между тиками, st — стихии за тик.
+func add_smoke(pos: Vector2, r: float, dmg: float, dur: float, every: float, st: float) -> void:
+	clouds.append({"pos": pos, "r": r, "dmg": dmg, "t": dur, "max": dur, "tick": 0.0, "every": every, "st": st, "first": true})
 
 
 func _update_clouds(delta: float, main: Main) -> void:
@@ -338,13 +360,13 @@ func _update_clouds(delta: float, main: Main) -> void:
 		c["t"] = float(c["t"]) - delta
 		c["tick"] = float(c["tick"]) - delta
 		if float(c["tick"]) <= 0.0:
-			c["tick"] = 1.0
+			c["tick"] = float(c["tick"]) + float(c["every"])
 			var pos: Vector2 = c["pos"]
 			var r := float(c["r"])
 			for o in main.grid_hash.query(pos, r + 50.0):
 				var e: Enemy = o
 				if not e.dead and pos.distance_to(e.position) < r + e.radius:
-					Skills.hit(e, float(c["dmg"]), Vector2.ZERO, bool(c["first"]))
+					Skills.hit(e, float(c["dmg"]), Vector2.ZERO, bool(c["first"]), float(c["st"]), true)
 			c["first"] = false
 		if float(c["t"]) > 0.0:
 			keep.append(c)
@@ -396,6 +418,11 @@ func _step(p: Proj, delta: float, zone: Zone, player: Player, main: Main) -> voi
 			_detonate(p, p.pos, _falloff(p))
 		p.dead = true
 		return
+
+	if p.team == 1 and p.homing > 0.0 and player != null and not player.dead:
+		# вражеский самонаводящийся: поворот к игроку с ограниченной угловой скоростью
+		var seek_diff := wrapf((player.position - p.pos).angle() - p.vel.angle(), -PI, PI)
+		p.vel = p.vel.rotated(clampf(seek_diff, -p.homing * delta, p.homing * delta))
 
 	if p.team == 0:
 		if p.homing > 0.0 and not p.returning:
@@ -553,6 +580,7 @@ func _hit_enemy(p: Proj, e: Enemy, main: Main) -> void:
 		_split(p, true)
 	if p.pierce > 0:
 		p.pierce -= 1
+		p.dmg *= PIERCE_MULT   # каждое пробитие срезает урон снаряда
 	else:
 		p.dead = true
 
@@ -816,3 +844,5 @@ func _draw_proj(p: Proj) -> void:
 			draw_circle(p.pos, p.size + 3.0, Color(p.color, 0.3))
 			draw_circle(p.pos, p.size, p.color)
 			draw_circle(p.pos, p.size * 0.45, Color(1, 1, 1, 0.9))
+			if p.homing > 0.0:   # самонаводящийся: кольцо-«прицел» вокруг, чтобы отличать от обычных
+				draw_arc(p.pos, p.size + 6.0, 0.0, TAU, 16, Color(p.color, 0.85), 2.0)

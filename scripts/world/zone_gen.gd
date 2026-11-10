@@ -20,6 +20,16 @@ static func generate(level: int, rng: RandomNumberGenerator) -> Dictionary:
 	return _try_gen(level, rng, biome, 0.95)
 
 
+## Сторона карты в клетках. Зона должна проходиться за ~4 минуты, поэтому карта небольшая и растёт медленно.
+static func map_size(level: int) -> int:
+	return 64 + mini(level, 24)
+
+
+## Сколько паков в зоне (максимум; на тесной карте может встать меньше). Влияет и на экономику: Game.expected_enemies.
+static func pack_count(level: int) -> int:
+	return mini(14 + level / 2, 28)
+
+
 static func _d(a: Vector2i, b: Vector2i) -> float:
 	return Vector2(a).distance_to(Vector2(b))
 
@@ -29,7 +39,7 @@ static func _walkable(v: int) -> bool:
 
 
 static func _try_gen(level: int, rng: RandomNumberGenerator, biome: Dictionary, th_override: float) -> Dictionary:
-	var size := 90 + mini(level, 30)
+	var size := map_size(level)
 	var w := size
 	var h := size
 	var grid := PackedByteArray()
@@ -116,7 +126,7 @@ static func _try_gen(level: int, rng: RandomNumberGenerator, biome: Dictionary, 
 	U.shuffle(cands, rng)
 
 	var packs: Array = []
-	var want := mini(20 + level, 42)
+	var want := pack_count(level)
 	for i in cands:
 		if packs.size() >= want:
 			break

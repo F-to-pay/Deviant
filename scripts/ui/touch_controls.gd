@@ -7,6 +7,10 @@ extends CanvasLayer
 ##  как коснулся, и сам целится в ближайшего врага.
 ##  «Стрельба по тапу» (touch_tap_fire): вместо правого стика — палец справа = огонь в точку под ним.
 ##  Автоогонь (auto_fire) — в Controls: сам стреляет по видимым врагам.
+##  Кнопка навыка у героя с прицельным навыком (Heroes «aimed», граната): держишь и тянешь — появляется свой
+##  стик прицела с превью (Player._draw_skill_preview), отпустил — бросок; тап без протяжки — бросок как обычно.
+##  У остальных навык срабатывает сразу при нажатии.
+##  Тап по слоту оружия внизу экрана выбирает это оружие (слот рисует HudDraw, его прямоугольник — weapon_rect_vp).
 ##  Кнопки: рывок, перезарядка, смена пушки, рюкзак, пауза; у пушки на земле — «Взять / Заменить /
 ##  Разобрать», у сундука — «Открыть», на экране смерти — «Ещё раз / В меню».
 ## Расположение и размер каждого элемента — редактор (start_edit, кнопка в «Управлении»),
@@ -164,6 +168,7 @@ func _release_all() -> void:
 	Controls.touch_aim = Vector2.ZERO
 	Controls.touch_fire = false
 	Controls.touch_target = null
+	Controls.skill_aim = Vector2.ZERO
 
 
 # --- Кнопки ----------------------------------------------------------------------------
@@ -210,6 +215,16 @@ func _hits(c: Vector2, r: float, p: Vector2, slack: float = 1.2) -> bool:
 	return p.distance_to(c) <= r * slack
 
 
+## У героя навык с отдельным стиком прицела (граната)?
+func _skill_aimed() -> bool:
+	var main: Main = Game.main
+	return main != null and main.player != null and bool(Heroes.get_hero(main.player.hero).get("aimed", false))
+
+
+func _skill_r() -> float:
+	return STICK_R * _gscale()
+
+
 func _button_at(p: Vector2) -> Array:
 	for b in _buttons():
 		if _hits(b[2], float(b[3]), p):
@@ -248,11 +263,25 @@ func _input(event: InputEvent) -> void:
 func _touch_down(i: int, vpos: Vector2) -> void:
 	var p := _local(vpos)
 	var b := _button_at(p)
+	if not b.is_empty() and str(b[0]) == "skill" and _skill_aimed():
+		# навык со своим стиком: пока тянешь — только целимся, бросок — при отпускании
+		_touches[i] = {"role": "skill", "action": "skill", "base": b[2], "pos": p, "vpos": vpos}
+		Sfx.ui("ui/click", -14.0)
+		_update_skill()
+		return
 	if not b.is_empty():
 		_touches[i] = {"role": "btn", "action": str(b[0]), "base": p, "pos": p, "vpos": vpos}
 		Controls.press(str(b[0]), true)
 		Sfx.ui("ui/click", -14.0)
 		return
+	# тап по слоту оружия внизу экрана — выбрать это оружие
+	var main: Main = Game.main
+	if not main.hud.dead_screen:
+		for k in 4:
+			if main.player.guns[k] != null and main.hud.root.weapon_rect_vp(k).grow(6.0).has_point(vpos):
+				main.player.switch_to(k)
+				_touches[i] = {"role": "slot", "base": p, "pos": p, "vpos": vpos, "action": ""}
+				return
 	var role := ""
 	var base := p
 	if bool(Game.setting("touch_static")):
@@ -282,6 +311,14 @@ func _touch_up(i: int) -> void:
 	_touches.erase(i)
 	if str(t["role"]) == "btn":
 		Controls.press(str(t["action"]), false)
+	elif str(t["role"]) == "skill":
+		var sv := ((t["pos"] as Vector2) - (t["base"] as Vector2)) / _skill_r()
+		sv = sv.limit_length(1.0)
+		if sv.length() > DEAD:
+			Controls.queue_skill(sv.normalized(), sv.length())
+		else:
+			Controls.queue_skill(Vector2.ZERO, 0.0)   # тап: бросок туда, куда смотрит ствол
+		_update_skill()
 	elif str(t["role"]) == "aim" and Controls.release_fire():
 		# «стрельба по отпусканию»: отпустил отклонённый стик — один выстрел туда, куда он смотрел
 		var base: Vector2 = t["base"]
@@ -299,6 +336,9 @@ func _touch_move(i: int, vpos: Vector2) -> void:
 	t["pos"] = p
 	t["vpos"] = vpos
 	var role := str(t["role"])
+	if role == "skill":
+		_update_skill()
+		return
 	if (role == "move" or role == "aim") and not bool(Game.setting("touch_static")):
 		# палец ушёл дальше радиуса — плавающий стик едет за ним
 		var r := _radius(role)
@@ -307,6 +347,16 @@ func _touch_move(i: int, vpos: Vector2) -> void:
 		if d.length() > r:
 			t["base"] = p - d.normalized() * r
 	_update_sticks()
+
+
+## Стик навыка → Controls.skill_aim (ZERO, пока палец в мёртвой зоне или стика нет).
+func _update_skill() -> void:
+	var v := Vector2.ZERO
+	for i in _touches:
+		var t: Dictionary = _touches[i]
+		if str(t["role"]) == "skill":
+			v = (((t["pos"] as Vector2) - (t["base"] as Vector2)) / _skill_r()).limit_length(1.0)
+	Controls.skill_aim = v if v.length() > DEAD else Vector2.ZERO
 
 
 ## «Стрельба по тапу»: мировая точка под пальцем — каждый кадр (камера едет за игроком).
@@ -489,8 +539,11 @@ func _draw_ui() -> void:
 	var held := {}
 	for i in _touches:
 		var t: Dictionary = _touches[i]
-		if str(t["role"]) == "btn":
+		if str(t["role"]) == "btn" or str(t["role"]) == "skill":
 			held[str(t["action"])] = true
+	var sk := _stick_of("skill")
+	if not sk.is_empty():
+		_draw_stick(c, sk, _pos("skill"), _skill_r(), "")
 	for b in _buttons():
 		_draw_button(c, b, held.has(str(b[0])), fb, s)
 

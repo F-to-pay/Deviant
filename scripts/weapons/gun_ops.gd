@@ -8,7 +8,9 @@ extends RefCounted
 ##   ["min", "armor", 0.5]            не больше
 ##   ["max", "mag_size", 3]           не меньше
 ##   ["pellets", 5, 1.3]              +5 дробин, общий урон залпа ×1.3 (урон одной дробины пересчитается)
+##   ["pellets", [5, 30, 8], 1.3]     +случайно 5–30 дробин, половина бросков — не больше 8, в среднем ~11 (roll_int)
 ##   ["rand", "burst", 2, 7]          случайное целое от 2 до 7 включительно (из rng пушки — по сиду воспроизводится)
+##   ["rand", "burst", 2, 7, 3]       ... но обычно около 3 (половина бросков — не больше 3)
 ##   ["if", условие, [операции], [операции иначе]]
 ## Условие: ["stat", "<", 12] — сравнение (==, !=, <, <=, >, >=); ["arch", "==", "shotgun"] — основа;
 ##   ["and", усл, усл...], ["or", усл, усл...], ["not", усл].
@@ -56,20 +58,56 @@ static func run(g: Gun, ops: Variant, rng: RandomNumberGenerator) -> void:
 						run(g, o[3], rng)
 			"pellets":
 				var old := g.pellets
-				g.pellets = maxi(1, g.pellets + int(o[1]))
+				g.pellets = maxi(1, g.pellets + roll_int(o[1], rng))
 				var keep := float(o[2]) if o.size() >= 3 else 1.0
 				g.damage *= float(old) * keep / float(g.pellets)
 			"rand":
 				if o.size() >= 4:
-					var lo := mini(int(o[2]), int(o[3]))
-					var hi := maxi(int(o[2]), int(o[3]))
-					var n := rng.randi_range(lo, hi) if rng != null else randi_range(lo, hi)
-					_stat(g, "set", str(o[1]), n, rng)
+					_stat(g, "set", str(o[1]), roll_int(o.slice(2), rng), rng)
 			"set", "add", "mul", "min", "max":
 				if o.size() >= 3:
 					_stat(g, kind, str(o[1]), o[2], rng)
 			_:
 				DebugLog.warn("unknown operation %s" % str(o), "ops")
+
+
+## Число из описания: просто число или [мин, макс] (равномерно) или [мин, макс, обычно] — со смещением:
+## половина бросков не больше «обычно», остальные тянутся до макс. (мин + (макс − мин) · u^k).
+static func roll_int(spec: Variant, rng: RandomNumberGenerator) -> int:
+	if not (spec is Array):
+		return int(spec)
+	var a: Array = spec
+	if a.size() < 2:
+		return int(a[0]) if a.size() == 1 else 0
+	var lo := mini(int(a[0]), int(a[1]))
+	var hi := maxi(int(a[0]), int(a[1]))
+	var u := rng.randf() if rng != null else randf()
+	if a.size() >= 3 and float(a[2]) > float(lo) and float(a[2]) < float(hi):
+		var k := log((float(a[2]) - float(lo)) / float(hi - lo)) / log(0.5)
+		return clampi(lo + floori(float(hi - lo + 1) * pow(u, k)), lo, hi)
+	return clampi(lo + floori(float(hi - lo + 1) * u), lo, hi)
+
+
+static func _spec_ok(v: Variant) -> bool:
+	if v is float or v is int:
+		return true
+	if not (v is Array) or (v as Array).size() < 2:
+		return false
+	for x in v:
+		if not (x is float or x is int):
+			return false
+	return true
+
+
+## Как показать число из описания: «5», «5–30» или «5–30 (~10)».
+static func spec_text(v: Variant) -> String:
+	if not (v is Array) or (v as Array).size() < 2:
+		return str(roundi(float(v))) if (v is float or v is int) else str(v)
+	var a: Array = v
+	var s := "%d–%d" % [mini(int(a[0]), int(a[1])), maxi(int(a[0]), int(a[1]))]
+	if a.size() >= 3:
+		s += " (~%d)" % int(a[2])
+	return s
 
 
 static func _stat(g: Gun, kind: String, stat: String, v: Variant, rng: RandomNumberGenerator) -> void:
@@ -193,8 +231,8 @@ static func problems(ops: Variant) -> Array:
 				if o.size() >= 4:
 					out.append_array(problems(o[3]))
 		elif kind == "pellets":
-			if o.size() < 2 or not (o[1] is float or o[1] is int):
-				out.append("'pellets' needs [\"pellets\", count, damage_keep]: %s" % str(o))
+			if o.size() < 2 or not _spec_ok(o[1]):
+				out.append("'pellets' needs [\"pellets\", count or [min, max, usual], damage_keep]: %s" % str(o))
 		elif kind == "rand":
 			if o.size() < 4 or not (o[2] is float or o[2] is int) or not (o[3] is float or o[3] is int):
 				out.append("'rand' needs [\"rand\", stat, min, max]: %s" % str(o))
@@ -332,13 +370,13 @@ static func describe(ops: Variant) -> Array:
 						s += "; " + U.t("otherwise: %s") % ", ".join(PackedStringArray(describe(o[3])))
 					out.append("(" + s + ")")
 			"pellets":
-				var s := "%s %s" % [_lbl("pellets"), _num("pellets", float(o[1]), true)]
+				var s := "%s %s" % [_lbl("pellets"), _num("pellets", float(o[1]), true) if not (o[1] is Array) else "+" + spec_text(o[1])]
 				if o.size() >= 3 and not is_equal_approx(float(o[2]), 1.0):
 					s += " (" + U.t("volley damage ×%s") % _num("", float(o[2]), false) + ")"
 				out.append(s)
 			"rand":
 				if o.size() >= 4:
-					out.append("%s: %d–%d" % [_lbl(str(o[1])), mini(int(o[2]), int(o[3])), maxi(int(o[2]), int(o[3]))])
+					out.append("%s: %s" % [_lbl(str(o[1])), spec_text(o.slice(2))])
 			"mul":
 				if o.size() >= 3:
 					var v := float(o[2])

@@ -224,7 +224,7 @@ func _block_free(cx: int, cy: int, k: int) -> bool:
 ## Ближайшая проходимая клетка сетки k к точке (поиск по расширяющимся кольцам).
 func _nearest_open(g: AStarGrid2D, p: Vector2, k: int) -> Vector2i:
 	var c := cell_at(p - Vector2(T * 0.5 * float(k - 1), T * 0.5 * float(k - 1)))
-	for r in 4:
+	for r in 4 + k * 2:   # крупному телу (босс, k=3) нужно искать дальше: свободных блоков меньше
 		for dy in range(-r, r + 1):
 			for dx in range(-r, r + 1):
 				if maxi(absi(dx), absi(dy)) != r:

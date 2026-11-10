@@ -66,7 +66,6 @@ static func generate(level: int, rng: RandomNumberGenerator, bonus: float = 0.0,
 			g.archetype = _pick_arch(rng, false)
 		if g.archetype2 != "" and not GunData.ARCH.has(g.archetype2):
 			g.archetype2 = ""
-		_shell_first(g)
 	else:
 		if g.rarity == GunData.R_LEGENDARY:
 			g.rarity = GunData.R_EPIC   # легендарок нет вовсе (мод всё убрал)
@@ -83,9 +82,8 @@ static func generate(level: int, rng: RandomNumberGenerator, bonus: float = 0.0,
 				g.archetype2 = a2
 		# Гипернова делает из любой основы ракетницу: узор стрельбы свой, снаряд — ракета
 		var pa := str(_maker(g).get("projectile_arch", ""))
-		if pa != "" and GunData.ARCH.has(pa) and g.archetype != pa and force_arch == "" and not _is_shell(g.archetype):
+		if pa != "" and GunData.ARCH.has(pa) and g.archetype != pa and force_arch == "":
 			g.archetype2 = pa
-		_shell_first(g)
 	_build(g, rng, leg)
 	return g
 
@@ -93,7 +91,7 @@ static func generate(level: int, rng: RandomNumberGenerator, bonus: float = 0.0,
 ## Всё после выбора «личности» пушки (редкость, основа, марка, легендарка): статы, перки, разброс, имя.
 ## keep — перки, которые надо оставить (пересборка в Мастерской), ban — какие не выдавать.
 static func _build(g: Gun, rng: RandomNumberGenerator, leg: Dictionary, keep: Array = [], ban: Array = []) -> void:
-	_apply_base(g)
+	_apply_base(g, rng)
 	var leg_ops: Array = []
 	if not leg.is_empty():
 		leg_ops.append(leg)
@@ -144,14 +142,6 @@ static func _build(g: Gun, rng: RandomNumberGenerator, leg: Dictionary, keep: Ar
 
 # --- Мастерская --------------------------------------------------------------------
 
-## Подтянуть пушку до уровня lvl: урон растёт так же, как у пушек этого уровня.
-static func upgrade_level(g: Gun, lvl: int) -> void:
-	if lvl <= g.level:
-		return
-	g.damage *= Game.gun_dmg_mult(lvl) / Game.gun_dmg_mult(g.level)
-	g.level = lvl
-
-
 ## Перки, которые можно перебросить: без перков марки и легендарки (они вернутся сами) и без «пули».
 static func rerollable(g: Gun) -> Array:
 	var fixed: Array = ["slug"]
@@ -193,18 +183,19 @@ static func rebuild(old: Gun, rarity: int, drop: String, rng: RandomNumberGenera
 
 # --- Основа -------------------------------------------------------------------
 
-static func _is_shell(arch: String) -> bool:
-	return str(GunData.ARCH.get(arch, {}).get("kind", "")) == "shell"
+## Число дробин основы: "pellets_roll": [мин, макс, обычно] — случайно (GunOps.roll_int), иначе pellets.
+static func _roll_pellets(a: Dictionary, base: int, rng: RandomNumberGenerator) -> int:
+	var spec: Variant = a.get("pellets_roll", null)
+	if spec is Array and (spec as Array).size() >= 2:
+		return maxi(1, GunOps.roll_int(spec, rng))
+	return base
 
 
-## Навесная мина при объединении всегда побеждает: основа с минами становится снарядом гибрида.
-static func _shell_first(g: Gun) -> void:
-	if g.archetype2 != "" and _is_shell(g.archetype) and not _is_shell(g.archetype2):
-		var t := g.archetype
-		g.archetype = g.archetype2
-		g.archetype2 = t
+## Основа стреляет навесными минами. kind при загрузке уже превращён в число (GunOps.kind_id).
+static func _is_shell(a: Dictionary) -> bool:
+	return int(a.get("kind", -1)) == GunData.K_SHELL
 
-static func _apply_base(g: Gun) -> void:
+static func _apply_base(g: Gun, rng: RandomNumberGenerator = null) -> void:
 	var a: Dictionary = GunData.ARCH[g.archetype]
 	if g.archetype2 == "":
 		g.damage = float(a.get("damage", 10.0))
@@ -226,11 +217,15 @@ static func _apply_base(g: Gun) -> void:
 		g.explode_r = float(a.get("explode", 0.0))
 		g.bounces = int(a.get("bounce", 0))
 		g.drag = float(a.get("drag", 0.0))
+		# случайное число дробин основы (pellets_roll): общий урон залпа тот же
+		var n0 := g.pellets
+		g.pellets = _roll_pellets(a, g.pellets, rng)
+		g.damage *= float(n0) / float(g.pellets)
 	else:
 		# Гибрид: узор стрельбы от первой основы, снаряд — от второй.
 		var b: Dictionary = GunData.ARCH[g.archetype2]
 		g.fire_rate = float(a.get("fire_rate", 2.0))
-		g.pellets = int(a.get("pellets", 1))
+		g.pellets = _roll_pellets(a, int(a.get("pellets", 1)), rng)
 		g.spread = float(a.get("spread", 3.0))
 		g.mag_size = int(a.get("mag", 10))
 		g.reload_time = (float(a.get("reload", 1.5)) + float(b.get("reload", 1.5))) * 0.5
@@ -255,6 +250,16 @@ static func _apply_base(g: Gun) -> void:
 		# скорострельность — смесь с уклоном к основе патронов (30% узора, 70% патронов, геометрически):
 		# пулемёт на минах — 1.5 выстр/с, а не 14; снайперка на патронах ПП — 5, а не 0.8
 		g.fire_rate = pow(float(a.get("fire_rate", 2.0)), 1.0 - HYBRID_AMMO_RATE) * pow(float(am.get("fire_rate", 2.0)), HYBRID_AMMO_RATE)
+		# Навесная мина — снаряд с первым приоритетом: если в гибриде есть миномёт (с любой стороны),
+		# он стреляет минами вместо пуль, дроби, ракет и гранат. Патроны, урон и узор — по обычным правилам.
+		var sh: Dictionary = a if _is_shell(a) else (b if _is_shell(b) else {})
+		if not sh.is_empty():
+			g.proj_kind = GunData.K_SHELL
+			g.proj_speed = float(sh.get("speed", 900.0))
+			g.lifetime = float(sh.get("lifetime", 0.75))
+			g.proj_size = float(sh.get("size", 3.0))
+			g.explode_r = float(sh.get("explode", 0.0))
+			g.drag = 0.0
 		# пулемёт отдаёт гибриду огромный магазин
 		if bool(b.get("big_mag", false)):
 			g.mag_size = maxi(g.mag_size, int(b.get("mag", 10)))
@@ -442,7 +447,7 @@ static func _finalize(g: Gun, rng: RandomNumberGenerator, leg: Dictionary) -> vo
 	g.damage *= lvl_mult * float(rar.get("damage_mult", 1.0))
 	g.fire_rate = clampf(g.fire_rate, 0.25, 30.0)
 	g.spread = clampf(g.spread, 0.0, 110.0)
-	g.pellets = clampi(g.pellets, 1, 40)
+	g.pellets = clampi(g.pellets, 1, 60)
 	g.ammo_per_shot = maxi(1, g.ammo_per_shot)
 	# очередь не длиннее 7 и не растягивает паузу между очередями дольше ~2.5 с (очередь из n при скорострельности f — n/f)
 	g.burst = clampi(g.burst, 1, mini(BURST_MAX, maxi(2, floori(g.fire_rate * 2.5))))

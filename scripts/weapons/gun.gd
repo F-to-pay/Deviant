@@ -245,7 +245,7 @@ func perk_lines() -> Array:
 	if pierce >= 50:
 		out.append([U.t("Pierces everything"), w])
 	elif pierce > 0:
-		out.append([U.t("Pierces enemies: %d") % pierce, w])
+		out.append([U.t("Pierces enemies: %d (−40%% damage each)") % pierce, w])
 	if bounces > 0 and proj_kind != GunData.K_GRENADE:
 		out.append([U.t("Ricochets off walls ×%d") % bounces, w])
 	if split_n > 0 and split_depth > 1:

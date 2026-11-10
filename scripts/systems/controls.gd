@@ -33,6 +33,8 @@ static var _self: Controls = null
 static var _frame := -1                  # кадр, для которого уже посчитан прицел
 static var touch_target: Variant = null  # «стрельба по тапу»: мировая точка под пальцем (или null)
 static var _visible_target: Variant = null  # ближайший враг на экране в прямой видимости (для автоогня)
+static var skill_aim := Vector2.ZERO     # сенсор: отдельный стик навыка (длина 0..1), ZERO — не целимся им
+static var _skill_cast: Variant = null   # отпустили стик навыка: {"dir": Vector2, "len": float}; dir = ZERO — тап, целимся как обычно
 static var _shot_ms := 0                 # когда отпустили стик в режиме «по отпусканию» (0 — выстрела нет)
 static var _release_cache := {}          # разобранная настройка touch_release_fire
 static var _release_src := "?"
@@ -199,6 +201,18 @@ static func release_fire() -> bool:
 ## Отпустили правый стик в режиме «по отпусканию» — выстрелить один раз.
 static func queue_shot() -> void:
 	_shot_ms = Time.get_ticks_msec()
+
+
+## Отпустили стик навыка — применить навык (dir — куда, len — насколько далеко 0..1; dir = ZERO — просто тап).
+static func queue_skill(dir: Vector2, len: float) -> void:
+	_skill_cast = {"dir": dir, "len": len}
+
+
+## Забрать отложенное применение навыка (или null).
+static func take_skill() -> Variant:
+	var c: Variant = _skill_cast
+	_skill_cast = null
+	return c
 
 
 ## Забрать отложенный выстрел. ready — ствол готов стрелять; не готов — ждём до SHOT_WAIT_MS.

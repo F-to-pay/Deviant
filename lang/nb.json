@@ -881,6 +881,8 @@
 		"Damage grows with distance: %d%% → 100%% at full range": "Skaden øker med avstand: %d %% → 100 %% ved full rekkevidde",
 		"No damage falloff with range": "Skaden faller ikke med avstand",
 		"Light: no slowdown while shooting": "Lett: skyting bremser deg ikke",
-		"Damage grows with distance: %d%% → 100%% at %d m": "Skaden øker med avstand: %d %% → 100 %% ved %d m"
+		"Damage grows with distance: %d%% → 100%% at %d m": "Skaden øker med avstand: %d %% → 100 %% ved %d m",
+		"The grenade turns into smoke of radius 300: 25% of its damage every second for 4 s.": "Granaten blir til røyk med radius 300: 25 % av skaden hvert sekund i 4 s.",
+		"Pierces enemies: %d (−40%% damage each)": "Går gjennom fiender: %d (−40 %% skade for hver)"
 	}
 }

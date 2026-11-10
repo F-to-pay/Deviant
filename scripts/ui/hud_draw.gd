@@ -56,6 +56,9 @@ func _draw() -> void:
 	if Game.debug:
 		U.draw_text(self, f, Vector2(12, vp.y - 12), U.t("FPS %d · enemies %d · projectiles %d") % [Engine.get_frames_per_second(),
 			main.enemies.size(), main.projectiles.count()], 13, Color(0.7, 1.0, 0.7), 3)
+		U.draw_text(self, f, Vector2(12, vp.y - 30), "LV %d · XP %.1f / %.1f · total %.1f" % [Game.hero_level, Game.xp,
+			Game.xp_need(Game.hero_level), Game.xp_total], 13, Color(0.7, 1.0, 0.7), 3)
+		U.draw_text(self, f, Vector2(12, vp.y - 48), "DIR " + main.director.describe(), 13, Color(0.7, 1.0, 0.7), 3)
 	if hud.fade > 0.0:
 		draw_rect(Rect2(-position - Vector2(64, 64), get_viewport_rect().size + Vector2(128, 128)), Color(0, 0, 0, hud.fade))
 	if bool(Game.setting("show_fps")) and not Game.debug:
@@ -155,15 +158,31 @@ func _draw_stall(st: Stall, vp: Vector2, f: Font, fb: Font) -> void:
 	U.draw_text_c(self, f, Vector2(cx, r.end.y - 14.0), close, 14, Color(0.7, 0.7, 0.75), 3)
 
 
+const SLOT_W := 150.0
+const SLOT_H := 64.0
+const SLOT_GAP := 8.0
+
+
+## Прямоугольник слота оружия i в координатах этого узла.
+func weapon_rect(i: int) -> Rect2:
+	var total := SLOT_W * 4.0 + SLOT_GAP * 3.0
+	return Rect2(size.x * 0.5 - total * 0.5 + float(i) * (SLOT_W + SLOT_GAP), size.y - SLOT_H - 20.0, SLOT_W, SLOT_H)
+
+
+## То же в координатах вьюпорта — для касаний (TouchControls: тап по слоту = выбрать оружие).
+func weapon_rect_vp(i: int) -> Rect2:
+	var xf := get_global_transform_with_canvas()
+	var r := weapon_rect(i)
+	var a: Vector2 = xf * r.position
+	var b: Vector2 = xf * r.end
+	return Rect2(a, b - a).abs()
+
+
 func _draw_weapons(p: Player, vp: Vector2, f: Font, fb: Font) -> void:
-	var sw := 150.0
-	var sh := 64.0
-	var gap := 8.0
-	var total := sw * 4.0 + gap * 3.0
-	var x0 := vp.x * 0.5 - total * 0.5
-	var y0 := vp.y - sh - 20.0
+	var x0 := weapon_rect(0).position.x
+	var y0 := weapon_rect(0).position.y
 	for i in 4:
-		var r := Rect2(x0 + float(i) * (sw + gap), y0, sw, sh)
+		var r := weapon_rect(i)
 		var g: Gun = p.guns[i]
 		var is_active := i == p.active
 		draw_rect(r, Color(0.05, 0.05, 0.08, 0.85 if is_active else 0.6))

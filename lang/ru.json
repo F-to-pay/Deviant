@@ -881,6 +881,8 @@
 		"Damage grows with distance: %d%% → 100%% at full range": "Урон растёт с дальностью: %d%% → 100%% на полной дальности",
 		"No damage falloff with range": "Урон не падает с дальностью",
 		"Light: no slowdown while shooting": "Лёгкая: стрельба не замедляет",
-		"Damage grows with distance: %d%% → 100%% at %d m": "Урон растёт с дальностью: %d%% → 100%% к %d м"
+		"Damage grows with distance: %d%% → 100%% at %d m": "Урон растёт с дальностью: %d%% → 100%% к %d м",
+		"The grenade turns into smoke of radius 300: 25% of its damage every second for 4 s.": "Граната превращается в дым радиусом 300: 25% её урона каждую секунду, 4 с.",
+		"Pierces enemies: %d (−40%% damage each)": "Пробивает врагов: %d (−40%% урона за каждого)"
 	}
 }

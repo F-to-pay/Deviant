@@ -13,6 +13,7 @@ var level: int = 1
 var dmg: float = 10.0
 var speed: float = 100.0
 var color: Color = Color.RED
+var summoned: bool = false   # призван другим врагом: опыта не даёт
 var elite: int = 0          # 0 обычный, 1 чемпион, 2 редкий вожак, 3 босс
 var affixes: Array = []
 var title: String = ""

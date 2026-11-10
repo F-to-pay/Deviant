@@ -2,8 +2,18 @@ class_name Boss
 extends Enemy
 ## Босс каждые 5 зон. Набор паттернов случайный, на 50% HP — ярость.
 
-const PATTERNS := ["radial", "spiral", "shotgun", "charge", "summon", "mortar", "wall"]
-const DURATION := {"radial": 3.0, "spiral": 3.5, "shotgun": 3.0, "charge": 5.0, "summon": 0.6, "mortar": 2.6, "wall": 3.6}
+const PATTERNS := ["radial", "spiral", "shotgun", "charge", "summon", "mortar", "wall", "seekers"]
+const DURATION := {"radial": 3.0, "spiral": 3.5, "shotgun": 3.0, "charge": 5.0, "summon": 0.6, "mortar": 2.6, "wall": 3.6,
+		"seekers": 4.0}
+
+## Таран: сколько пикселей пролетает за бросок (скорость × время), и порог — ближе стены бросок не начинаем.
+const CHARGE_SPEED_K := 5.5
+const CHARGE_TIME := 0.55
+const CHARGE_MIN_LEN := 110.0
+## «Охотники»: медленные снаряды вокруг босса, доворачивают к игроку.
+const SEEK_SPEED := 85.0
+const SEEK_TURN_DEG := 10.0
+const SEEK_LIFE := 9.0
 
 var patterns: Array = []
 var pat: String = ""
@@ -13,6 +23,8 @@ var spiral_a: float = 0.0
 var enraged: bool = false
 var rest: float = 2.0
 var charges: int = 0
+var charge_len: float = 0.0     # сколько реально можно пролететь по charge_dir до стены
+var charge_wait: float = 0.0    # сколько уже ищем позицию для тарана (по пути A*)
 
 
 func setup_boss(lvl: int, rng: RandomNumberGenerator) -> void:
@@ -58,6 +70,7 @@ func _behave(delta: float, player: Player, to_p: Vector2, dist: float) -> void:
 			state = S_MOVE
 			st = 0.0
 			charges = 3 if not enraged else 4
+			charge_wait = 0.0
 		return
 	pat_t -= delta
 	shot_t -= delta * rate_k
@@ -103,43 +116,91 @@ func _behave(delta: float, player: Player, to_p: Vector2, dist: float) -> void:
 			if shot_t <= 0.0:
 				shot_t = 1.1
 				_wall(player)
+		"seekers":
+			if shot_t <= 0.0:
+				shot_t = 2.0
+				_seekers()
+			_chase(delta, player, speed * 0.35)
 	if pat_t <= 0.0 or (pat == "charge" and charges <= 0 and state == S_MOVE):
 		pat = ""
 		rest = randf_range(0.6, 1.1) / rate_k
 		state = S_MOVE
 
 
-func _boss_charge(delta: float, player: Player, to_p: Vector2, _dist: float) -> void:
+## Свободная длина разбега из pos по dir для тела босса (шагаем кругом, пока не упрёмся), не больше max_len.
+func _clear_len(dir: Vector2, max_len: float) -> float:
+	var zone: Zone = Game.main.zone
+	var d := 0.0
+	while d < max_len:
+		d += 12.0
+		if zone.circle_blocked(position + dir * d, radius):
+			return maxf(0.0, d - 12.0)
+	return max_len
+
+
+func _boss_charge(delta: float, player: Player, to_p: Vector2, dist: float) -> void:
+	var full_len := speed * CHARGE_SPEED_K * CHARGE_TIME
 	match state:
 		S_MOVE:
-			if charges > 0:
+			if charges <= 0:
+				return
+			var dir := to_p.normalized()
+			# Бросаемся только когда игрок виден «толстым» лучом и впереди хватает места до стены.
+			# Иначе подходим по пути A* (как при обычной погоне); не вышло за 3 с — пропускаем бросок.
+			if move_los and _clear_len(dir, full_len) >= minf(CHARGE_MIN_LEN, dist):
 				state = S_WINDUP
 				st = 0.6
-				charge_dir = to_p.normalized()
+				charge_dir = dir
+				charge_len = _clear_len(dir, full_len)
+			else:
+				charge_wait += delta
+				_chase(delta, player, speed * 0.9)
+				if charge_wait > 3.0:
+					charge_wait = 0.0
+					charges -= 1
 		S_WINDUP:
 			st -= delta
 			if st > 0.3:
-				charge_dir = (player.position - position).normalized()
+				var nd := (player.position - position).normalized()
+				var nl := _clear_len(nd, full_len)
+				if nl >= CHARGE_MIN_LEN or nl >= charge_len:   # целимся, только если не в упор в стену
+					charge_dir = nd
+					charge_len = nl
 			if st <= 0.0:
 				state = S_ACTION
-				st = 0.55
+				st = CHARGE_TIME
 		S_ACTION:
 			st -= delta
 			var before := position
-			position = Game.main.zone.move_circle(position, charge_dir * speed * 5.5 * delta, radius)
+			var step := minf(speed * CHARGE_SPEED_K * delta, charge_len)
+			position = Game.main.zone.move_circle(position, charge_dir * step, radius)
+			charge_len -= position.distance_to(before)
 			if position.distance_to(player.position) < radius + player.radius and contact_cd <= 0.0:
 				player.take_damage(dmg * 2.0)
 				contact_cd = 0.5
-			if st <= 0.0 or position.distance_squared_to(before) < 1.0:
+			# кончилось время / длина разбега (стена впереди) / упёрлись — конец броска
+			if st <= 0.0 or charge_len <= 1.0 or position.distance_squared_to(before) < 1.0:
 				state = S_RECOVER
 				st = 0.35
 				charges -= 1
+				charge_wait = 0.0
 				_ring(10, 200.0, randf() * TAU)
 				Game.main.fx.shake(6.0)
 		S_RECOVER:
 			st -= delta
 			if st <= 0.0:
 				state = S_MOVE
+
+
+## «Охотники»: кольцо медленных снарядов вокруг босса, которые доворачивают к игроку.
+func _seekers() -> void:
+	var n := 12 if enraged else 8
+	var off := randf() * TAU
+	for i in n:
+		var dir := Vector2.from_angle(off + TAU * float(i) / float(n))
+		Game.main.projectiles.enemy_seeker(position + dir * (radius + 6.0), dir, SEEK_SPEED, dmg * 0.9, 9.0,
+			Color(0.75, 0.4, 1.0), SEEK_TURN_DEG, SEEK_LIFE)
+	Game.main.fx.ring(position, radius + 24.0, Color(0.75, 0.4, 1.0), 0.4)
 
 
 ## Стена пуль с дыркой — ищи проход.
@@ -165,7 +226,7 @@ func _draw() -> void:
 	if enraged:
 		draw_circle(Vector2.ZERO, radius + 18.0 + sin(anim * 8.0) * 4.0, Color(1.0, 0.2, 0.1, 0.18))
 	if pat == "charge" and state == S_WINDUP:
-		draw_line(Vector2.ZERO, charge_dir * speed * 5.5 * 0.55, Color(1, 0.2, 0.2, 0.3), radius * 2.0)
+		draw_line(Vector2.ZERO, charge_dir * charge_len, Color(1, 0.2, 0.2, 0.3), radius * 2.0)
 	# Шипастое тело
 	var pts := U.ngon(9, radius, anim * 0.6, true)
 	for i in pts.size():

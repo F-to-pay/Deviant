@@ -88,6 +88,7 @@
 		"knock": 110.0,
 		"move": 1.0,
 		"shake": 4.5,
+		"pellets_roll": [5, 30, 8],
 		"ammo_name": "shotgun",
 		"ammo_color": "#ff7359",
 		"slug_chance": 0.3,

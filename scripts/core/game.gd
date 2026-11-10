@@ -33,6 +33,19 @@ var main: Main = null
 var zone_level: int = 1
 var kills: int = 0
 var run_time: float = 0.0
+
+# --- Опыт героя (пока только подсчёт, ничего не даёт) -----------------------------------
+## Враг даёт XP_BASE + XP_PER_LEVEL × (уровень − 1), умноженное на XP_ELITE_MULT[elite]
+## (0 обычный, 1 чемпион, 2 вожак, 3 босс — множители пока заглушки).
+## До следующего уровня L → L+1 нужно XP_NEED_BASE × L ^ XP_NEED_POW (1.1): сначала растёт быстро, потом всё медленнее.
+const XP_BASE := 1.0
+const XP_PER_LEVEL := 0.1
+const XP_ELITE_MULT := [1.0, 3.0, 6.0, 25.0]
+const XP_NEED_BASE := 40.0
+const XP_NEED_POW := 1.1
+var hero_level: int = 1
+var xp: float = 0.0          # накоплено к следующему уровню (остаток после повышения переносится)
+var xp_total: float = 0.0    # за весь забег, для статистики и калибровки
 var guns_found: int = 0
 var best_gun: Gun = null
 var biome_offset: int = 0
@@ -157,11 +170,36 @@ func counts_for_records() -> bool:
 	return true
 
 
+## Сколько XP нужно, чтобы подняться с уровня lvl на lvl+1.
+static func xp_need(lvl: int) -> float:
+	return XP_NEED_BASE * pow(float(lvl), XP_NEED_POW)
+
+
+## Сколько XP даёт убийство врага уровня lvl (elite: 0 обычный … 3 босс).
+static func enemy_xp(lvl: int, elite: int) -> float:
+	return (XP_BASE + XP_PER_LEVEL * float(maxi(0, lvl - 1))) * float(XP_ELITE_MULT[clampi(elite, 0, 3)])
+
+
+## Начисляет XP, повышает уровень (может несколько раз подряд). Возвращает, на сколько уровней вырос.
+func add_xp(amount: float) -> int:
+	xp += amount
+	xp_total += amount
+	var ups := 0
+	while xp >= xp_need(hero_level):
+		xp -= xp_need(hero_level)
+		hero_level += 1
+		ups += 1
+	return ups
+
+
 func new_run() -> void:
 	rng.seed = seed_value ^ 0x5eed
 	zone_level = 1
 	kills = 0
 	run_time = 0.0
+	hero_level = 1
+	xp = 0.0
+	xp_total = 0.0
 	guns_found = 0
 	best_gun = null
 	bosses = 0
@@ -177,6 +215,12 @@ func new_run() -> void:
 # Здоровье врагов растёт чуть быстрее урона пушек: старые стволы постепенно
 # устаревают, и приходится лутаться. Урон врагов растёт линейно — у игрока
 # нет уровней, вся его сила — в пушках.
+
+## Рост за зону. Пушка с зоны N на зоне N+k: враги толще в ENEMY_HP_GROWTH^k — через 4 зоны ×2,
+## новая пушка той же зоны отстаёт от врагов на (1.20/1.18)^k — лутаться и менять стволы надо постоянно.
+const ENEMY_HP_GROWTH := 1.20
+const GUN_DMG_GROWTH := 1.18
+
 
 func is_boss_zone(level: int) -> bool:
 	return level % 5 == 0
@@ -199,9 +243,14 @@ func econ(level: int) -> float:
 	return pow(ECON_GROWTH, float(maxi(0, level - 1) / TOWN_EVERY))
 
 
+## Эталон «врагов в зоне» для монет: столько их было на 1-й зоне до сокращения карт (21 пак × 5). Доход с зоны
+## остаётся прежним, хотя врагов стало меньше, — каждый убитый приносит соответственно больше.
+const COIN_REF_ENEMIES := 105.0
+
+
 ## Сколько врагов в среднем в зоне (как в ZoneGen и EnemyData.roll_pack).
 func expected_enemies(level: int) -> float:
-	return float(mini(20 + level, 42)) * (10.0 + float(mini(level / 3, 5))) * 0.5
+	return float(ZoneGen.pack_count(level)) * (10.0 + float(mini(level / 3, 5))) * 0.5
 
 
 ## Монеты из base «монет первого этапа»: × econ, дробная часть — случайно (0.4 — с шансом 40% одна монета).
@@ -211,7 +260,7 @@ func coins_for(level: int, base: float, r: RandomNumberGenerator) -> int:
 
 ## То же для добычи с врагов: ещё и делится на рост числа врагов, чтобы доход за зону не рос с ним.
 func kill_coins(level: int, base: float, r: RandomNumberGenerator) -> int:
-	return _round_rand(base * econ(level) * expected_enemies(1) / expected_enemies(level), r)
+	return _round_rand(base * econ(level) * COIN_REF_ENEMIES / expected_enemies(level), r)
 
 
 func _round_rand(x: float, r: RandomNumberGenerator) -> int:
@@ -262,7 +311,7 @@ func add_meta(n: int) -> void:
 
 
 func enemy_hp_mult(level: int) -> float:
-	return pow(1.15, level - 1) * float(run["hp"])
+	return pow(ENEMY_HP_GROWTH, level - 1) * float(run["hp"])
 
 
 func enemy_dmg_mult(level: int) -> float:
@@ -270,7 +319,7 @@ func enemy_dmg_mult(level: int) -> float:
 
 
 func gun_dmg_mult(level: int) -> float:
-	return pow(1.14, level - 1)
+	return pow(GUN_DMG_GROWTH, level - 1)
 
 
 # --- Статистика ---------------------------------------------------------------

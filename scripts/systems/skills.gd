@@ -13,12 +13,17 @@ const STUN := 0.7
 const STUN_MORE := 0.4
 const VANDAL_KNOCK := 10.0
 const SMOKE_R := 300.0
-const SMOKE_TICK := 0.3      # доля урона гранаты за секунду дыма
+const SMOKE_TICK := 0.25     # доля урона гранаты за секунду дыма
+const SMOKE_RATE := 5.0      # тиков дыма в секунду (урон и стихия делятся на них)
 const SMOKE_TIME := 4.0
+## Сколько стихии (кислоты/холода/проклятия) даёт попадание навыком: как 2 секунды стрельбы пушкой (у пушки 0.1 = 1 с).
+## Дым за секунду даёт столько же, сколько одно попадание гранаты (по SKILL_ST / SMOKE_RATE за тик).
+const SKILL_ST := 0.2
 
 
 ## Ударить врага навыком. stun — можно ли оглушить (у дыма — только на первом тике).
-static func hit(e: Enemy, dmg: float, kb: Vector2, stun: bool = true) -> void:
+## st — сколько стихии накладывает удар; tick — тик дыма: без цифр урона и без цепных молний шока.
+static func hit(e: Enemy, dmg: float, kb: Vector2, stun: bool = true, st: float = SKILL_ST, tick: bool = false) -> void:
 	if e == null or e.dead:
 		return
 	var p: Player = Game.main.player
@@ -33,10 +38,13 @@ static func hit(e: Enemy, dmg: float, kb: Vector2, stun: bool = true) -> void:
 		if e.elite != 3:
 			e.knock += kb * (7.0 / e.radius)
 		if el >= 0:
-			e.apply_element(el, dmg, 0.3)
-		Game.main.fx.text(e.position + Vector2(0, -e.radius - 6.0), U.fmt(dmg * e.vulnerability()), Color(0.45, 1.0, 0.3, 0.8), 12, 0.5)
+			e.apply_element(el, dmg, st)
+		if not tick:
+			Game.main.fx.text(e.position + Vector2(0, -e.radius - 6.0), U.fmt(dmg * e.vulnerability()), Color(0.45, 1.0, 0.3, 0.8), 12, 0.5)
+	elif tick:
+		e.hurt(dmg, false, el, kb, true, st)
 	else:
-		Combat.hit_enemy(e, dmg, false, el, kb, false, 0.3)
+		Combat.hit_enemy(e, dmg, false, el, kb, false, st)
 	var w := p.perk("wounds")
 	if w > 0 and not e.dead:
 		# элиткам нужно вдвое больше ударов на ступень, боссам — втрое
@@ -51,17 +59,20 @@ static func hit(e: Enemy, dmg: float, kb: Vector2, stun: bool = true) -> void:
 		p.on_skill_kill(e)
 
 
-## Взрыв навыка (граната Первопроходца, ракета благословлённого выстрела): урон от центра к краю 100% → 20%.
+## Взрыв навыка (граната Первопроходца, ракета благословлённого выстрела). У гранаты урон по всему радиусу
+## одинаковый, у взрывов Шерифа — от центра к краю 100% → 20%, как у обычных взрывов.
 ## С «Дымовой гранатой» вместо взрыва — облако дыма (Projectiles.add_smoke).
 static func explode(pos: Vector2, r: float, dmg: float, col: Color) -> void:
 	var main: Main = Game.main
 	var p: Player = main.player
 	var sm := p.perk("smoke")
 	if sm > 0:
-		main.projectiles.add_smoke(pos, SMOKE_R, dmg * SMOKE_TICK, SMOKE_TIME + float(sm - 1))
+		main.projectiles.add_smoke(pos, SMOKE_R, dmg * SMOKE_TICK / SMOKE_RATE, SMOKE_TIME + float(sm - 1),
+			1.0 / SMOKE_RATE, SKILL_ST / SMOKE_RATE)
 		main.fx.ring(pos, 60.0, Color(0.75, 0.75, 0.8), 0.4)
 		Sfx.at("player/dodge", pos, -4.0, 0.5, 0.06, 2, 0.1)
 		return
+	var flat := str(Heroes.get_hero(p.hero).get("skill", "")) == "grenade"
 	var ecol := U.el_color(p.skill_element) if p.skill_element >= 0 else col
 	main.fx.explosion(pos, r, ecol)
 	main.sfx.explosion(pos, r, false)
@@ -73,7 +84,7 @@ static func explode(pos: Vector2, r: float, dmg: float, col: Color) -> void:
 		var dist := pos.distance_to(e.position)
 		if dist > r + e.radius:
 			continue
-		var k := lerpf(1.0, 0.2, clampf(dist / r, 0.0, 1.0))
+		var k := 1.0 if flat else lerpf(1.0, 0.2, clampf(dist / r, 0.0, 1.0))
 		var dir := (e.position - pos) / dist if dist > 1.0 else Vector2.RIGHT
 		hit(e, dmg * k, dir * 180.0)
 	# своя граната задевает и героя — как любой свой взрыв (Combat.SELF_DAMAGE)

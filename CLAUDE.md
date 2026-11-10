@@ -43,7 +43,8 @@ godot --headless --path . --quit          # загрузить проект: в�
 | Поиск пути | `world/zone.gd` `find_path()` — AStarGrid2D по классам размера тела (`size_class`) |
 | Карта | `world/zone_gen.gd` (генерация), `world/zone.gd` (сетка T=40, коллизии `move_circle`, лучи `ray_clear`, миникарта), `world/biomes.gd` |
 | Город между этапами | `world/town_gen.gd` (площадь, улицы, дома по `town_style` биома, имя), `world/stall.gd` (лавки: `KINDS` — вывеска, реплики, `menu` — экран меню; без него — окно-заглушка `HudDraw._draw_stall`) |
-| Торговля, Мистик, Мастерская | цены и товар — `systems/shops.gd` (`make_town` при входе в город → `Main.town`), перки Мистика — перки навыков `Heroes.PERKS` (что даёт — `Player.perk()`, `skill_dmg_mult`, `Skills`); пересборка пушки — `GunGen.rebuild` / `upgrade_level`; экраны — `Menu._build_shop/_mystic/_workshop` |
+| Торговля, Мистик, Мастерская | цены и товар — `systems/shops.gd` (`make_town` при входе в город → `Main.town`), перки Мистика — перки навыков `Heroes.PERKS` (что даёт — `Player.perk()`, `skill_dmg_mult`, `Skills`); пересборка пушки — `GunGen.rebuild` (подтягивать уровень нельзя — пушки должны устаревать); экраны — `Menu._build_shop/_mystic/_workshop` |
+| Опыт героя и «судья» | `Game.add_xp / xp_need / enemy_xp` (пока только подсчёт), `systems/director.gd` (запас XP в зоне, сложность по времени — наблюдает, F3), `Main.director` |
 | Задания Гильдии | `systems/quests.gd` (`TYPES`, `active`, `progress(тип)` — зовётся из `Main`); экран — `Menu._build_guild`, строки на HUD — `HudDraw._draw_zone_info` |
 | Фляги лечения | `Player.flasks` / `drink()` / `FLASK_MAX`, `FLASK_HEAL`; дроп — `Main.spawn_flask` (`world/flask_drop.gd`); Лекарь — `Shops.heal_price` / `flask_price`, экран `Menu._build_healer` |
 | Монеты | `Game.coins` (забег, `START_COINS`, `coin_value`), `Game.meta_coins` (древние, мета, сохраняются в `[meta]` deviant.cfg сразу); `world/coin.gd`; дроп — `Main.drop_coins` в `on_enemy_killed` / `open_chest` / `_boss_dead` |
@@ -92,7 +93,8 @@ godot --headless --path . --quit          # загрузить проект: в�
 
 | Хочу | Куда |
 |---|---|
-| Баланс урона/здоровья по зонам | `Game.enemy_hp_mult / enemy_dmg_mult / gun_dmg_mult` |
+| Баланс урона/здоровья по зонам | `Game.ENEMY_HP_GROWTH` / `GUN_DMG_GROWTH`, `enemy_dmg_mult` |
+| Отложенные задачи | `TODO.md` |
 | Шансы редкостей, перков, гибридов | `data/rarities.json`, `GunGen.roll_rarity` |
 | Новый тип пушки / марка / перк / легендарка | `data/*.json` + `lang/ru.json` + `lang/nb.json` |
 | Новый враг | `EnemyData.TYPES` + ветка в `Enemy._behave` + описание в `data/codex.json` (`enemies`) |

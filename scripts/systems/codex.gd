@@ -194,7 +194,8 @@ static func _auto_archetypes() -> String:
 		var a: Dictionary = GunData.ARCH[k]
 		t += "[cell]%s  [/cell]" % _c(a["ammo_color"], "[b]%s[/b]" % _esc(U.t(str(a["name"]))))
 		t += "[cell]%s[/cell][cell]%s[/cell][cell]%s[/cell][cell]%s[/cell][cell]%s[/cell][cell]%s[/cell][cell]%s[/cell]" % [
-			U.fmt(float(a.get("damage", 0))), U.t("%.1f/s") % float(a.get("fire_rate", 0)), str(a.get("pellets", 1)),
+			U.fmt(float(a.get("damage", 0))), U.t("%.1f/s") % float(a.get("fire_rate", 0)),
+			GunOps.spec_text(a["pellets_roll"]) if a.get("pellets_roll") is Array else str(a.get("pellets", 1)),
 			str(a.get("mag", 0)), U.t("%.1f s") % float(a.get("reload", 0)),
 			"%d%% ×%.1f" % [roundi(float(a.get("crit", 0)) * 100.0), float(a.get("crit_mult", 2))],
 			_esc(GunData.ammo_label(str(a.get("ammo", k))))]

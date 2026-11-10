@@ -433,8 +433,11 @@ func _physics_process(delta: float) -> void:
 	# Пассивного регена нет. Только хилки и (редкий) вампиризм.
 	leech_budget = minf(LEECH_CAP, leech_budget + LEECH_CAP * delta)
 
+	var skill_cast: Variant = Controls.take_skill()   # навык, прицеленный отдельным стиком на сенсоре
 	if not main.transitioning:
-		if Input.is_action_pressed("skill") and skill_charges > 0 and skill_gap <= 0.0 and not blessed:
+		if skill_cast != null and skill_charges > 0 and skill_gap <= 0.0 and not blessed:
+			_use_skill(skill_cast)
+		elif Input.is_action_pressed("skill") and skill_charges > 0 and skill_gap <= 0.0 and not blessed:
 			_use_skill()
 		_update_gun(delta)
 	queue_redraw()
@@ -442,7 +445,8 @@ func _physics_process(delta: float) -> void:
 
 # --- Навык героя -------------------------------------------------------------------
 
-func _use_skill() -> void:
+## cast — отдельный стик навыка на сенсоре: {"dir", "len"}; null или dir = ZERO — целимся, как обычно.
+func _use_skill(cast: Variant = null) -> void:
 	var main: Main = Game.main
 	var h := Heroes.get_hero(hero)
 	var col: Color = h["color"] if skill_element < 0 else U.el_color(skill_element)
@@ -456,16 +460,23 @@ func _use_skill() -> void:
 		"grenade":
 			# в точку прицела, но не дальше range. «Разделение» — 3×N гранат, урон поровну;
 			# ложатся пятном вокруг точки прицела, как мины миномёта (чем дальше бросок, тем шире пятно)
-			var to := Controls.aim_world(position) - position
-			var dist := clampf(to.length(), 40.0, float(h["range"]))
-			var target := position + aim * dist
+			var cdir := aim
+			var dist: float
+			if cast is Dictionary and (cast["dir"] as Vector2) != Vector2.ZERO:
+				# своим стиком: направление — куда потянули, дальность — насколько сильно
+				cdir = (cast["dir"] as Vector2).normalized()
+				dist = lerpf(60.0, float(h["range"]), clampf(float(cast["len"]), 0.0, 1.0))
+			else:
+				var to := Controls.aim_world(position) - position
+				dist = clampf(to.length(), 40.0, float(h["range"]))
+			var target := position + cdir * dist
 			var n := 3 * perk("split") if perk("split") > 0 else 1
 			var dev := (20.0 + dist * 0.14) * sqrt(float(n) / 3.0)
 			for i in n:
 				var off := Vector2.ZERO
 				if n > 1:
 					off = Vector2.from_angle(randf() * TAU) * dev * sqrt(randf())
-				main.projectiles.throw_grenade(position + aim * (radius + 6.0), target + off, sdmg / float(n), float(h["r"]), col)
+				main.projectiles.throw_grenade(position + cdir * (radius + 6.0), target + off, sdmg / float(n), float(h["r"]), col)
 			Sfx.at("player/dodge", position, -6.0, 1.4, 0.06, 1, 0.1)
 		"bless":
 			blessed = true
@@ -473,7 +484,10 @@ func _use_skill() -> void:
 			Sfx.at("player/perfect", position, -6.0, 0.7, 0.04, 1, 0.1)
 		"slash":
 			slash_t = float(h["time"])
-			slash_dir = aim
+			var sdir := aim
+			if cast is Dictionary and (cast["dir"] as Vector2) != Vector2.ZERO:
+				sdir = (cast["dir"] as Vector2).normalized()   # своим стиком на сенсоре
+			slash_dir = sdir
 			var r := float(h["r"])
 			var half := deg_to_rad(float(h["arc"])) * 0.5
 			var hits := 0
@@ -485,14 +499,14 @@ func _use_skill() -> void:
 				if to_e.length() > r + e.radius:
 					continue
 				# совсем вплотную — бьём в любом случае, иначе только в дуге
-				if to_e.length() > e.radius + radius and absf(aim.angle_to(to_e)) > half:
+				if to_e.length() > e.radius + radius and absf(sdir.angle_to(to_e)) > half:
 					continue
 				Skills.hit(e, sdmg, to_e.normalized() * 160.0)
 				hits += 1
 			# «Парирование»: раз в 4 с удар разворачивает вражеские снаряды
 			var pr := perk("parry")
 			if pr > 0 and parry_cd <= 0.0:
-				var refl := main.projectiles.reflect(position, aim, r + 20.0, half, 1.0 + 0.3 * float(pr - 1))
+				var refl := main.projectiles.reflect(position, sdir, r + 20.0, half, 1.0 + 0.3 * float(pr - 1))
 				if refl > 0:
 					parry_cd = 4.0
 					main.fx.ring(position, r, Color(0.85, 0.7, 1.0), 0.3)
@@ -723,6 +737,35 @@ func _fire(g: Gun) -> void:
 
 # --- Отрисовка ----------------------------------------------------------------
 
+## Превью броска, пока тянешь стик навыка: линия, круг взрыва в точке падения и кольцо максимальной дальности.
+func _draw_skill_preview() -> void:
+	var hd := Heroes.get_hero(hero)
+	if not bool(hd.get("aimed", false)):
+		return
+	var col: Color = hd["color"] if skill_element < 0 else U.el_color(skill_element)
+	var sd := Controls.skill_aim
+	var dir := sd.normalized()
+	var ready := skill_charges > 0
+	var a := 1.0 if ready else 0.4
+	if str(hd["skill"]) == "slash":
+		# сектор удара: куда и насколько широко ударим
+		var sr := float(hd["r"])
+		var half := deg_to_rad(float(hd["arc"])) * 0.5
+		var pts := PackedVector2Array([Vector2.ZERO])
+		for k in 13:
+			pts.append(Vector2.from_angle(dir.angle() - half + half * 2.0 * float(k) / 12.0) * sr)
+		draw_colored_polygon(pts, Color(col, 0.16 * a))
+		draw_arc(Vector2.ZERO, sr, dir.angle() - half, dir.angle() + half, 20, Color(col, 0.85 * a), 2.0)
+		draw_line(Vector2.ZERO, Vector2.from_angle(dir.angle() - half) * sr, Color(col, 0.5 * a), 2.0)
+		draw_line(Vector2.ZERO, Vector2.from_angle(dir.angle() + half) * sr, Color(col, 0.5 * a), 2.0)
+		return
+	var d := lerpf(60.0, float(hd["range"]), clampf(sd.length(), 0.0, 1.0))
+	draw_arc(Vector2.ZERO, float(hd["range"]), 0.0, TAU, 48, Color(col, 0.12 * a), 2.0)
+	draw_line(dir * (radius + 6.0), dir * d, Color(col, 0.4 * a), 2.0)
+	draw_circle(dir * d, float(hd["r"]), Color(col, 0.14 * a))
+	draw_arc(dir * d, float(hd["r"]), 0.0, TAU, 32, Color(col, 0.85 * a), 2.0)
+
+
 func _draw() -> void:
 	if dead:
 		return
@@ -742,6 +785,8 @@ func _draw() -> void:
 		var pulse := 1.0 + sin(anim * 8.0) * 0.15
 		draw_circle(Vector2.ZERO, (radius + 7.0) * pulse, Color(1.0, 0.8, 0.3, 0.22))
 		draw_arc(Vector2.ZERO, (radius + 7.0) * pulse, 0.0, TAU, 24, Color(1.0, 0.85, 0.4, 0.8), 2.0)
+	if Controls.skill_aim != Vector2.ZERO:
+		_draw_skill_preview()
 	if slash_t > 0.0:
 		# дуга удара: метёт от одного края к другому
 		var hs := Heroes.get_hero(hero)

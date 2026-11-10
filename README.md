@@ -57,6 +57,8 @@ The game detects what you are playing with (`systems/controls.gd`) and adapts hi
 
 **Touch** (`ui/touch_controls.gd`): a move stick on the left, an aim stick on the right (tilt it to shoot), buttons for
 dodge, reload, weapon switch, backpack and pause; Take / Swap / Scrap next to a gun on the ground, Open next to a chest.
+Tapping a weapon slot at the bottom of the screen selects that gun. The Pioneer's grenade and the Assassin's slash have their own aim stick: hold the Skill button and drag (a preview is drawn), release to throw / strike;
+a plain tap uses the gun's aim. The Sheriff's blessing has no direction and fires instantly on press.
 Options in Settings → Controls:
 - **Layout editor** — drag every control, change the size of each one (− / + next to the selected control);
   stored in `touch_layout`. Plus a global size slider.
@@ -132,7 +134,7 @@ next to the exe — the text from `data/guide.json` plus a reference of every lo
 
 - Every zone is an open procedural map (noise → rocks, chasms, acid/lava pools).
   Unreachable areas get walled off, the rift is placed at the point farthest from the spawn.
-- Every zone = +1 level of loot and enemies. Enemy health grows 15% per zone, gun damage 14%,
+- Every zone = +1 level of loot and enemies. Enemy health grows 20% per zone, gun damage 18%,
   so old guns slowly go stale. Enemy damage grows linearly.
 - Every 5th zone is a boss arena (random set of attack patterns, enrage at 50% HP).
 - Elites like in Diablo: blue champion packs and yellow rare leaders with affixes
@@ -152,7 +154,7 @@ next to the exe — the text from `data/guide.json` plus a reference of every lo
 - **Stages and towns**: 5 zones (the last with a boss) make a stage. Before every stage — and at the start of a run —
   you visit a procedural **town**: a plaza with five stalls: the **Gun Shop** (8 guns, buy / sell, new stock for coins,
   one magazine of ammo for 1.5× its scrap value),
-  the **Mystic** (one run-long perk for the hero's skill per town: split, poison, heavy shell, parry, extra charges, element...), the **Workshop** (upgrade a gun to the current level, reroll a perk,
+  the **Mystic** (one run-long perk for the hero's skill per town: split, poison, heavy shell, parry, extra charges, element...), the **Workshop** (reroll a perk,
   raise rarity up to Epic) and the **Healer** (heal to full, refill flasks), the **Guild** (one contract at a time; pays ancient and regular coins the moment it is done)
   and a rift onward. The town takes its colors, layout and name from the zone that comes next.
   Custom start can turn towns off. The **starting town** also has the Recruiter (pick a hero), the Relic Keeper
@@ -180,11 +182,13 @@ X over a gun — recycle. You can't drop or recycle your last gun in hand.
   - **Revolver** — slower than the pistol, hits twice as hard, its own ammo.
   - **Mortar** — uses rockets. A shell flies in an arc to the aim point (no farther than its range) and explodes
     after 1 s. Spread = deviation of the landing point. Highest damage per shot, a magazine of 1 shell.
+  - **Shotgun** — 5–30 pellets, usually ~8–10 (same volley damage); the Scattering perk adds another 5–30, so a Dandy
+    shotgun has 10–60, usually ~20.
   - **Shotgun** — 30% chance to be born a "slug gun": one projectile with the whole volley's damage (×0.85), spread ×0.12, range ×2.
 - **Hybrids** (from Rare and up): firing pattern from the first type, projectile and ammo from the second, fire rate
   mixed 30/70 towards the ammo type;
   damage comes from the ammo (one round hits like a shot of its own type, split between pellets). Traits of both
-  types combine; a mortar is always the projectile, a machine gun gives its magazine.
+  types combine; any hybrid with a mortar fires arcing shells (ammo and damage as usual), a machine gun gives its magazine.
 - **Type traits**: effective range −30% for everything; shooting slows you by 15% (not pistols/SMGs); pistol and SMG
   reload twice as fast with lower damage (same DPS); revolver has no damage falloff; assault rifle is 30% more accurate;
   sniper +30% damage that grows with distance from 30% to 100% at half its effective range.

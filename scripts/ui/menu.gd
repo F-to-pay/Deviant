@@ -1242,12 +1242,6 @@ func _ws_fill_actions() -> void:
 		return
 	_ws_prev.show_gun(g)
 	_ws_actions.add_child(_label(g.gun_name, 18, g.rarity_color(), false, HORIZONTAL_ALIGNMENT_LEFT))
-	var lvl := int(Game.main.town.get("level", Game.zone_level))
-	var up := Shops.upgrade_price(g, lvl)
-	var b := _small_button(U.t("Upgrade to level %d — %d") % [lvl, up] if up > 0 else U.t("Level %d — up to date") % g.level,
-		_ws_upgrade, 460.0)
-	b.disabled = up <= 0 or Game.coins < up
-	_ws_actions.add_child(b)
 	if Shops.can_rarity_up(g):
 		var rp := Shops.rarity_up_price(g)
 		var rb := _small_button(U.t("Raise rarity: %s — %d") % [U.t(str(GunData.RARITIES[g.rarity + 1]["name"])), rp],
@@ -1287,16 +1281,6 @@ func _ws_pay(price: int) -> bool:
 	Game.add_coins(-price)
 	Sfx.ui("ui/scrap", -4.0)
 	return true
-
-
-func _ws_upgrade() -> void:
-	var g := _ws_gun
-	var lvl := int(Game.main.town.get("level", Game.zone_level))
-	if g == null or not _ws_pay(Shops.upgrade_price(g, lvl)):
-		return
-	GunGen.upgrade_level(g, lvl)
-	_ws_status.text = U.t("%s is now level %d") % [g.gun_name, lvl]
-	_refresh_workshop()
 
 
 func _ws_rarity() -> void:
