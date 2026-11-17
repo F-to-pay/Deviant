@@ -81,4 +81,8 @@ static func explode(pos: Vector2, r: float, dmg: float, crit: bool, el: int, tea
 		var p: Player = main.player
 		if not p.dead and pos.distance_to(p.position) < r + p.radius * 0.6:
 			p.take_damage(dmg)
+		for o in main.turrets:
+			var t: Turret = o
+			if not t.dead and pos.distance_to(t.position) < r + t.radius * 0.6:
+				t.take_damage(dmg)
 	return total

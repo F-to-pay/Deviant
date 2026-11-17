@@ -31,6 +31,7 @@ var move_los: bool = false
 var _path := PackedVector2Array()   # путь A* к игроку (Zone.find_path)
 var _path_i := 0
 var _repath_t := 0.0
+var _target: Actor = null            # на кого сейчас идёт (герой или турель Инженера)
 var _stuck_t := 0.0
 var _last_pos := Vector2.ZERO
 var strafe: float = 1.0
@@ -168,7 +169,7 @@ func _physics_process(delta: float) -> void:
 	if dead:
 		return
 	var main: Main = Game.main
-	var player: Player = main.player
+	var hero: Player = main.player
 	anim += delta
 	if _shield_msg_cd > 0.0:
 		_shield_msg_cd -= delta
@@ -183,9 +184,15 @@ func _physics_process(delta: float) -> void:
 		position = main.zone.move_circle(position, knock * delta, radius)
 		knock = knock.move_toward(Vector2.ZERO, 1800.0 * delta)
 	var sm := slow_mult()
-	if sm <= 0.0 or player == null or player.dead:
+	if sm <= 0.0 or hero == null or hero.dead:
 		queue_redraw()
 		return
+	# цель — ближайший из героя и его турелей (Main.target_for)
+	var player: Actor = main.target_for(position)
+	if player != _target:
+		_target = player
+		_repath_t = 0.0
+		los_t = 0.0
 	var to_p := player.position - position
 	var dist := to_p.length()
 	if dist > 1.0:
@@ -216,7 +223,7 @@ func _physics_process(delta: float) -> void:
 	queue_redraw()
 
 
-func _behave(delta: float, player: Player, to_p: Vector2, dist: float) -> void:
+func _behave(delta: float, player: Actor, to_p: Vector2, dist: float) -> void:
 	match etype:
 		"runner":
 			_chase(delta, player, speed)
@@ -256,7 +263,7 @@ func _behave(delta: float, player: Player, to_p: Vector2, dist: float) -> void:
 
 
 ## Видно и проходимо телом — бежим напрямую; иначе — по пути A* с учётом своего размера.
-func _chase(delta: float, player: Player, spd: float) -> void:
+func _chase(delta: float, player: Actor, spd: float) -> void:
 	var dir: Vector2
 	if move_los:
 		dir = (player.position - position).normalized()
@@ -287,7 +294,7 @@ func _path_dir(target: Vector2, delta: float) -> Vector2:
 
 
 ## Держим дистанцию, стрейфим.
-func _ranged(delta: float, player: Player, to_p: Vector2, dist: float, want: float) -> void:
+func _ranged(delta: float, player: Actor, to_p: Vector2, dist: float, want: float) -> void:
 	if dist > want + 90.0 or not has_los:
 		_chase(delta, player, speed)
 	elif dist < want - 90.0:
@@ -298,7 +305,7 @@ func _ranged(delta: float, player: Player, to_p: Vector2, dist: float, want: flo
 		_move(to_p.normalized().orthogonal() * strafe * speed * 0.6, delta)
 
 
-func _brute(delta: float, player: Player, dist: float) -> void:
+func _brute(delta: float, player: Actor, dist: float) -> void:
 	match state:
 		S_MOVE:
 			if dist < radius + 70.0 and atk_cd <= 0.0:
@@ -320,7 +327,7 @@ func _brute(delta: float, player: Player, dist: float) -> void:
 				state = S_MOVE
 
 
-func _bomber(delta: float, player: Player, dist: float) -> void:
+func _bomber(delta: float, player: Actor, dist: float) -> void:
 	if state == S_MOVE:
 		if dist < radius + player.radius + 34.0:
 			state = S_WINDUP
@@ -337,7 +344,7 @@ func _bomber(delta: float, player: Player, dist: float) -> void:
 			queue_free()
 
 
-func _charger(delta: float, player: Player, to_p: Vector2, dist: float) -> void:
+func _charger(delta: float, player: Actor, to_p: Vector2, dist: float) -> void:
 	match state:
 		S_MOVE:
 			if has_los and move_los and dist < 400.0 and atk_cd <= 0.0:
@@ -373,7 +380,7 @@ func _charger(delta: float, player: Player, to_p: Vector2, dist: float) -> void:
 				state = S_MOVE
 
 
-func _summoner(_player: Player) -> void:
+func _summoner(_player: Actor) -> void:
 	var alive: Array = []
 	for s in summons:
 		if is_instance_valid(s) and not s.dead:
@@ -392,7 +399,7 @@ func _summoner(_player: Player) -> void:
 			_ring(8, 170.0, randf() * TAU)
 
 
-func _tick_affixes(delta: float, player: Player, dist: float) -> void:
+func _tick_affixes(delta: float, player: Actor, dist: float) -> void:
 	if affixes.is_empty():
 		return
 	var main: Main = Game.main
@@ -463,7 +470,7 @@ func _ring(n: int, spd: float, offset: float, size: float = 6.0) -> void:
 		Game.main.projectiles.enemy_shot(position + dir * radius, dir, spd, dmg * 0.8, size, _bullet_col())
 
 
-func _move(vel: Vector2, delta: float) -> void:
+func _move(v: Vector2, delta: float) -> void:
 	var main: Main = Game.main
 	var sep := Vector2.ZERO
 	for o in main.grid_hash.query(position, radius + 30.0):
@@ -475,7 +482,7 @@ func _move(vel: Vector2, delta: float) -> void:
 		var min_d := radius + e.radius
 		if l < min_d and l > 0.01:
 			sep += d / l * (min_d - l) * 8.0
-	position = main.zone.move_circle(position, (vel + sep) * delta, radius)
+	position = main.zone.move_circle(position, (v + sep) * delta, radius)
 
 
 # --- Отрисовка ----------------------------------------------------------------

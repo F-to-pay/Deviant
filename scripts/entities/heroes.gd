@@ -8,11 +8,12 @@ extends RefCounted
 ##         (благословение Шерифа — у него нет направления).
 ##  skill: grenade — граната в точку прицела (dmg, r — радиус взрыва, range — дальность броска);
 ##         bless — следующий выстрел наносит +dmg (делится между дробинами);
+##         turret — турель в точку прицела (range — дальность броска, r — размер метки; число турелей = заряды навыка);
 ##         slash — удар перед собой (dmg, r — дальность, arc — ширина дуги в градусах,
 ##                 time — сколько длится удар, slow — замедление героя на это время).
 
 const DEFAULT := "pioneer"
-const ORDER := ["pioneer", "sheriff", "assassin"]
+const ORDER := ["pioneer", "sheriff", "assassin", "engineer"]
 const LIST := {
 	"pioneer": {"name": "Pioneer", "price": 0, "color": Color(0.35, 0.85, 1.0),
 		"skill": "grenade", "skill_name": "Hand grenade", "cd": 6.0, "dmg": 30.0, "r": 60.0, "range": 420.0, "aimed": true,
@@ -24,6 +25,9 @@ const LIST := {
 		"skill": "slash", "skill_name": "Slash", "cd": 0.7, "dmg": 15.0, "r": 95.0, "arc": 130.0,
 		"time": 0.25, "slow": 0.5, "aimed": true,
 		"desc": "A cleaving melee strike in front of you: %d damage. Cooldown %s s, you are slowed by %d%% while striking."},
+	"engineer": {"name": "Engineer", "price": 35, "color": Color(0.95, 0.8, 0.25),
+		"skill": "turret", "skill_name": "Turret", "cd": 10.0, "dmg": 0.0, "r": 22.0, "range": 420.0, "aimed": true,
+		"desc": "Lobs a turret to the aim point (up to %d): it takes the rounds from your magazine and shoots enemies. Cooldown %s s."},
 }
 
 
@@ -35,7 +39,7 @@ const PERKS := {
 	"split": {"name": "Split", "heroes": ["pioneer", "sheriff"], "max": 0,
 		"desc": "The skill fires ×3 projectiles and deals +20% total damage, split evenly between them.",
 		"more": "+3 projectiles, +20% damage."},
-	"wounds": {"name": "Grievous Wounds", "heroes": [], "max": 1,
+	"wounds": {"name": "Grievous Wounds", "heroes": ["pioneer", "sheriff", "assassin"], "max": 1,
 		"desc": "Skill hits slow the target by 10% for good, up to 30%. Elites need 2 hits for each step, bosses 3."},
 	"poison": {"name": "Poison Shell", "name_slash": "Poison Cut", "heroes": ["pioneer", "sheriff", "assassin"], "max": 0,
 		"desc": "Skill damage lands 5 s later, but is 50% higher.", "more": "+2 s delay, +50% damage."},
@@ -58,6 +62,10 @@ const PERKS := {
 	"precise": {"name": "Precise Shot", "heroes": ["sheriff"], "max": 0,
 		"desc": "The blessed shot homes in, flies 20% farther and deals 10% more damage.",
 		"more": "+20% range, +10% damage."},
+	"economy": {"name": "Economy", "heroes": ["engineer"], "max": 0,
+		"desc": "The turret gets 40% more rounds than it takes from you.", "more": "+40% rounds."},
+	"scientist": {"name": "Mad Scientist", "heroes": ["engineer"], "max": 1,
+		"desc": "The turret gets a random Synergis gun one rarity above yours. Nothing is taken from your reserve."},
 	"ready": {"name": "Readiness", "heroes": ["assassin", "sheriff"], "max": 1,
 		"desc": "Dealing damage with the skill takes 1 s off the dodge cooldown."},
 }
@@ -122,4 +130,6 @@ static func describe(id: String) -> String:
 			return d % [roundi(float(h["dmg"])), cd]
 		"slash":
 			return d % [roundi(float(h["dmg"])), cd, roundi(float(h["slow"]) * 100.0)]
+		"turret":
+			return d % [roundi(float(h["range"])), cd]
 	return d

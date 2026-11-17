@@ -21,6 +21,8 @@ var max_hp: float = 100.0
 var hp: float = 100.0
 var dead: bool = false
 var flash: float = 0.0
+var vel: Vector2 = Vector2.ZERO   # скорость (у героя — текущая; враги целятся с упреждением по ней)
+var chill: float = 0.0            # «холод» от ледяной ауры врагов (замедляет героя)
 
 var burn_dps: float = 0.0
 var burn_time: float = 0.0
@@ -147,6 +149,11 @@ func _tick_delayed(delta: float) -> void:
 		on_dot(land, el)
 		if dead and Game.main != null:
 			Game.main.player.on_skill_kill(self)
+
+
+## Враг (или его снаряд) бьёт эту цель. Переопределяют герой и турель; true — урон прошёл.
+func take_damage(_amount: float) -> bool:
+	return false
 
 
 ## Переопределяется наследниками.

@@ -103,6 +103,20 @@ func _draw() -> void:
 	if highlight:
 		draw_arc(Vector2(0, -8), 26.0 + sin(t * 5.0) * 2.0, 0.0, TAU, 24, Color(col, 0.7), 2.0)
 	U.draw_text_c(self, U.font_bold(), Vector2(0, -122), title(), 16, col.lightened(0.2))
+	_draw_front()
+
+
+## То, что должно лежать поверх навеса (иначе полосы его перекрывают).
+func _draw_front() -> void:
+	if kind == "guild":
+		# «!» над торговцем — квестодатель же; тёмная обводка, чтобы читался на светлых полосах
+		var y := -104.0 + sin(t * 4.0) * 3.0
+		var yel := Color(1.0, 0.85, 0.2)
+		var ol := Color(0.16, 0.11, 0.08)
+		draw_rect(Rect2(18, y - 2, 10, 18), ol)
+		draw_rect(Rect2(18, y + 15, 10, 9), ol)
+		draw_rect(Rect2(20, y, 6, 14), yel)
+		draw_rect(Rect2(20, y + 17, 6, 5), yel)
 
 
 ## Товар на прилавке — чтобы лавки различались издали.
@@ -156,7 +170,3 @@ func _draw_goods(col: Color) -> void:
 			draw_rect(Rect2(-40, -60, 30, 18), Color(0.9, 0.84, 0.65))
 			for i in 3:
 				draw_rect(Rect2(-36, -56 + float(i) * 5.0, 22, 2), Color(0.4, 0.3, 0.2))
-			# «!» над торговцем — квестодатель же
-			var y := -100.0 + sin(t * 4.0) * 3.0
-			draw_rect(Rect2(20, y, 6, 14), Color(1.0, 0.85, 0.2))
-			draw_rect(Rect2(20, y + 17, 6, 5), Color(1.0, 0.85, 0.2))

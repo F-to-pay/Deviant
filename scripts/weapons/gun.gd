@@ -114,7 +114,16 @@ func gender() -> String:
 ## (дробовик-гранатомёт стреляет гранатами -> гранаты).
 ## Исключение — марки с projectile_arch (Гипернова): ракеты у неё «пули-ракеты»,
 ## ест патроны своей основы (ПП -> патроны ПП).
+## Безлимитная пушка (Синергис) — «энергия»: патроны под неё не падают и не продаются (иначе они достаются пустышке).
 func ammo_type() -> String:
+	if free_ammo:
+		return GunData.ENERGY
+	return base_ammo_type()
+
+
+## Тип патронов по основе пушки (то, чем она была бы без бесконечных патронов). Остаётся для разбора:
+## Синергис, пущенный на переработку, даёт патроны своей основы — их можно отдать другим пушкам.
+func base_ammo_type() -> String:
 	var base := archetype
 	if str(GunData.MAKERS.get(maker, {}).get("projectile_arch", "")) == "" and archetype2 != "":
 		base = archetype2
@@ -150,6 +159,23 @@ func type_name_lower() -> String:
 ## Эффективная дальность (px). Дальше пуля летит, но урон резко падает.
 ## Эффективная дальность: дальше урон падает (кроме no_falloff). 0.7 — общий срез дальности всех пушек.
 const RANGE_MULT := 0.7
+
+
+## Независимая копия пушки (турель Инженера стреляет своей копией: свой магазин и свой счётчик ядерки).
+func copy() -> Gun:
+	var c := Gun.new()
+	for pr in get_property_list():
+		if (int(pr["usage"]) & PROPERTY_USAGE_SCRIPT_VARIABLE) == 0:
+			continue
+		var n := str(pr["name"])
+		if n == "gun_name":   # геттер/сеттер: имя уже скопировано через name_parts и _fixed_name
+			continue
+		var v: Variant = get(n)
+		if v is Array or v is Dictionary:
+			v = v.duplicate(true)
+		c.set(n, v)
+	c.shot_count = 0
+	return c
 
 
 func eff_range() -> float:

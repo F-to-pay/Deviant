@@ -56,7 +56,7 @@ static func stock_reroll_price(level: int, done: int) -> int:
 
 ## Сколько патронов даёт разбор пушки сам по себе (без патронов в магазине) — как в Player.scrap.
 static func scrap_rounds(g: Gun) -> int:
-	return ceili(float(GunData.base_mag(g.ammo_type())) * (0.75 + 0.25 * float(g.rarity)))
+	return ceili(float(GunData.base_mag(g.base_ammo_type())) * (0.75 + 0.25 * float(g.rarity)))
 
 
 ## Один магазин патронов к пушке: цена патрона = цена продажи / патроны с разбора × AMMO_MARKUP.

@@ -382,6 +382,8 @@ static func _roll_mod(g: Gun, rng: RandomNumberGenerator, pending: Array = [], n
 			continue
 		if bool(Game.run["no_heal"]) and GunData.perk_has_tag(id, "heal"):
 			continue   # хардкор: без лечения — и без вампиризма
+		if g.free_ammo and GunData.perk_costs_ammo(md):
+			continue   # бесконечные патроны: «Двуствольный» и его родня — урон без платы (ломает баланс)
 		if int(md.get("min_rarity", 1)) > g.rarity:
 			continue
 		var grp := str(md.get("group", ""))

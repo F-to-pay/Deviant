@@ -21,9 +21,9 @@ const HELP := [
 	"ancient <n>                   — add ancient coins (meta, saved)",
 	"town                          — go to the town before the next zone (in a run)",
 	"skip [n] [--boss]             — kill every enemy of the zone (XP, kills and coins are credited) and move on; n zones ahead, --boss — to the next boss zone",
-	"unlock <hero|all>             — unlock a hero for free (pioneer, sheriff, assassin)",
+	"unlock <hero|all>             — unlock a hero for free (pioneer, sheriff, assassin, engineer)",
 	"hero <id>                     — play as this hero (unlocks it if needed)",
-	"skillperk <id> [element 0-4]  — take a skill perk for free (split, wounds, poison, heavy, parry, hand, vandal, element, trophies, smoke, precise, ready)",
+	"skillperk <id> [element 0-4]  — take a skill perk for free (split, wounds, poison, heavy, parry, hand, vandal, element, trophies, smoke, precise, ready, economy, scientist)",
 ]
 
 var panel: PanelContainer

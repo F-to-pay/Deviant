@@ -2,6 +2,14 @@
 
 ## 0.1.1
 
+### Heroes
+- **Engineer** (35 ancient coins). Skill — a turret, lobbed like a mortar shell to the aim point (10 s cooldown). It takes all the rounds left in your
+  active gun's magazine and you reload (free for a Synergis gun), has your health and shoots the nearest visible enemies with a copy of your gun.
+  Enemies go for whichever is closer — the turret or you. It stands until smashed, but is destroyed the moment the magazine runs dry. Its bullets deal 50% of the gun's damage and it fires at the gun's effective range. Taking a hit knocks nearby enemies away and stuns them for 1 s.
+  At most as many turrets as skill charges; a new one beyond the limit removes the oldest. Skill perks: Extra Hand, Economy (+40% rounds), Mad Scientist (a random Synergis gun
+  one rarity higher, nothing taken from your reserve, once), Element. Grievous Wounds is now offered only to the Pioneer, Sheriff and Assassin.
+- Enemies and bosses now pick the nearest target (`Main.target_for`): the hero or a turret.
+
 ### Touch controls
 - **Aimed skills.** On touch the Pioneer's grenade and the Assassin's slash get their own aim stick: hold the Skill button and drag, release to throw / strike.
   A preview is drawn while you aim (landing circle and range ring for the grenade, strike sector for the slash). A plain tap uses the gun's aim, as before.
@@ -36,6 +44,8 @@
 - New `Director` (`scripts/systems/director.gd`) measures how much XP each zone holds. Debug overlay (F3) shows `LV / XP` and the zone's XP pool.
 
 ### Balance and other changes in this build
+- Synergis guns (infinite ammo) now use their own ammo type, energy: no ammo drops or sells for them any more, and the starter Synergis no longer fills the reserve of its base type. Hybrid names (mortar-machine gun and so on) are unchanged; recycling a Synergis still gives rounds of its base type.
+- Guns with infinite ammo (Synergis) no longer roll perks that spend more rounds per shot for more damage or projectiles (Double-Barreled and the like): with free ammo the cost was zero.
 - Workshop no longer raises a gun's level (guns are meant to go stale); it still rerolls perks and raises rarity.
 - Skill changes: grenade explosion damage is flat across its radius; smoke grenade ticks 5 times a second; skill hits build up less elemental effect.
 - Gun generator: shotguns roll a random pellet count with the same total volley damage; a mortar in a hybrid always makes the shot arc.

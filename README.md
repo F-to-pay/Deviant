@@ -57,7 +57,7 @@ The game detects what you are playing with (`systems/controls.gd`) and adapts hi
 
 **Touch** (`ui/touch_controls.gd`): a move stick on the left, an aim stick on the right (tilt it to shoot), buttons for
 dodge, reload, weapon switch, backpack and pause; Take / Swap / Scrap next to a gun on the ground, Open next to a chest.
-Tapping a weapon slot at the bottom of the screen selects that gun. The Pioneer's grenade and the Assassin's slash have their own aim stick: hold the Skill button and drag (a preview is drawn), release to throw / strike;
+Tapping a weapon slot at the bottom of the screen selects that gun. The Pioneer's grenade, the Engineer's turret and the Assassin's slash have their own aim stick: hold the Skill button and drag (a preview is drawn), release to throw / strike;
 a plain tap uses the gun's aim. The Sheriff's blessing has no direction and fires instantly on press.
 Options in Settings → Controls:
 - **Layout editor** — drag every control, change the size of each one (− / + next to the selected control);
@@ -161,7 +161,9 @@ next to the exe — the text from `data/guide.json` plus a reference of every lo
   (meta perks — stub), the Oddsmaker (custom start) and a Restart stone at the entrance: a new run in a new
   starting town, to reroll the stock.
 - **Heroes**, each with an active skill (RMB / LT): Pioneer — grenade (30 damage, radius 60, 6 s),
-  Sheriff — the next shot deals +40 (6 s), Assassin — melee slash for 15, reach 95 (0.7 s, slowed while striking).
+  Sheriff — the next shot deals +40 (6 s), Assassin — melee slash for 15, reach 95 (0.7 s, slowed while striking),
+  Engineer — lobs a turret (10 s): it takes all the rounds from your gun's current magazine (you reload), has your health and shoots the nearest visible enemies,
+  who go for whichever is closer, you or the turret; it shoots at the gun's effective range, deals 50% of the gun's damage, knocks nearby enemies away and stuns them for 1 s whenever it is hit, and is destroyed the moment the magazine runs dry. Up to as many turrets as skill charges; beyond that the oldest one is removed.
   The Pioneer is free, the others are unlocked with ancient coins. Skill damage does not grow with depth.
 - **Coins**: you start with 100 and a single gun; enemies, chests and bosses drop more, income and prices grow 20% per stage (10:12). Lost on death.
   **Ancient coins** (meta-progression) drop from bosses, leaders and golden chests and are saved forever.

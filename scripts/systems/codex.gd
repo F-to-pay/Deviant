@@ -232,6 +232,8 @@ static func _auto_makers() -> String:
 			fx.append(U.t("never explosive"))
 		if bool(m.get("no_proc_perks", false)):
 			fx.append(U.t("no effect perks"))
+		if GunData.maker_free_ammo(m):
+			fx.append(U.t("no perks that use extra ammo"))
 		if str(m.get("projectile_arch", "")) != "":
 			fx.append(U.t("any type fires %s projectiles, but uses its own ammo") % U.t(str(GunData.ARCH.get(m["projectile_arch"], {}).get("name", m["projectile_arch"]))))
 		if bool(m.get("random_legendary_perk", false)):

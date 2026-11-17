@@ -47,21 +47,31 @@ static var ABSURD_FLAVOR: Array = []
 static var _mod_index: Dictionary = {}   # id перка -> запись
 
 
+## «Энергия» — тип патронов безлимитных пушек (Синергис). Не основа: запаса нет, коробок с ней нет, лимит 0.
+const ENERGY := "energy"
+
+
 static func ammo_cap(t: String) -> int:
 	return base_mag(t) * RESERVE_MAGS
 
 
 static func base_mag(t: String) -> int:
+	if t == ENERGY:
+		return 0
 	return int(ARCH.get(t, {}).get("mag", 10))
 
 
 static func ammo_color(t: String) -> Color:
+	if t == ENERGY:
+		return Color("#80fff2")
 	var c: Variant = ARCH.get(t, {}).get("ammo_color")
 	return c if c is Color else Color(0.85, 0.85, 0.85)
 
 
 ## Название патронов (переведённое, строчная форма).
 static func ammo_label(t: String) -> String:
+	if t == ENERGY:
+		return I18n.word(ENERGY, "lower")
 	var a: Dictionary = ARCH.get(t, {})
 	return I18n.word(str(a.get("ammo_name", a.get("name", t))), "lower")
 
@@ -73,6 +83,37 @@ static func perk(id: String) -> Dictionary:
 static func perk_has_tag(id: String, tag: String) -> bool:
 	var tags: Variant = perk(id).get("tags", [])
 	return tags is Array and (tags as Array).has(tag)
+
+
+## Перк тратит больше патронов за выстрел ради урона/числа снарядов («Двуствольный»)? Определяется по операциям
+## (ammo_per_shot растёт), без тега — работает и для перков из модов. Безлимитным пушкам (Синергис) такие перки не выдаём:
+## цена расхода для них нулевая, и перк стал бы чистым бонусом.
+static func perk_costs_ammo(md: Dictionary) -> bool:
+	return ops_raise_ammo_cost(md.get("ops", []))
+
+
+static func ops_raise_ammo_cost(ops: Array) -> bool:
+	for o in ops:
+		if not (o is Array) or (o as Array).size() < 3:
+			continue
+		var op: Array = o
+		var kind := str(op[0])
+		if kind == "if":
+			if (op.size() > 2 and op[2] is Array and ops_raise_ammo_cost(op[2])) 					or (op.size() > 3 and op[3] is Array and ops_raise_ammo_cost(op[3])):
+				return true
+		elif str(op[1]) == "ammo_per_shot" and (op[2] is float or op[2] is int):
+			var v := float(op[2])
+			if (kind == "mul" and v > 1.0) or (kind == "set" and v > 1.0) or (kind == "add" and v > 0.0):
+				return true
+	return false
+
+
+## Марка делает патроны бесконечными (операция ["set", "free_ammo", true])?
+static func maker_free_ammo(m: Dictionary) -> bool:
+	for o in m.get("ops", []):
+		if o is Array and (o as Array).size() >= 3 and str(o[0]) == "set" and str(o[1]) == "free_ammo" and o[2] == true:
+			return true
+	return false
 
 
 # --- Загрузка ---------------------------------------------------------------------

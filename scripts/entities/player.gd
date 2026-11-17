@@ -21,7 +21,6 @@ var _dry_cd: float = 0.0
 var active: int = 0
 var last_active: int = 0
 var aim: Vector2 = Vector2.RIGHT
-var vel: Vector2 = Vector2.ZERO
 var fire_cd: float = 0.0
 var reload_t: float = 0.0
 var burst_left: int = 0
@@ -33,7 +32,6 @@ var dodge_dir: Vector2 = Vector2.RIGHT
 var invuln: float = 0.0
 var perfect_dodge: bool = false
 var leech_budget: float = LEECH_CAP
-var chill: float = 0.0
 var hazard_tick: float = 0.0
 var anim: float = 0.0
 var muzzle: float = 0.0
@@ -450,6 +448,12 @@ func _use_skill(cast: Variant = null) -> void:
 	var main: Main = Game.main
 	var h := Heroes.get_hero(hero)
 	var col: Color = h["color"] if skill_element < 0 else U.el_color(skill_element)
+	# турель: сначала проверки (лимит, патроны) — заряд тратится, только если бросок состоится
+	var turret_spec: Dictionary = {}
+	if str(h["skill"]) == "turret":
+		turret_spec = _make_turret_spec()
+		if turret_spec.is_empty():
+			return
 	if skill_charges >= max_charges():
 		skill_cd = skill_max_cd()   # заряд пошёл в дело — начинаем копить следующий
 	skill_charges -= 1
@@ -478,6 +482,23 @@ func _use_skill(cast: Variant = null) -> void:
 					off = Vector2.from_angle(randf() * TAU) * dev * sqrt(randf())
 				main.projectiles.throw_grenade(position + cdir * (radius + 6.0), target + off, sdmg / float(n), float(h["r"]), col)
 			Sfx.at("player/dodge", position, -6.0, 1.4, 0.06, 1, 0.1)
+		"turret":
+			var tdir := aim
+			var tdist: float
+			if cast is Dictionary and (cast["dir"] as Vector2) != Vector2.ZERO:
+				tdir = (cast["dir"] as Vector2).normalized()
+				tdist = lerpf(60.0, float(h["range"]), clampf(float(cast["len"]), 0.0, 1.0))
+			else:
+				tdist = clampf((Controls.aim_world(position) - position).length(), 40.0, float(h["range"]))
+			var tpos := position + tdir * tdist
+			# в скале или пропасти турель не встанет — ищем свободное место рядом
+			if main.zone.circle_blocked(tpos, 18.0):
+				tpos = main.zone.random_free_near(tpos, 0.0, 90.0)
+				if main.zone.circle_blocked(tpos, 18.0):
+					tpos = position
+			turret_spec["el"] = skill_element
+			main.projectiles.throw_turret(position + tdir * (radius + 6.0), tpos, turret_spec, col)
+			Sfx.at("player/dodge", position, -6.0, 0.8, 0.06, 1, 0.1)
 		"bless":
 			blessed = true
 			main.fx.ring(position, 34.0, Color(1.0, 0.8, 0.3), 0.4)
@@ -515,6 +536,52 @@ func _use_skill(cast: Variant = null) -> void:
 			if hits > 0:
 				Sfx.at("hit/body", position, -6.0, 1.2, 0.08, 2, 0.05)
 				main.fx.shake(2.0)
+
+
+## Что унесёт турель Инженера: {gun, ammo}. Пустой словарь — бросать нельзя (сообщение уже показано).
+## Обычная турель — копия активной пушки и ВСЕ патроны из её текущей обоймы; пушка остаётся пустой, герой перезаряжается
+## (из запаса, как обычно; у Синергиса перезарядка бесплатная).
+## Обойма у турели всегда конечная — расстреляла и сломалась; «Экономия» даёт сверху +40% за взятие.
+## «Безумный Учёный» — случайная пушка Синергис на редкость выше: у героя ничего не берётся, обойма — её полная.
+func _make_turret_spec() -> Dictionary:
+	var main: Main = Game.main
+	# лимит здесь не проверяем: сверх лимита самая старая турель убирается при посадке новой (Main.spawn_turret)
+	var g := gun()
+	if g == null:
+		return {}
+	var tg: Gun
+	var n: int
+	var take := 0
+	if perk("scientist") > 0:
+		# легендарка может быть привязана к другой марке — тогда free_ammo выставляем сами, а перки с повышенным расходом
+		# патронов (Двуствольный) для безлимитной пушки недопустимы: перебрасываем, пока не пропадут
+		for attempt in 30:
+			tg = GunGen.generate(Game.zone_level, main.rng, 0.0, 0, mini(g.rarity + 1, GunData.R_LEGENDARY), "", "synergis")
+			var costly := tg.ammo_per_shot > 1
+			for m in tg.mods:
+				if GunData.perk_costs_ammo(GunData.perk(str(m))):
+					costly = true
+			if not costly:
+				break
+		tg.free_ammo = true
+		n = tg.mag_size
+	else:
+		tg = g.copy()
+		if reload_t > 0.0:
+			_dry(U.t("RELOADING"))   # обойма в процессе — брать нечего
+			return {}
+		take = g.ammo
+		if take <= 0:
+			_dry(U.t("NO AMMO"))
+			return {}
+		n = take
+	n = maxi(1, roundi(float(n) * (1.0 + 0.4 * float(perk("economy")))))
+	tg.ammo = n
+	if take > 0:
+		g.ammo = 0
+		burst_left = 0
+		start_reload()   # без запаса сообщит «NO AMMO» — турель всё равно получила патроны
+	return {"gun": tg, "ammo": n}
 
 
 ## Благословлённый выстрел Шерифа: снаряды помечены как навык (Skills), к урону — бонус навыка
@@ -575,12 +642,12 @@ func reserve_full(t: String) -> bool:
 
 ## Разбор пушки: патроны из магазина + сколько-то за саму пушку (больше за редкость).
 func scrap(g: Gun) -> int:
-	var t := g.ammo_type()
+	var t := g.base_ammo_type()   # у безлимитной пушки — патроны её основы (в магазине энергии запаса нет)
 	var n := g.ammo + ceili(float(GunData.base_mag(t)) * (0.75 + 0.25 * float(g.rarity)))
 	g.ammo = 0
 	Sfx.ui("ui/scrap", -4.0)
 	var got := add_ammo(t, n)
-	Game.say(U.t("Scrapped: +%d rounds (%s)") % [got, g.ammo_name()] + ("" if got == n else U.t(" — reserve full")), GunData.ammo_color(t))
+	Game.say(U.t("Scrapped: +%d rounds (%s)") % [got, GunData.ammo_label(t)] + ("" if got == n else U.t(" — reserve full")), GunData.ammo_color(t))
 	return got
 
 

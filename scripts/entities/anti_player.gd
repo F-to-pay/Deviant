@@ -75,7 +75,7 @@ func _check_enrage() -> void:
 		_ring(16, 220.0, 0.0, 7.0)
 
 
-func _behave(delta: float, player: Player, to_p: Vector2, dist: float) -> void:
+func _behave(delta: float, player: Actor, to_p: Vector2, dist: float) -> void:
 	var g := gun_ref
 	if g == null:
 		return
@@ -132,7 +132,7 @@ func _behave(delta: float, player: Player, to_p: Vector2, dist: float) -> void:
 		_shoot(player, dist)
 
 
-func _shoot(player: Player, dist: float) -> void:
+func _shoot(player: Actor, dist: float) -> void:
 	var g := gun_ref
 	var main: Main = Game.main
 	var lead := player.vel * clampf(dist / maxf(100.0, g.proj_speed), 0.0, 0.6) * 0.6
@@ -168,7 +168,7 @@ func _shoot(player: Player, dist: float) -> void:
 		reload_left = minf(g.reload_time, 2.5)
 
 
-func _cast(player: Player, dist: float, dir: Vector2, range_max: float) -> void:
+func _cast(player: Actor, dist: float, dir: Vector2, range_max: float) -> void:
 	var h := Heroes.get_hero(hero_id)
 	var main: Main = Game.main
 	match str(h["skill"]):
@@ -194,9 +194,14 @@ func _cast(player: Player, dist: float, dir: Vector2, range_max: float) -> void:
 			skill_cd = SLASH_CD
 			slash_w = SLASH_WINDUP
 			slash_dir = dir
+		"turret":
+			# турелей у босса нет — вместо неё кольцо пуль
+			skill_cd = float(h["cd"]) * 0.6
+			_ring(10, 200.0, randf() * TAU)
+			main.fx.ring(position, radius + 20.0, Heroes.color(hero_id), 0.3)
 
 
-func _slash_strike(player: Player) -> void:
+func _slash_strike(player: Actor) -> void:
 	var main: Main = Game.main
 	main.fx.ring(position, SLASH_R, Heroes.color(hero_id), 0.25)
 	Sfx.at("player/dodge", position, -5.0, 1.6, 0.08, 2, 0.05)

@@ -49,7 +49,7 @@ godot --headless --path . --quit          # загрузить проект: в�
 | Фляги лечения | `Player.flasks` / `drink()` / `FLASK_MAX`, `FLASK_HEAL`; дроп — `Main.spawn_flask` (`world/flask_drop.gd`); Лекарь — `Shops.heal_price` / `flask_price`, экран `Menu._build_healer` |
 | Монеты | `Game.coins` (забег, `START_COINS`, `coin_value`), `Game.meta_coins` (древние, мета, сохраняются в `[meta]` deviant.cfg сразу); `world/coin.gd`; дроп — `Main.drop_coins` в `on_enemy_killed` / `open_chest` / `_boss_dead` |
 | Игрок | `entities/player.gd` (движение, рывок, навык героя `_use_skill`, оружие, патроны, рюкзак) |
-| Герои и навыки | `entities/heroes.gd` (`LIST`: имя, цена в древних монетах, навык и числа); выбор — `Game.hero`, открытые — `Game.heroes_open` (`[meta]` deviant.cfg); экран Вербовщика — `Menu._build_heroes` |
+| Герои и навыки | `entities/heroes.gd` (`LIST`: имя, цена в древних монетах, навык и числа); выбор — `Game.hero`, открытые — `Game.heroes_open` (`[meta]` deviant.cfg); экран Вербовщика — `Menu._build_heroes`; турель Инженера — `entities/turret.gd` (бросок и обойма — `Player._make_turret_spec`, мина — `Projectiles.throw_turret`), враги выбирают цель через `Main.target_for` (герой или ближайшая турель; `Enemy._target`, параметры `player: Actor`) |
 | Ввод | `core/input_setup.gd` (действия, умолчания kb/pad, переназначение), `systems/controls.gd` (чем играют, прицел, огонь, автоприцел/автоогонь), `ui/touch_controls.gd` |
 | HUD | `ui/hud.gd` (состояние), `ui/hud_draw.gd` (всё рисуется в `_draw`), `ui/inventory_ui.gd`, `ui/cursor_draw.gd` |
 | Меню | `ui/menu.gd` — все экраны (главное, пауза, настройки, управление, настраиваемый старт, моды, справочник) на Control-ах |

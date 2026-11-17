@@ -22,6 +22,8 @@ var grid_hash := SpatialHash.new()
 var rng := RandomNumberGenerator.new()
 
 var enemies: Array = []
+var turrets: Array = []          # турели Инженера (Turret): враги отвлекаются на ближайшую цель — героя или турель
+var turret_layer: Node2D
 var director := Director.new()   # судья: пока только считает запас XP в зоне (systems/director.gd)
 var items: Array = []
 var flask_drops: Array = []
@@ -59,6 +61,9 @@ func _ready() -> void:
 	add_child(item_layer)
 	enemy_layer = Node2D.new()
 	add_child(enemy_layer)
+	turret_layer = Node2D.new()
+	turret_layer.z_index = 1   # под героем (он тоже z 1, но добавлен позже)
+	add_child(turret_layer)
 	player = Player.new()
 	player.z_index = 1
 	add_child(player)
@@ -142,7 +147,8 @@ func start_run() -> void:
 		if o != null:
 			Game.note_gun(o)
 			var sg: Gun = o
-			player.add_ammo(sg.ammo_type(), GunData.ammo_cap(sg.ammo_type()))
+			if not sg.free_ammo:
+				player.add_ammo(sg.ammo_type(), GunData.ammo_cap(sg.ammo_type()))
 	if Game.town_before(1):
 		load_town(1)
 	else:
@@ -157,6 +163,10 @@ func _clear_zone() -> void:
 		if is_instance_valid(e):
 			e.queue_free()
 	enemies.clear()
+	for o in turrets:
+		if is_instance_valid(o):
+			o.queue_free()
+	turrets.clear()
 	for it in items:
 		if is_instance_valid(it):
 			it.queue_free()
@@ -196,6 +206,40 @@ func _clear_zone() -> void:
 	projectiles.clear_all()
 	fx.clear()
 	grid_hash.clear()
+
+
+## Ближайшая к точке цель врага: герой или одна из его турелей (мёртвого героя не выбираем, если есть живая турель).
+func target_for(pos: Vector2) -> Actor:
+	if turrets.is_empty():
+		return player
+	var best: Actor = player
+	var bd := INF if player.dead else pos.distance_squared_to(player.position)
+	for o in turrets:
+		var t: Turret = o
+		if t.dead:
+			continue
+		var d := pos.distance_squared_to(t.position)
+		if d < bd:
+			bd = d
+			best = t
+	return best
+
+
+## Турель Инженера приземлилась (Projectiles: мина-турель долетела). spec — {gun, ammo, el}.
+## Лимит — число зарядов навыка: если все места заняты, самая старая турель убирается, новая встаёт на её место.
+func spawn_turret(spec: Dictionary, pos: Vector2) -> void:
+	var alive: Array = []
+	for o in turrets:
+		if is_instance_valid(o) and not (o as Turret).dead:
+			alive.append(o)
+	turrets = alive
+	while turrets.size() >= maxi(1, player.max_charges()):
+		(turrets[0] as Turret).dismantle()
+	var t := Turret.new()
+	t.position = pos
+	t.setup(spec)
+	turret_layer.add_child(t)
+	turrets.append(t)
 
 
 func load_zone(level: int) -> void:
@@ -569,7 +613,8 @@ func _pick_ammo_type() -> String:
 	for o in player.guns:
 		if o != null:
 			var g: Gun = o
-			held.append(g.ammo_type())
+			if not g.free_ammo:   # безлимитной пушке патроны ни к чему
+				held.append(g.ammo_type())
 	if not held.is_empty() and rng.randf() < 0.75:
 		return held[rng.randi() % held.size()]
 	var keys: Array = GunData.ARCH.keys()

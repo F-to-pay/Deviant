@@ -359,7 +359,7 @@ func _last_gun_msg() -> void:
 ## Сколько патронов даст переработка (та же формула, что в Player.scrap, с учётом места в запасе).
 func _scrap_preview(g: Gun) -> int:
 	var p := _player()
-	var t := g.ammo_type()
+	var t := g.base_ammo_type()
 	var n := g.ammo + ceili(float(GunData.base_mag(t)) * (0.75 + 0.25 * float(g.rarity)))
 	return mini(n, maxi(0, GunData.ammo_cap(t) - p.reserve_of(t)))
 
@@ -463,8 +463,8 @@ func _draw() -> void:
 	var scrap_sub := U.t("drag here or press [%s]") % Controls.label("scrap") if Controls.mode != "touch" \
 		else U.t("drag a gun here")
 	if preview != null:
-		scrap_sub = U.t("+%d rounds (%s)") % [_scrap_preview(preview), preview.ammo_name()]
-	_zone(_scrap_rect(), U.t("Recycle"), scrap_sub, GunData.ammo_color(preview.ammo_type()) if preview != null else OK_COL,
+		scrap_sub = U.t("+%d rounds (%s)") % [_scrap_preview(preview), GunData.ammo_label(preview.base_ammo_type())]
+	_zone(_scrap_rect(), U.t("Recycle"), scrap_sub, GunData.ammo_color(preview.base_ammo_type()) if preview != null else OK_COL,
 		hover_kind == "scrap" and dg != null, f, fb)
 
 	U.draw_text_c(self, f, Vector2(pr.get_center().x, pr.end.y - 18), _hint(), 14, Color(0.75, 0.75, 0.8))

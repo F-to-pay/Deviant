@@ -53,7 +53,7 @@ func setup_boss(lvl: int, rng: RandomNumberGenerator) -> void:
 	rest = 2.5  # даём осмотреться перед мясом
 
 
-func _behave(delta: float, player: Player, to_p: Vector2, dist: float) -> void:
+func _behave(delta: float, player: Actor, to_p: Vector2, dist: float) -> void:
 	var rate_k := 1.35 if enraged else 1.0
 	if not enraged and hp < max_hp * 0.5:
 		enraged = true
@@ -142,7 +142,7 @@ func _clear_len(dir: Vector2, max_len: float) -> float:
 	return max_len
 
 
-func _boss_charge(delta: float, player: Player, to_p: Vector2, dist: float) -> void:
+func _boss_charge(delta: float, player: Actor, to_p: Vector2, dist: float) -> void:
 	var full_len := speed * CHARGE_SPEED_K * CHARGE_TIME
 	match state:
 		S_MOVE:
@@ -208,7 +208,7 @@ func _seekers() -> void:
 
 
 ## Стена пуль с дыркой — ищи проход.
-func _wall(player: Player) -> void:
+func _wall(player: Actor) -> void:
 	var dir := (player.position - position).normalized()
 	var perp := dir.orthogonal()
 	var n := 24

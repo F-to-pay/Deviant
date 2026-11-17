@@ -54,6 +54,8 @@ class Proj:
 	var sine_phase := 0.0
 	var boomerang := false
 	var returning := false
+	var home: Variant = null          # к кому возвращается бумеранг (турель); null — к герою
+	var home_pos := Vector2.ZERO      # последняя известная точка «дома» (турель могла сломаться, пока пуля летела)
 	var split_n := 0
 	var split_depth := 0
 	var chain_n := 0
@@ -76,6 +78,7 @@ class Proj:
 	var no_falloff := false   # револьвер: урон не падает за дальностью
 	var range_dmg := 0.0      # снайперка: урон растёт с пролётом от этой доли до 100% на половине eff_range
 	var skill := false        # снаряд навыка героя: попадания и взрыв — через Skills (перки навыка)
+	var payload: Dictionary = {}   # мина-турель Инженера: что поставить на месте падения (Main.spawn_turret)
 	var hit: Dictionary = {}
 	var start := Vector2.ZERO   # мина: откуда летит
 	var target := Vector2.ZERO  # мина: куда падает
@@ -140,6 +143,28 @@ func throw_grenade(pos: Vector2, target: Vector2, dmg: float, r: float, col: Col
 	p.eff_range = FAR
 	p.crit_chance = 0.0
 	p.knock = 60.0
+	_add(p)
+
+
+## Турель Инженера: летит дугой, как мина, и встаёт на месте падения (Main.spawn_turret). spec — см. Player._make_turret_spec.
+func throw_turret(pos: Vector2, target: Vector2, spec: Dictionary, col: Color) -> void:
+	if count() >= MAX_PROJ:
+		return
+	var p := Proj.new()
+	p.team = 0
+	p.kind = K_SHELL
+	p.pos = pos
+	p.start = pos
+	p.target = target
+	p.payload = spec
+	p.explode_r = 22.0   # только размер метки падения
+	p.size = 7.0
+	p.radius = 8.0
+	p.color = col
+	p.life = clampf(pos.distance_to(target) / 650.0, 0.3, 0.7)
+	p.max_life = p.life
+	p.eff_range = FAR
+	p.crit_chance = 0.0
 	_add(p)
 
 
@@ -211,7 +236,7 @@ func fire_gun(g: Gun, pos: Vector2, dir: Vector2, team: int, dmg_mult: float = 1
 
 
 ## Каждый 10-й выстрел «Последнего Слова».
-func fire_nuke(g: Gun, pos: Vector2, dir: Vector2) -> void:
+func fire_nuke(g: Gun, pos: Vector2, dir: Vector2, dmg_mult: float = 1.0) -> void:
 	var p := fire_gun(g, pos, dir, 0)
 	if p == null:
 		return
@@ -223,7 +248,7 @@ func fire_nuke(g: Gun, pos: Vector2, dir: Vector2) -> void:
 	p.life = 1.5
 	p.max_life = 1.5
 	var lvl_mult: float = Game.gun_dmg_mult(g.level)
-	p.dmg = Gun.NUKE_COST * 0.4 * lvl_mult
+	p.dmg = Gun.NUKE_COST * 0.4 * lvl_mult * dmg_mult
 	p.proc = 1.0
 	p.eff_range = FAR
 	p.explode_chance = 1.0
@@ -457,7 +482,10 @@ func _step(p: Proj, delta: float, zone: Zone, player: Player, main: Main) -> voi
 		p.pos = p.start.lerp(p.target, clampf(p.age / p.max_life, 0.0, 1.0))
 		if p.life <= 0.0:
 			p.pos = p.target
-			_detonate(p, p.target)
+			if not p.payload.is_empty():
+				main.spawn_turret(p.payload, p.target)
+			else:
+				_detonate(p, p.target)
 			p.dead = true
 		return
 	p.age += delta
@@ -488,7 +516,12 @@ func _step(p: Proj, delta: float, zone: Zone, player: Player, main: Main) -> voi
 				p.hit.clear()
 				p.pierce += 2
 			if p.returning:
-				var to := player.position - p.pos
+				var dest := player.position
+				if p.home != null:
+					if is_instance_valid(p.home):
+						p.home_pos = (p.home as Actor).position
+					dest = p.home_pos   # стрелок — турель: летим к ней, а если её уже нет — к месту, где она стояла
+				var to := dest - p.pos
 				var spd := maxf(p.vel.length(), 500.0)
 				p.vel = p.vel.lerp(to.normalized() * spd, minf(1.0, delta * 8.0))
 				p.life = maxf(p.life, 0.2)
@@ -569,15 +602,28 @@ func _step(p: Proj, delta: float, zone: Zone, player: Player, main: Main) -> voi
 				_hit_enemy(p, e, main)
 				if p.dead:
 					return
-	elif not player.dead:
-		var rr := player.radius * 0.7 + p.radius
-		if p.pos.distance_squared_to(player.position) < rr * rr:
-			if _enemy_explodes(p):
-				_enemy_explode(p)   # взрывной снаряд ранит взрывом (мина с задержкой 0.05 с), а не касанием
+	else:
+		if not player.dead and _hit_actor(p, player):
+			return
+		for o in main.turrets:
+			var t: Turret = o
+			if not t.dead and _hit_actor(p, t):
 				return
-			# во время переката пуля пролетает насквозь (и засчитывает уклон)
-			if player.take_damage(p.dmg):
-				p.dead = true
+
+
+## Вражеский снаряд задел цель (героя или турель). true — снаряд потрачен (попал или взорвался).
+func _hit_actor(p: Proj, a: Actor) -> bool:
+	var rr := a.radius * 0.7 + p.radius
+	if p.pos.distance_squared_to(a.position) >= rr * rr:
+		return false
+	if _enemy_explodes(p):
+		_enemy_explode(p)   # взрывной снаряд ранит взрывом (мина с задержкой 0.05 с), а не касанием
+		return true
+	# во время переката пуля пролетает насквозь (и засчитывает уклон)
+	if a.take_damage(p.dmg):
+		p.dead = true
+		return true
+	return false
 
 
 func _roll_el(p: Proj) -> int:
