@@ -1,7 +1,7 @@
 # Deviant
 
 An endless Diablo-like arcade shooter with Borderlands-style guns pushed into the absurd.
-Top-down, twin-stick. The hero has no levels — all progression lives in the guns and the enemies.
+Top-down, twin-stick. The hero levels up during a run, but levels only give skill points (a small tree of perks that resets with the run) — real progression lives in the guns and the enemies.
 
 ![Deviant](docs/screenshot.png)
 
@@ -45,6 +45,7 @@ The only assets are audio: music in `music/` (classical recordings from Wikimedi
 | Pick up to backpack / open chest | E | Y |
 | Swap current gun with the one on the ground | F | right stick click |
 | Scrap the gun on the ground for ammo | X | B |
+| Skill tree (pauses) | K | D-pad down |
 | Inventory (pauses) | Tab / I | Back (stick moves a pointer, A — take/drag, Y — slot ↔ backpack) |
 | Pause menu / debug overlay | Esc / F3 | Start |
 | Music volume / mute | − and + (or numpad) / M | |
@@ -80,7 +81,7 @@ The background is a parade of random guns from the real generator (`ui/menu_bg.g
 **Custom start** (`Game.RUN_DEFAULTS` / `Game.custom`, the last choice is saved in `[custom]`):
 - difficulty: presets Easy (enemy health 80%, damage 50%) / Normal / Hard (120% / 120%) and manual sliders 10–200%;
 - full heal on entering a new zone; no regular enemies (regular packs → champions, leader escorts too);
-- chests on/off; hardcore — no flasks, no healer and no Vampiric perk (legendary lifesteal is zeroed);
+- chests (off by default — switch them on here); hardcore — no flasks, no healer and no Vampiric perk (legendary lifesteal is zeroed);
 - chaos — all gun rarities equally likely, all enemy types available from zone 1 and equally likely,
   and every pack is 1/4 regular / champions / leader / **boss** (a wandering one: sleeps until you come close,
   smaller loot, no rift);
@@ -88,8 +89,8 @@ The background is a parade of random guns from the real generator (`ui/menu_bg.g
 
 **Rating** (any run) = points × multiplier. Points = (zone − 1) × 100 + kills + bosses × 250.
 Multiplier = enemy health × enemy damage × (1 + bonuses): hardcore +100%, elites only +50%, chaos +25%,
-no chests +25%, heal between zones −50% (`Game.RATING_BONUS`, `POINTS_*`). Easy ×0.4, Normal ×1, Hard ×1.44.
-The multiplier is shown in Custom start and in the pause menu; rating and best rating — on the death screen and in the main menu.
+chests on −20%, heal between zones −50% (`Game.RATING_BONUS`, `POINTS_*`). Easy ×0.4, Normal ×1, Hard ×1.44.
+The multiplier is shown in Custom start and in the pause menu; it also multiplies the XP your hero earns (so harder settings level you up faster); rating and best rating — on the death screen and in the main menu.
 
 The seed and the differences from a normal game are shown in the pause menu and on the death screen; R repeats the run with the
 same parameters (a given seed gives the same world and loot). Best zone/kills only count with default settings.
@@ -163,11 +164,19 @@ next to the exe — the text from `data/guide.json` plus a reference of every lo
 - **Heroes**, each with an active skill (RMB / LT): Pioneer — grenade (30 damage, radius 60, 6 s),
   Sheriff — the next shot deals +40 (6 s), Assassin — melee slash for 15, reach 95 (0.7 s, slowed while striking),
   Engineer — lobs a turret (10 s): it takes all the rounds from your gun's current magazine (you reload), has your health and shoots the nearest visible enemies,
-  who go for whichever is closer, you or the turret; it shoots at the gun's effective range, deals 50% of the gun's damage, knocks nearby enemies away and stuns them for 1 s whenever it is hit, and is destroyed the moment the magazine runs dry. Up to as many turrets as skill charges; beyond that the oldest one is removed.
+  who go for whichever is closer, you or the turret; it shoots at the gun's effective range (at least 10 m, at most 40 m), deals 50% of the gun's damage, knocks nearby enemies away and stuns them for 1 s whenever it is hit, and is destroyed the moment the magazine runs dry. Up to as many turrets as skill charges; beyond that the oldest one is removed.
   The Pioneer is free, the others are unlocked with ancient coins. Skill damage does not grow with depth.
 - **Coins**: you start with 100 and a single gun; enemies, chests and bosses drop more, income and prices grow 20% per stage (10:12). Lost on death.
   **Ancient coins** (meta-progression) drop from bosses, leaders and golden chests and are saved forever.
 - Death = start over. The best zone and ancient coins are saved.
+
+## Skill tree
+
+Every hero level (`Game.hero_level`, XP from kills) gives 5 skill points. The tree (`K`, or Pause → Skill tree) has four branches on
+four screens — **Weapon**, **Vitality**, **Abilities**, **Utility**. Level N of a tier 1 skill costs N points, of a tier 2 skill 2×N.
+A tier 2 skill needs a level in every parent; skills of one class exclude each other; personal skills exist only for one hero.
+Firepower, Toughness and Skill Power also scale with the hero's level (bonus = skill level × hero level × base bonus, `per_hero`). The tree lasts one run (it is not meta-progression). The data is in `data/skill_branches.json` and `data/skill_tree.json`, so mods can add
+branches and skills; the logic is in `systems/level_tree.gd`.
 
 ## Inventory
 
@@ -211,8 +220,8 @@ X over a gun — recycle. You can't drop or recycle your last gun in hand.
   | BOARDING | magazine 30%, projectile speed ×3 (same range), +40% damage, knockback ×2 |
   The starting pistol is always a Synergis.
   Hypernova, Chaos Forge, Atlas and Godforce never appear on legendaries.
-- **37 perks**: grenades, rockets, ricochet, piercing, splitting, fractal splitting, boomerang, wave flight,
-  chain lightning, cluster bombs, "seeding" projectiles, quantum teleport, nuke, and so on.
+- **38 perks**: grenades, rockets, ricochet, piercing, splitting, fractal splitting, boomerang, wave flight,
+  chain lightning, cluster bombs, knockback boost for weak guns (Concussive), "seeding" projectiles, quantum teleport, nuke, and so on.
   Piercing, lifesteal and black holes are rare (Epic and up). Black hole chance depends on the damage of a single projectile,
   so a machine gun barely ever procs it. Bullets explode by chance, rockets and grenades always.
 - Explosions: 100% damage at the center → 20% at the edge; your own explosions hurt you too, but 10 times less.

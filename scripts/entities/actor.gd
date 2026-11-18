@@ -39,6 +39,8 @@ var _stun_cd: float = 0.0
 var elem_res: int = -1          # врождённое сопротивление стихии (EnemyData.TYPES "res"), -1 — нет
 var status_resist: float = 1.0   # 1 — обычный, больше — стаки копятся медленнее
 var wound: float = 0.0           # «Опасные раны» (перк навыка): вечное замедление, до 0.3
+var slow_k: float = 0.0          # замедление от узла «Ледяное касание» (дерево навыков): доля скорости
+var slow_t: float = 0.0          # сколько секунд ещё держится
 var delayed: Array = []          # «Ядовитый снаряд»: отложенный урон [осталось секунд, урон, стихия]
 var _burn_tick: float = 0.0
 
@@ -50,7 +52,10 @@ func vulnerability() -> float:
 func slow_mult() -> float:
 	if frozen_time > 0.0 or stun_time > 0.0:
 		return 0.0
-	return (1.0 - minf(cryo, CRYO_SLOW_MAX)) * (1.0 - wound)
+	var s := (1.0 - minf(cryo, CRYO_SLOW_MAX)) * (1.0 - wound)
+	if slow_t > 0.0:
+		s *= 1.0 - slow_k
+	return s
 
 
 ## Отложенный урон навыка (перк «Ядовитый снаряд/разрез»): ляжет через t секунд.
@@ -127,6 +132,8 @@ func tick_status(delta: float) -> void:
 		shock_time -= delta
 	if stun_time > 0.0:
 		stun_time -= delta
+	if slow_t > 0.0:
+		slow_t -= delta
 	if _stun_cd > 0.0:
 		_stun_cd -= delta
 	if not delayed.is_empty():

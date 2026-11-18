@@ -24,6 +24,10 @@ var _custom_seed: LineEdit
 var _custom_rating: Label
 var _heroes_list: VBoxContainer
 var _heroes_coins: Label
+var _tree_ui := {}        # ветка дерева навыков -> {head: Label, rows: VBoxContainer}
+var _pause_tree_btn: Button
+var _pause_restart_btn: Button   # «Начать заново»: первое нажатие просит подтверждения
+var _restart_armed := false
 var _town_sub := {}       # экран лавки -> Label с репликой торговца
 var _town_coins := {}     # экран лавки -> Label с монетами
 var _shop_buy: VBoxContainer
@@ -115,6 +119,7 @@ func _build_ui() -> void:
 	_build_main(root)
 	_build_custom(root)
 	_build_heroes(root)
+	_build_tree(root)
 	_build_shop(root)
 	_build_mystic(root)
 	_build_workshop(root)
@@ -164,6 +169,7 @@ func _rebuild() -> void:
 	_custom_ui.clear()
 	_town_sub.clear()
 	_town_coins.clear()
+	_tree_ui.clear()
 	_codex_buttons.clear()
 	_bind_buttons.clear()
 	_listening = ""
@@ -205,6 +211,10 @@ func open_pause() -> void:
 	dim.visible = true
 	_pause_info.text = run_info()
 	_fill_help()
+	var fp := LevelTree.free_points()
+	_pause_tree_btn.text = U.t("Skill tree") + (" (%d)" % fp if fp > 0 else "")
+	_restart_armed = false
+	_pause_restart_btn.text = U.t("Restart run")
 	show_screen("pause")
 
 
@@ -259,6 +269,8 @@ func show_screen(sname: String) -> void:
 		_refresh_custom()
 	elif sname == "heroes":
 		_refresh_heroes()
+	elif sname.begins_with("tree_"):
+		_refresh_tree(sname.substr(5))
 	elif sname == "shop":
 		_refresh_shop()
 	elif sname == "mystic":
@@ -318,6 +330,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			show_screen(mode)
 		elif mode == "pause":
 			Game.main.hud.toggle_pause()
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("skill_tree") and current.begins_with("tree_"):
+		_back()   # та же клавиша закрывает дерево
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("inventory") or event.is_action_pressed("debug"):
 		get_viewport().set_input_as_handled()
@@ -940,7 +955,7 @@ func _grab_first(box: Container) -> void:
 # --- Оружейная ---
 
 func _build_shop(root: Control) -> void:
-	var box := _screen(root, "shop")
+	var box := _screen(root, "shop", true)
 	_shop_head(box, "shop", U.t("GUN SHOP"))
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 24)
@@ -1187,7 +1202,7 @@ func _buy_mystic(id: String, element: int) -> void:
 # --- Мастерская ---
 
 func _build_workshop(root: Control) -> void:
-	var box := _screen(root, "workshop")
+	var box := _screen(root, "workshop", true)
 	_shop_head(box, "workshop", U.t("WORKSHOP"))
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 24)
@@ -1303,6 +1318,106 @@ func _ws_reroll(id: String) -> void:
 	_refresh_workshop()
 
 
+# --- Дерево навыков (LevelTree): по экрану на ветку, вкладки сверху ---
+
+func _build_tree(root: Control) -> void:
+	for b in LevelTree.branches:
+		var bid := str(b["id"])
+		var box := _screen(root, "tree_" + bid)
+		box.add_child(_label(U.t("SKILLS"), 52, ACCENT, true))
+		var tabs := HBoxContainer.new()
+		tabs.alignment = BoxContainer.ALIGNMENT_CENTER
+		tabs.add_theme_constant_override("separation", 10)
+		box.add_child(tabs)
+		for o in LevelTree.branches:
+			var oid := str(o["id"])
+			var tb := _small_button(LevelTree.branch_name(o), show_screen.bind("tree_" + oid), 210.0)
+			if oid == bid:
+				var col := LevelTree.branch_color(o)
+				tb.add_theme_stylebox_override("normal", _box(Color(col, 0.28), col, 3))
+				tb.add_theme_stylebox_override("hover", _box(Color(col, 0.38), col, 3))
+				tb.add_theme_color_override("font_color", Color.WHITE)
+			tabs.add_child(tb)
+		var head := _label("", 20, Color(0.75, 1.0, 0.55))
+		box.add_child(head)
+		var lb := _list_box(1060, 440)
+		box.add_child(lb[0])
+		var back := _button(U.t("Back"), _back)
+		box.add_child(back)
+		_first_focus["tree_" + bid] = back
+		_tree_ui[bid] = {"head": head, "rows": lb[1]}
+
+
+func _refresh_tree(bid: String) -> void:
+	var ui: Dictionary = _tree_ui.get(bid, {})
+	if ui.is_empty():
+		return
+	var head: Label = ui["head"]
+	var rows: VBoxContainer = ui["rows"]
+	head.text = U.t("Level %d   ·   Skill points: %d   ·   Spent: %d") % [Game.hero_level, LevelTree.free_points(), LevelTree.spent_points()]
+	_clear_box(rows)
+	var bcol := LevelTree.branch_color(LevelTree.branch(bid))
+	for n in LevelTree.branch_nodes(bid, LevelTree.current_hero()):
+		rows.add_child(_tree_row(n, bid, bcol))
+	_grab_first(rows)
+
+
+## Строка узла: слева название, уровень и описание (что даёт сейчас и на следующем уровне), справа кнопка покупки.
+func _tree_row(n: Dictionary, bid: String, bcol: Color) -> Control:
+	var id := str(n["id"])
+	var lv := LevelTree.level(id)
+	var mx := LevelTree.max_level(n)
+	var why := LevelTree.block(id)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 16)
+	var pad := Control.new()
+	pad.custom_minimum_size = Vector2(26.0 * float(int(n.get("tier", 1)) - 1), 0)
+	row.add_child(pad)
+	var info := VBoxContainer.new()
+	info.custom_minimum_size = Vector2(760, 0)
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var locked := why == "req" or why == "class"
+	var title := "%s   %s" % [U.t(str(n.get("name", id))), (U.t("Lv %d/%d") % [lv, mx]) if mx > 0 else (U.t("Lv %d") % lv)]
+	var hero := str(n.get("hero", ""))
+	if hero != "":
+		title += "   · " + Heroes.hero_name(hero)
+	info.add_child(_label(title, 22, DIM if locked else (bcol.lightened(0.3) if lv > 0 else TEXT), true, HORIZONTAL_ALIGNMENT_LEFT))
+	var d := _label(LevelTree.describe(n, maxi(lv, 1)), 17, TEXT if not locked else DIM, false, HORIZONTAL_ALIGNMENT_LEFT)
+	d.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	info.add_child(d)
+	if LevelTree.scales_with_hero(n):
+		info.add_child(_label(U.t("Grows with hero level (now ×%s)") % U.fmt(float(Game.hero_level)), 15, DIM, false, HORIZONTAL_ALIGNMENT_LEFT))
+	if lv > 0 and why != "max":
+		var nx := _label(U.t("Next level: ") + LevelTree.describe(n, lv + 1), 16, Color(0.6, 0.95, 0.7), false, HORIZONTAL_ALIGNMENT_LEFT)
+		nx.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		info.add_child(nx)
+	if why == "req":
+		var names: Array = []
+		for r in n.get("requires", []):
+			if LevelTree.level(str(r)) <= 0:
+				names.append(U.t(str(LevelTree.node(str(r)).get("name", r))))
+		info.add_child(_label(U.t("Requires: %s") % ", ".join(PackedStringArray(names)), 16, Color(1.0, 0.6, 0.45), false, HORIZONTAL_ALIGNMENT_LEFT))
+	elif why == "class":
+		var rival := LevelTree.node(LevelTree.class_rival(n))
+		info.add_child(_label(U.t("Excluded by: %s") % U.t(str(rival.get("name", "?"))), 16, Color(1.0, 0.6, 0.45), false, HORIZONTAL_ALIGNMENT_LEFT))
+	row.add_child(info)
+	var btn := _small_button(
+		U.t("MAX") if why == "max" else (U.t("Locked") if locked else U.t("Upgrade — %d") % LevelTree.cost_of(n, lv + 1)),
+		_tree_buy.bind(id, bid), 230.0)
+	btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	btn.disabled = why != ""
+	row.add_child(btn)
+	return row
+
+
+func _tree_buy(id: String, bid: String) -> void:
+	if LevelTree.buy(id):
+		Sfx.ui("pickup/relic", -8.0, 1.2)
+	else:
+		Sfx.ui("ui/error", -6.0)
+	_refresh_tree(bid)
+
+
 # --- Лекарь ---
 
 func _build_healer(root: Control) -> void:
@@ -1324,7 +1439,7 @@ func _refresh_healer() -> void:
 	_clear_box(_healer_box)
 	var p: Player = Game.main.player
 	var lvl := int(Game.main.town.get("level", 1))
-	_healer_info.text = U.t("Health: %s / %s   ·   Flasks: %d / %d") % [U.fmt(ceilf(p.hp)), U.fmt(p.max_hp), p.flasks, Player.FLASK_MAX]
+	_healer_info.text = U.t("Health: %s / %s   ·   Flasks: %d / %d") % [U.fmt(ceilf(p.hp)), U.fmt(p.max_hp), p.flasks, p.flask_max()]
 	if bool(Game.run["no_heal"]):
 		_healer_box.add_child(_label(U.t("Hardcore run — the healer won't touch you."), 18, DIM))
 		return
@@ -1333,7 +1448,7 @@ func _refresh_healer() -> void:
 	hb.disabled = hp_price <= 0 or Game.coins < hp_price
 	_healer_box.add_child(hb)
 	var fp := Shops.flask_price(lvl)
-	var need := Player.FLASK_MAX - p.flasks
+	var need := p.flask_max() - p.flasks
 	var fb := _small_button(U.t("Fill a flask — %d") % fp if need > 0 else U.t("Flasks are full"), _buy_flask.bind(1), 560.0)
 	fb.disabled = need <= 0 or Game.coins < fp
 	_healer_box.add_child(fb)
@@ -1358,7 +1473,7 @@ func _heal_full() -> void:
 func _buy_flask(n: int) -> void:
 	var p: Player = Game.main.player
 	var price := Shops.flask_price(int(Game.main.town.get("level", 1))) * n
-	if Game.coins < price or p.flasks + n > Player.FLASK_MAX:
+	if Game.coins < price or p.flasks + n > p.flask_max():
 		Sfx.ui("ui/error", -6.0)
 		return
 	Game.add_coins(-price)
@@ -1639,7 +1754,7 @@ func _on_custom_slider(v: float, key: String, val: Label) -> void:
 
 func _update_preset_label() -> void:
 	if _custom_rating != null:
-		_custom_rating.text = U.t("Rating multiplier: ×%.2f") % Game.rating_mult(Game.custom)
+		_custom_rating.text = U.t("Rating and XP multiplier: ×%.2f") % Game.rating_mult(Game.custom)
 	var t := U.t("custom")
 	for d in Game.DIFFICULTY:
 		if is_equal_approx(float(d["hp"]), float(Game.custom["hp"])) and is_equal_approx(float(d["dmg"]), float(Game.custom["dmg"])):
@@ -1730,6 +1845,11 @@ func _build_pause(root: Control) -> void:
 	var b := _button(U.t("Resume"), func() -> void: Game.main.hud.toggle_pause())
 	box.add_child(b)
 	_first_focus["pause"] = b
+	_pause_tree_btn = _button(U.t("Skill tree"), func() -> void: show_screen("tree_" + str(LevelTree.branches[0]["id"])))
+	_pause_tree_btn.visible = not LevelTree.branches.is_empty()
+	box.add_child(_pause_tree_btn)
+	_pause_restart_btn = _button(U.t("Restart run"), _on_restart_pressed)
+	box.add_child(_pause_restart_btn)
 	box.add_child(_button(U.t("Settings"), func() -> void: show_screen("settings")))
 	box.add_child(_button(U.t("Codex"), func() -> void: show_screen("codex")))
 	box.add_child(_button(U.t("Main menu"), func() -> void: Game.main.to_menu()))
@@ -1740,6 +1860,18 @@ func _build_pause(root: Control) -> void:
 	_help_box = VBoxContainer.new()
 	_help_box.add_theme_constant_override("separation", 4)
 	box.add_child(_help_box)
+
+
+## «Начать заново» из паузы: забег с теми же настройками (Main.start_run). Первое нажатие только просит подтвердить —
+## потерять забег одним случайным кликом слишком легко.
+func _on_restart_pressed() -> void:
+	if not _restart_armed:
+		_restart_armed = true
+		_pause_restart_btn.text = U.t("Restart? Click again")
+		return
+	_restart_armed = false
+	Game.main.hud.toggle_pause()   # снять паузу и закрыть меню
+	Game.main.start_run()
 
 
 ## Подсказка по управлению в паузе — под то, чем играют сейчас (клавиатура / геймпад / сенсор).
@@ -1781,7 +1913,7 @@ func _fill_help() -> void:
 			if bool(Game.setting("auto_aim")):
 				lines[0] = U.t("Left stick — move, hold FIRE — shoot at the nearest enemy")
 	lines.append("")
-	lines.append(U.t("No regen. Flasks heal 20%: up to 3, refilled by the town healer. No levels — only guns."))
+	lines.append(U.t("No regen. Flasks heal 20%: up to 3, refilled by the town healer. Levels only give skill points — the rest is guns."))
 	for l in lines:
 		_help_box.add_child(_label(str(l), 17, DIM))
 
@@ -1849,7 +1981,7 @@ func _fmt(v: float, fmt: String) -> String:
 
 ## Строка о забеге: сид и отличия от обычной игры.
 static func run_info() -> String:
-	var parts := PackedStringArray([U.t("Seed: %d") % Game.seed_value, U.t("rating ×%.2f") % Game.rating_mult()])
+	var parts := PackedStringArray([U.t("Seed: %d") % Game.seed_value, U.t("rating and XP ×%.2f") % Game.rating_mult()])
 	var r := Game.run
 	if not (is_equal_approx(float(r["hp"]), 1.0) and is_equal_approx(float(r["dmg"]), 1.0)):
 		parts.append(U.t("enemies: health %d%%, damage %d%%") % [roundi(float(r["hp"]) * 100.0), roundi(float(r["dmg"]) * 100.0)])
@@ -1857,8 +1989,8 @@ static func run_info() -> String:
 		parts.append(U.t("heal between zones"))
 	if bool(r["no_normals"]):
 		parts.append(U.t("elites only"))
-	if not bool(r["chests"]):
-		parts.append(U.t("no chests"))
+	if bool(r["chests"]):
+		parts.append(U.t("chests"))
 	if bool(r["no_heal"]):
 		parts.append(U.t("hardcore"))
 	if bool(r["chaos"]):
@@ -1878,7 +2010,21 @@ func _records_text() -> String:
 
 # --- Конструкторы ---------------------------------------------------------------
 
-func _screen(root: Control, sname: String) -> VBoxContainer:
+## top = true: экран прижат к верху, а не по центру. Нужен экранам с карточкой пушки: высота их содержимого не должна
+## двигать заголовок и списки, когда карточка меняется (у Кузни хаоса она выше обычных).
+func _screen(root: Control, sname: String, top: bool = false) -> VBoxContainer:
+	if top:
+		var wrap := VBoxContainer.new()
+		wrap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		wrap.alignment = BoxContainer.ALIGNMENT_BEGIN
+		root.add_child(wrap)
+		wrap.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		var tbox := VBoxContainer.new()
+		tbox.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		tbox.add_theme_constant_override("separation", 10)
+		wrap.add_child(tbox)
+		screens[sname] = wrap
+		return tbox
 	var center := CenterContainer.new()
 	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(center)

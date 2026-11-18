@@ -14,6 +14,7 @@ var dmg: float = 10.0
 var speed: float = 100.0
 var color: Color = Color.RED
 var summoned: bool = false   # призван другим врагом: опыта не даёт
+var bounty: bool = false     # цель заказа Шерифа (узел «Охотник за головами»): с неё больше монет и всегда пушка
 var elite: int = 0          # 0 обычный, 1 чемпион, 2 редкий вожак, 3 босс
 var affixes: Array = []
 var title: String = ""
@@ -119,6 +120,9 @@ func hurt(amount: float, crit: bool, el: int, kb: Vector2, quiet: bool = false, 
 			main.fx.text(position + Vector2(0, -radius - 10.0), U.t("SHIELD"), Color(0.6, 0.85, 1.0), 14, 0.5)
 		return
 	var a := amount * vulnerability()
+	var ex := LevelTree.stat("exec_dmg")   # узел «Палач»: чем меньше у цели здоровья, тем больнее
+	if ex > 0.0:
+		a *= 1.0 + ex * (1.0 - clampf(hp / max_hp, 0.0, 1.0))
 	hp -= a
 	flash = 0.07
 	set_aggro()
@@ -568,3 +572,11 @@ func _draw() -> void:
 	if elite == 1 or elite == 2:
 		var tc := Color(0.55, 0.75, 1.0) if elite == 1 else Color(1.0, 0.85, 0.3)
 		U.draw_text_c(self, U.font_bold(), Vector2(0, -radius - 18.0), title, 13, tc, 3)
+	if bounty:
+		# заказ: красное кольцо с прицельными рисками вокруг цели
+		var br := radius + 14.0 + sin(anim * 5.0) * 2.0
+		var bc := Color(1.0, 0.25, 0.2)
+		draw_arc(Vector2.ZERO, br, 0.0, TAU, 32, Color(bc, 0.9), 2.5)
+		for k in 4:
+			var d := Vector2.from_angle(PI * 0.5 * float(k))
+			draw_line(d * (br - 6.0), d * (br + 7.0), bc, 2.5)

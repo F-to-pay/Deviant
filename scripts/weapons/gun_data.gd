@@ -231,6 +231,11 @@ static func _merge_list(rel: String) -> Array:
 	return out
 
 
+## Тот же список по id, но для чужих таблиц (дерево навыков — LevelTree): слои игры и модов, {"remove": id}.
+static func merge_list(rel: String) -> Array:
+	return _merge_list(rel)
+
+
 ## Список, где важен порядок (редкости): правка по индексу.
 static func _merge_indexed(rel: String) -> Array:
 	var out: Array = []

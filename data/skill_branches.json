@@ -1,0 +1,6 @@
+[
+	{"id": "W", "name": "Weapon", "color": "ff8a4a"},
+	{"id": "V", "name": "Vitality", "color": "ff5a6a"},
+	{"id": "A", "name": "Abilities", "color": "b58cff"},
+	{"id": "U", "name": "Utility", "color": "ffd84a"}
+]

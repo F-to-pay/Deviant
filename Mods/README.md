@@ -83,7 +83,7 @@ Mods/MyMod/
 Сначала читается игра, потом включённые моды по алфавиту. Поздний слой правит ранний.
 
 - **Словари по id** (`archetypes.json`, `makers.json`). Запись с тем же id дополняется: указанные поля заменяются, остальные остаются. Новый id — новая запись. `"_remove": ["noname"]` — удалить запись.
-- **Списки по id** (`perks.json`, `legendaries.json`). Так же по полю `id`. Элемент `{"remove": "vamp"}` удаляет запись.
+- **Списки по id** (`perks.json`, `legendaries.json`, `skill_tree.json`, `skill_branches.json`). Так же по полю `id`. Элемент `{"remove": "vamp"}` удаляет запись.
 - **`rarities.json`** — правка по индексу: 0 обычная … 5 абсурдная.
 - **`names.json`** — списки дописываются. `"replace": true` в файле заменяет их целиком.
 
@@ -168,6 +168,33 @@ Mods/MyMod/
   - `no_shell` — бессмыслен для мин.
 - `fits` — условия, при которых перк может выпасть (все должны выполняться).
 
+## Дерево навыков (skill_branches.json, skill_tree.json)
+
+Уровень героя даёт 5 очков, которые тратятся в дереве (клавиша K). Дерево живёт один забег. Ветки — вкладки меню, узлы — навыки; оба списка сливаются по `id`
+из всех слоёв (`{"remove": "W1"}` удаляет запись).
+
+```json
+{"id": "W3", "tier": 2, "branches": ["W"], "requires": ["W1"], "max": 5, "class": "", "hero": "",
+ "name": "Fast Hands", "desc": "Weapon damage +{0}, accuracy +{1}.",
+ "effects": [{"stat": "weapon_dmg", "first": 0.05, "step": 0.02, "fmt": "pct"},
+             {"stat": "accuracy", "first": 0.1, "step": 0.0, "fmt": "pct"}]}
+```
+
+- `id` — любая строка (в игре: `W1`, `WA2`, `V2.1` — буквы веток, цифра тира, `.N` — порядок ответвления).
+- `tier` — цена уровня: уровень N стоит `tier × N` очков.
+- `branches` — на каких вкладках узел виден (гибрид висит на всех родительских). `requires` — узлы, в каждом из которых нужен хотя бы 1 уровень.
+- `max` — пиковый уровень, 0 — без предела. `class` — узлы одного класса взаимоисключающи. `hero` — личный узел (id героя из `Heroes.LIST`).
+- `desc` — текст, `{0}`, `{1}` заменяются значениями `effects` по порядку. Значение эффекта на уровне N = `first + step × (N − 1)`;
+  `fmt`: `pct` (доли в проценты), `num`, `sec`.
+- Ветка в `skill_branches.json`: `{"id": "W", "name": "Weapon", "color": "ff8a4a"}`.
+- `per_hero: true` (в эффекте, необязательно) — рост от уровня героя: значение умножается на уровень героя, то есть бонус = уровень навыка × уровень героя ×
+  базовый бонус (`first` = `step` = базовый бонус). Так устроены корни веток; без поля эффект зависит только от уровня навыка.
+  Бонусы пересчитываются при каждом новом уровне героя.
+- `stat` — что именно меняется. Игра понимает только свои (`LevelTree.KNOWN_STATS`: `weapon_dmg`, `max_hp`, `skill_dmg`, `coin_double`, `exec_dmg`,
+  `free_shot`, `rare_luck`, `accuracy`, `flask_max`, `flask_heal`, `flask_haste`, `skill_slow`, `skill_temp_hp`, `flask_skill_refund`, `bounty_coins` …);
+  неизвестный stat ничего не делает, `validate` предупредит. Эффекты с одним stat складываются.
+- Названия и описания переводятся через `lang/<код>.json`, как всё остальное.
+
 ## Легендарка (legendaries.json)
 
 ```json
@@ -207,7 +234,7 @@ Mods/MyMod/
 **Статы пушки** (поля `Gun`, см. `scripts/weapons/gun.gd`):
 - урон и стрельба: `damage`, `fire_rate`, `pellets`, `spread`, `burst`, `ammo_per_shot`, `crit_chance`, `crit_mult`;
 - магазин: `mag_size`, `reload_time`, `free_ammo`;
-- снаряд: `proj_speed`, `lifetime`, `proj_kind`, `proj_size`, `knock`, `pierce`, `bounces`, `homing`, `accel`, `drag`, `sine`, `boomerang`, `split_n`, `split_depth`, `teleport`;
+- снаряд: `proj_speed`, `lifetime`, `proj_kind`, `proj_size`, `knock`, `knock_boost`, `pierce`, `bounces`, `homing`, `accel`, `drag`, `sine`, `boomerang`, `split_n`, `split_depth`, `teleport`;
 - взрывы и спецэффекты: `explode_r`, `explode_chance`, `explode_on_expire`, `chain_n`, `cluster_n`, `vortex`, `seeder`;
 - стихии: `element`, `elem_chance`, `elem_mult`, `proc_mult`;
 - носитель: `leech`, `armor`, `move_mult`, `shake`.

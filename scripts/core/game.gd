@@ -34,7 +34,7 @@ var zone_level: int = 1
 var kills: int = 0
 var run_time: float = 0.0
 
-# --- Опыт героя (пока только подсчёт, ничего не даёт) -----------------------------------
+# --- Опыт героя: уровни дают очки дерева навыков (LevelTree) -----------------------------
 ## Враг даёт XP_BASE + XP_PER_LEVEL × (уровень − 1), умноженное на XP_ELITE_MULT[elite]
 ## (0 обычный, 1 чемпион, 2 вожак, 3 босс — множители пока заглушки).
 ## До следующего уровня L → L+1 нужно XP_NEED_BASE × L ^ XP_NEED_POW (1.1): сначала растёт быстро, потом всё медленнее.
@@ -44,7 +44,8 @@ const XP_ELITE_MULT := [1.0, 3.0, 6.0, 25.0]
 const XP_NEED_BASE := 40.0
 const XP_NEED_POW := 1.1
 var hero_level: int = 1
-var xp: float = 0.0          # накоплено к следующему уровню (остаток после повышения переносится)
+var tree: Dictionary = {}    # дерево навыков этого забега: id узла -> уровень (LevelTree), сбрасывается новым забегом
+var xp: float = 0.0         # накоплено к следующему уровню (остаток после повышения переносится)
 var xp_total: float = 0.0    # за весь забег, для статистики и калибровки
 var guns_found: int = 0
 var best_gun: Gun = null
@@ -68,7 +69,7 @@ var settings: Dictionary = DEFAULTS.duplicate()
 ##  hp/dmg — множители здоровья и урона врагов; arch/maker — стартовая пушка ("" — по умолчанию,
 ##  "random" — случайно); seed — текст сида ("" — случайный).
 const RUN_DEFAULTS := {
-	"hp": 1.0, "dmg": 1.0, "zone_heal": false, "no_normals": false, "chests": true,
+	"hp": 1.0, "dmg": 1.0, "zone_heal": false, "no_normals": false, "chests": false,
 	"no_heal": false, "chaos": false, "arch": "", "maker": "", "seed": "", "towns": true,
 }
 ## Этап = TOWN_EVERY зон (последняя — с боссом). Перед каждым этапом, и в начале забега, — город.
@@ -89,7 +90,7 @@ const RATING_BONUS := [
 	["no_heal", true, 1.0, "hardcore"],
 	["no_normals", true, 0.5, "elites only"],
 	["chaos", true, 0.25, "chaos"],
-	["chests", false, 0.25, "no chests"],
+	["chests", true, -0.2, "chests"],
 	["zone_heal", true, -0.5, "heal between zones"],
 ]
 const POINTS_ZONE := 100     # за каждую пройденную зону
@@ -136,6 +137,7 @@ func load_content() -> void:
 	Mods.clear_cache()
 	GunData.load_data()
 	EnemyData.load_data()
+	LevelTree.load_data()
 	Codex.load_data()
 	I18n.load_all()
 	I18n.apply(str(setting("language")))
@@ -181,7 +183,10 @@ static func enemy_xp(lvl: int, elite: int) -> float:
 
 
 ## Начисляет XP, повышает уровень (может несколько раз подряд). Возвращает, на сколько уровней вырос.
+## Каждый уровень — очки в дерево навыков (LevelTree), о чём сообщаем в углу экрана.
+## Опыт умножается на множитель рейтинга забега (rating_mult): сложнее настройки — быстрее уровни, и наоборот.
 func add_xp(amount: float) -> int:
+	amount *= rating_mult()
 	xp += amount
 	xp_total += amount
 	var ups := 0
@@ -189,6 +194,13 @@ func add_xp(amount: float) -> int:
 		xp -= xp_need(hero_level)
 		hero_level += 1
 		ups += 1
+	if ups > 0:
+		# корни дерева растут вместе с героем (per_hero): пересчитать бонусы и здоровье
+		LevelTree.recompute()
+		if main != null and main.player != null:
+			main.player.on_tree_changed()
+		say(U.t("LEVEL %d! Skill points: %d") % [hero_level, LevelTree.free_points()], Color(0.75, 1.0, 0.55))
+		Sfx.ui("pickup/relic", -6.0, 1.3)
 	return ups
 
 
@@ -200,6 +212,8 @@ func new_run() -> void:
 	hero_level = 1
 	xp = 0.0
 	xp_total = 0.0
+	tree = {}
+	LevelTree.recompute()
 	guns_found = 0
 	best_gun = null
 	bosses = 0

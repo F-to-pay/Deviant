@@ -52,6 +52,11 @@ func setup(data: Dictionary) -> void:
 			chunks.append(ch)
 	minimap_img = Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
 	minimap_img.fill(Color(0, 0, 0, 0))
+	# карта открыта с самого начала: рисуем её целиком, explore() потом ничего нового не находит
+	for y in h:
+		for x in w:
+			minimap_img.set_pixel(x, y, _mini_color(grid[y * w + x]))
+	explored.fill(1)
 	minimap_tex = ImageTexture.create_from_image(minimap_img)
 	queue_redraw()
 
@@ -164,6 +169,27 @@ func ray_clear(a: Vector2, b: Vector2, for_move: bool = false, r: float = 0.0) -
 		if v == ROCK or (for_move and v == PIT):
 			return false
 	return true
+
+
+## Ближайшая к p свободная точка: пол, и вокруг (на clear) нет ни стен, ни ям. Ищем по клеткам в радиусе max_r;
+## не нашли — как random_free_near (последний шанс — сама p).
+func open_spot_near(p: Vector2, clear: float, max_r: float = 400.0) -> Vector2:
+	var best := p
+	var best_d := INF
+	var c0 := cell_at(p)
+	var n := ceili(max_r / T)
+	for cy in range(c0.y - n, c0.y + n + 1):
+		for cx in range(c0.x - n, c0.x + n + 1):
+			if get_cell(cx, cy) != FLOOR:
+				continue
+			var q := Vector2((float(cx) + 0.5) * T, (float(cy) + 0.5) * T)
+			var d := q.distance_to(p)
+			if d < best_d and d <= max_r and not circle_blocked(q, clear):
+				best = q
+				best_d = d
+	if best_d < INF:
+		return best
+	return random_free_near(p, 80.0, 120.0)
 
 
 func random_free_near(p: Vector2, rmin: float, rmax: float) -> Vector2:

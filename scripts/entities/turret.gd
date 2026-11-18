@@ -7,6 +7,8 @@ extends Actor
 ## Урон по ней — через take_damage (вражеские пули, взрывы, касание, таран).
 
 const BASH_R := 150.0        # удар при попадании по турели: враги в этом радиусе отлетают
+const MIN_RANGE := 400.0    # 10 м: у пушки с короткой дальностью турель всё равно достаёт хотя бы до сюда
+const MAX_RANGE := 1600.0   # 40 м: потолок, даже у револьвера (дальность 1000 м)
 const BASH_KNOCK := 650.0    # скорость отбрасывания (Enemy.knock); тормозится 1800/с²
 const BASH_STUN := 1.0       # стан отброшенных, с
 const BURST_GAP := 0.065
@@ -51,9 +53,9 @@ func _ready() -> void:
 	Sfx.at("hit/wall", position, -8.0, 0.7, 0.05, 2, 0.05)
 
 
-## Турель стреляет на эффективную дальность своей пушки — дальше не целится.
+## Турель стреляет на эффективную дальность своей пушки, но не короче 10 м и не дальше 40 м (1 м = 40 px).
 func _range() -> float:
-	return gun.eff_range()
+	return clampf(gun.eff_range(), MIN_RANGE, MAX_RANGE)
 
 
 func _physics_process(delta: float) -> void:
@@ -134,15 +136,16 @@ func _pull_trigger(main: Main) -> void:
 
 func _fire(main: Main) -> void:
 	var g := gun
-	ammo = maxi(0, ammo - g.ammo_per_shot)
+	if randf() >= LevelTree.free_shot_chance():   # узел «Экономный стрелок» работает и на турели
+		ammo = maxi(0, ammo - g.ammo_per_shot)
 	g.shot_count += 1
 	var base := aim.angle()
-	var spr := deg_to_rad(g.spread)
+	var spr := deg_to_rad(g.spread * LevelTree.spread_mult())
 	var mpos := position + aim * (radius + 10.0)
 	var n := g.pellets
 	if g.proj_kind == GunData.K_SHELL:
 		# миномёт: мины ложатся вокруг цели, а не летят по полу
-		var dist := clampf(aim_dist, 60.0, g.eff_range())
+		var dist := clampf(aim_dist, 60.0, _range())
 		var aim_pt := position + aim * dist
 		var dev := dist * tan(clampf(spr * 0.5, 0.0, 1.2))
 		for i in n:

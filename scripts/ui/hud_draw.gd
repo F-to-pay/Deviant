@@ -77,14 +77,23 @@ func _draw_hp(p: Player, f: Font, fb: Font) -> void:
 	var r := Rect2(24, 24, 320, 22)
 	var col := Color(0.9, 0.22, 0.25)
 	_bar(r, p.hp / p.max_hp, col)
-	U.draw_text_c(self, fb, Vector2(r.position.x + r.size.x * 0.5, r.position.y + 17), "%s / %s" % [U.fmt(ceilf(p.hp)), U.fmt(p.max_hp)], 15, Color.WHITE, 3)
+	if p.temp_hp > 0.0:
+		# временное здоровье (узел «Осколочный щит»): голубой кусок за красной полосой
+		var x0 := r.position.x + r.size.x * clampf(p.hp / p.max_hp, 0.0, 1.0)
+		var x1 := r.position.x + r.size.x * clampf((p.hp + p.temp_hp) / p.max_hp, 0.0, 1.0)
+		draw_rect(Rect2(x0, r.position.y, x1 - x0, r.size.y), Color(0.45, 0.8, 1.0))
+	var hp_text := "%s / %s" % [U.fmt(ceilf(p.hp)), U.fmt(p.max_hp)]
+	if p.temp_hp > 0.0:
+		hp_text += " +%s" % U.fmt(ceilf(p.temp_hp))
+	U.draw_text_c(self, fb, Vector2(r.position.x + r.size.x * 0.5, r.position.y + 17), hp_text, 15, Color.WHITE, 3)
 	# фляги лечения справа от полосы здоровья
-	# сверх трёх — «+N»: в зоне фляг сколько угодно, лишние сгорят при переходе
-	for i in Player.FLASK_MAX:
+	# сверх лимита — «+N»: в зоне фляг сколько угодно, лишние сгорят при переходе
+	var fmax := p.flask_max()
+	for i in fmax:
 		FlaskDrop.draw_icon(self, Vector2(r.end.x + 18.0 + float(i) * 20.0, r.position.y + 13.0), 1.0, 1.0 if i < p.flasks else 0.0)
-	var fx := r.end.x + 12.0 + float(Player.FLASK_MAX) * 20.0
-	if p.flasks > Player.FLASK_MAX:
-		var extra := "+%d" % (p.flasks - Player.FLASK_MAX)
+	var fx := r.end.x + 12.0 + float(fmax) * 20.0
+	if p.flasks > fmax:
+		var extra := "+%d" % (p.flasks - fmax)
 		U.draw_text(self, fb, Vector2(fx, r.position.y + 17.0), extra, 15, Color(1.0, 0.55, 0.6), 3)
 		fx += U.text_w(fb, extra, 15) + 8.0
 	if Controls.mode != "touch":
@@ -130,8 +139,19 @@ func _draw_zone_info(main: Main, f: Font, fb: Font) -> void:
 	var x := 44.0 + U.text_w(fb, cs, 15) + 22.0
 	Coin.draw_icon(self, Vector2(x, y - 5.0), 7.0, true)
 	U.draw_text(self, fb, Vector2(x + 12.0, y), U.fmt(float(Game.meta_coins)), 15, Color(0.6, 1.0, 1.0), 3)
+	# уровень героя, опыт и свободные очки дерева навыков
+	var ly := y + 24.0
+	_bar(Rect2(24, ly - 9.0, 120, 5), Game.xp / Game.xp_need(Game.hero_level), Color(0.55, 0.9, 0.4))
+	U.draw_text(self, f, Vector2(150, ly - 3.0), U.t("Level %d") % Game.hero_level, 12, Color(0.75, 0.95, 0.65, 0.9), 2)
+	var fp := LevelTree.free_points()
+	var qy := ly + 20.0
+	if fp > 0:
+		var hint := U.t("Skill points: %d") % fp
+		if Controls.mode != "touch":
+			hint = "[%s] " % Controls.label("skill_tree") + hint
+		U.draw_text(self, f, Vector2(24, qy), hint, 13, Color(0.75, 1.0, 0.55), 3)
+		qy += 18.0
 	# задания Гильдии
-	var qy := y + 22.0
 	for q in Quests.active:
 		U.draw_text(self, f, Vector2(24, qy), "• " + Quests.line(q), 13, Color(0.75, 0.95, 0.95, 0.9), 3)
 		qy += 18.0
@@ -239,9 +259,16 @@ func _draw_minimap(main: Main, vp: Vector2, f: Font) -> void:
 		var it: GroundItem = o
 		if it.gun.rarity >= GunData.R_EPIC:
 			draw_circle(r.position + it.position * k, 2.5, it.gun.rarity_color())
+	for o in main.enemies:   # все враги — пикселем (карта открыта), элитки и боссы — кружком поверх
+		var e: Enemy = o
+		if e.dead:
+			continue
+		var ep := r.position + e.position * k
+		if e.elite < 1:
+			draw_rect(Rect2(ep - Vector2(1, 1), Vector2(2, 2)), Color(1.0, 0.3, 0.3))
 	for o in main.enemies:
 		var e: Enemy = o
-		if e.elite >= 1 and e.awake and z.is_explored(e.position):
+		if e.elite >= 1 and not e.dead:
 			draw_circle(r.position + e.position * k, 3.0 if e.elite < 3 else 5.0,
 				Color(1.0, 0.85, 0.3) if e.elite == 2 else (Color(0.5, 0.7, 1.0) if e.elite == 1 else Color(1, 0.2, 0.2)))
 	for o in main.stalls:

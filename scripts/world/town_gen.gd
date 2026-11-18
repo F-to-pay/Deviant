@@ -7,6 +7,7 @@ extends RefCounted
 ##  "Dust-" и "-ville" (в переводе дефисы тоже убираются: "Пыле-" + "-град" = «Пылеград»).
 ## Результат — тот же словарь, что у ZoneGen.generate (Zone.setup его ест), плюс:
 ##  "town": true, "stalls": [[вид лавки, клетка перед прилавком], ...], "name": имя города,
+##  "center": клетка центра площади (в стартовом городе там камень перезапуска; на самой клетке может быть пруд или памятник);
 ##  "paved": клетки мостовой (1 — улица/площадь; рисует TerrainChunk). Пусто — генерация не удалась.
 
 const FLOOR := Zone.FLOOR
@@ -200,7 +201,7 @@ static func _try(next_level: int, rng: RandomNumberGenerator, biome: Dictionary,
 			paved[i] = 1
 
 	return {"paved": paved, "w": w, "h": h, "level": next_level, "grid": grid, "biome": biome, "boss": false, "town": true,
-		"spawn": sp, "portal": pt, "packs": [], "chests": [], "stalls": stalls, "name": make_name(biome, rng),
+		"spawn": sp, "portal": pt, "center": c, "packs": [], "chests": [], "stalls": stalls, "name": make_name(biome, rng),
 		"decor": ZoneGen._make_decor(grid, w, h, rng, 140)}
 
 

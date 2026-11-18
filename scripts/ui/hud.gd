@@ -121,6 +121,13 @@ func toggle_inventory() -> void:
 		inv.queue_redraw()
 
 
+## Дерево навыков поверх игры (клавиша skill_tree): игра на паузе, Esc / та же клавиша — обратно.
+func open_skill_tree() -> void:
+	if dead_screen or LevelTree.branches.is_empty():
+		return
+	Game.main.menu.open_town("tree_" + str(LevelTree.branches[0]["id"]))
+
+
 func toggle_pause() -> void:
 	if dead_screen:
 		return
@@ -153,6 +160,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("inventory") and not paused:
 		toggle_inventory()
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("skill_tree") and visible and not paused and not inv.visible and not Game.main.menu.visible:
+		open_skill_tree()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("debug"):
 		Game.debug = not Game.debug

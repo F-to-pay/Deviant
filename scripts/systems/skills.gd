@@ -58,6 +58,14 @@ static func hit(e: Enemy, dmg: float, kb: Vector2, stun: bool = true, st: float 
 		e.hurt(dmg, false, el, kb, true, st)
 	else:
 		Combat.hit_enemy(e, dmg, false, el, kb, false, st)
+	# дерево навыков: замедление цели («Ледяное касание») и временное здоровье героя («Осколочный щит»)
+	var sl := LevelTree.stat("skill_slow")
+	if sl > 0.0 and not e.dead:
+		e.slow_k = maxf(e.slow_k if e.slow_t > 0.0 else 0.0, sl)
+		e.slow_t = maxf(e.slow_t, LevelTree.stat("skill_slow_time"))
+	var th := LevelTree.stat("skill_temp_hp")
+	if th > 0.0:
+		p.add_temp_hp(dmg * th)
 	var w := p.perk("wounds")
 	if w > 0 and not e.dead:
 		# элиткам нужно вдвое больше ударов на ступень, боссам — втрое

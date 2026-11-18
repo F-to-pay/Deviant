@@ -39,6 +39,10 @@ var elem_chance: float = 0.0
 var burst: int = 1
 var ammo_per_shot: int = 1
 var knock: float = 60.0
+var _fx_cache: Array = []       # effect_lines(): готовый текст и язык, на котором он собран
+var _fx_lang: String = ""
+var slug_n: int = 0           # у пулевого дробовика — сколько дробин было до слитка; толчок залпа считается по ним
+var knock_boost: float = 0.0   # перк «Сотрясающий»: множитель толчка залпа обратно пропорционален самому толчку (слабой пушке — много, сильной — мало)
 
 # --- Снаряд
 var proj_kind: int = 0
@@ -87,6 +91,10 @@ var nuke_charge: float = 0.0
 
 const PROC_REF := 40.0     # «вес» снаряда, при котором эффекты срабатывают на полную
 const NUKE_COST := 600.0   # сколько нормированного урона копится на одну ядерку
+const PELLET_KNOCK_CAP := 6.0      # потолок: суммарный толчок залпа не больше чем ×6 от толчка одной дробины
+const KNOCK_BOOST_REF := 150.0     # «Сотрясающий»: толчок, при котором множитель = 1 + knock_boost (0.8 → ×1.8); слабее — множитель растёт, сильнее — падает
+const PELLET_KNOCK_HALF := 8.0     # насколько быстро к нему подходим: при 8 дробинах сверх первой набрана половина прибавки
+const PELLET_DMG_BONUS := 0.01     # +1% к урону дробины за каждую дробину сверх первой
 
 
 func rarity_color() -> Color:
@@ -159,6 +167,7 @@ func type_name_lower() -> String:
 ## Эффективная дальность (px). Дальше пуля летит, но урон резко падает.
 ## Эффективная дальность: дальше урон падает (кроме no_falloff). 0.7 — общий срез дальности всех пушек.
 const RANGE_MULT := 0.7
+const NO_FALLOFF_RANGE := 40000.0  # пушка без спада урона (револьвер): дальность 1000 м (1 м = 40 px), больше любой карты; на карточке пишем «-»
 
 
 ## Независимая копия пушки (турель Инженера стреляет своей копией: свой магазин и свой счётчик ядерки).
@@ -179,6 +188,8 @@ func copy() -> Gun:
 
 
 func eff_range() -> float:
+	if no_falloff:
+		return NO_FALLOFF_RANGE
 	return proj_speed * lifetime * RANGE_MULT
 
 
@@ -221,13 +232,40 @@ func vortex_chance() -> float:
 	return vortex * clampf(pow(norm_damage() / 60.0, 1.5), 0.01, 1.0) * proc_mult
 
 
+## Отбрасывание одной дробины. Толчки дробин складываются, поэтому у веера на 60 дробин цель улетала через пол-карты.
+## Отбрасывание одной дробины: суммарный толчок залпа (volley_knock), поделённый между дробинами.
+func pellet_knock() -> float:
+	return volley_knock() / float(maxi(1, pellets))
+
+
+## Во сколько раз суммарный толчок залпа больше толчка одной дробины: 1 + (потолок − 1) × k / (k + HALF), k = дробин сверх первой.
+func volley_knock_mult() -> float:
+	var k := float(maxi(0, maxi(pellets, slug_n) - 1))
+	return 1.0 + (PELLET_KNOCK_CAP - 1.0) * k / (k + PELLET_KNOCK_HALF)
+
+
+## Суммарный толчок залпа по цели: knock × volley_knock_mult() (растёт с числом дробин всё медленнее, упирается в
+## PELLET_KNOCK_CAP). Перк «Сотрясающий» (knock_boost) умножает его на 1 + boost × REF / толчок — обратно пропорционально
+## самому толчку: ПП (30) вырастает в 5 раз, пистолет (60) — в 3, револьвер (100) — в 2.2, дробовик на 40 дробей (283) — в 1.4.
+func volley_knock() -> float:
+	var t := knock * volley_knock_mult()
+	if knock_boost > 0.0:
+		t *= 1.0 + knock_boost * KNOCK_BOOST_REF / maxf(t, 1.0)
+	return t
+
+
+## Бонус к урону каждой дробины за их число: +1% за каждую дробину сверх первой (у одной дробины — ×1).
+func pellet_dmg_mult() -> float:
+	return 1.0 + PELLET_DMG_BONUS * float(maxi(0, pellets - 1))
+
+
 func accuracy() -> int:
-	return clampi(roundi(100.0 - spread * 2.2), 0, 100)
+	return mini(100, roundi(100.0 - spread * 2.2))   # снизу не обрезаем: у веера в 110° честные −142%, только для вида
 
 
 ## Оценка устойчивого урона в секунду (с перезарядкой).
 func dps() -> float:
-	var per_shot := damage * float(pellets) * (1.0 + crit_chance * (crit_mult - 1.0))
+	var per_shot := damage * float(pellets) * pellet_dmg_mult() * (1.0 + crit_chance * (crit_mult - 1.0))
 	if explode_r > 0.0:
 		per_shot *= 1.0 + 0.3 * explode_chance
 	if split_n > 0 and split_depth > 0:
@@ -237,6 +275,28 @@ func dps() -> float:
 	var shots_per_mag := maxf(1.0, float(mag_size) / float(maxi(1, ammo_per_shot)))
 	var cycle := shots_per_mag / fire_rate + reload_time
 	return per_shot * shots_per_mag / cycle
+
+
+## Что дают марка и перки пушки словами — для низа карточки: «Тяжёлый: урон +35%, скорострельность −15%».
+## Текст берётся из операций перка (GunOps.describe), как в справочнике. Кэш — пока не сменился язык.
+func effect_lines() -> Array:
+	if _fx_lang == I18n.lang:
+		return _fx_cache
+	var out: Array = []
+	var mk: Dictionary = GunData.MAKERS.get(maker, {})
+	var mk_fx := GunOps.describe(mk.get("ops", []))
+	if not mk_fx.is_empty():
+		out.append("%s: %s" % [maker_name(), ", ".join(PackedStringArray(mk_fx))])
+	for id in mods:
+		var d := GunData.perk(str(id))
+		if d.is_empty():
+			continue
+		var fx := GunOps.describe(d.get("ops", []))
+		if not fx.is_empty():
+			out.append("%s: %s" % [I18n.word(str(d.get("name", id)), "m"), ", ".join(PackedStringArray(fx))])
+	_fx_cache = out
+	_fx_lang = I18n.lang
+	return out
 
 
 ## Строки особенностей для карточки: [текст, цвет].
@@ -298,6 +358,8 @@ func perk_lines() -> Array:
 		out.append([U.t("Bursts of %d") % burst, w])
 	if ammo_per_shot > 1:
 		out.append([U.t("Uses %d rounds per shot") % ammo_per_shot, bad])
+	if knock_boost > 0.0:
+		out.append([U.t("Concussive: weak knockback is boosted"), good])
 	if legend_perk != "":
 		out.insert(0, [U.t("Legendary perk: \"%s\"") % U.t(legend_perk), Color(1.0, 0.6, 0.15)])
 	if free_ammo:

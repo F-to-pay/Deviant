@@ -22,6 +22,7 @@ func _physics_process(delta: float) -> void:
 		position += d.normalized() * minf(l, (220.0 + (150.0 - l) * 6.0) * delta)
 	if l < p.radius + 10.0:
 		p.add_flask()
+		p.on_flask_pickup()
 		Sfx.ui("pickup/heal", -7.0, 1.2)
 		main.fx.text(position + Vector2(0, -22), U.t("+1 flask"), Color(1.0, 0.45, 0.5), 14, 0.8)
 		main.remove_flask(self)

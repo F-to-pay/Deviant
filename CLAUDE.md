@@ -44,7 +44,8 @@ godot --headless --path . --quit          # загрузить проект: в�
 | Карта | `world/zone_gen.gd` (генерация), `world/zone.gd` (сетка T=40, коллизии `move_circle`, лучи `ray_clear`, миникарта), `world/biomes.gd` |
 | Город между этапами | `world/town_gen.gd` (площадь, улицы, дома по `town_style` биома, имя), `world/stall.gd` (лавки: `KINDS` — вывеска, реплики, `menu` — экран меню; без него — окно-заглушка `HudDraw._draw_stall`) |
 | Торговля, Мистик, Мастерская | цены и товар — `systems/shops.gd` (`make_town` при входе в город → `Main.town`), перки Мистика — перки навыков `Heroes.PERKS` (что даёт — `Player.perk()`, `skill_dmg_mult`, `Skills`); пересборка пушки — `GunGen.rebuild` (подтягивать уровень нельзя — пушки должны устаревать); экраны — `Menu._build_shop/_mystic/_workshop` |
-| Опыт героя и «судья» | `Game.add_xp / xp_need / enemy_xp` (пока только подсчёт), `systems/director.gd` (запас XP в зоне, сложность по времени — наблюдает, F3), `Main.director` |
+| Опыт героя и «судья» | `Game.add_xp / xp_need / enemy_xp` (уровень = 5 очков дерева), `systems/director.gd` (запас XP в зоне, сложность по времени — наблюдает, F3), `Main.director` |
+| Дерево навыков игрока | `systems/level_tree.gd` (`LevelTree`: очки, покупка, `stat(имя)`), данные — `data/skill_branches.json` + `data/skill_tree.json` (моды правят по id), состояние забега — `Game.tree`; экраны — `Menu._build_tree` (по экрану на ветку), клавиша `skill_tree`; читают эффекты `Player`, `Projectiles.fire_gun`, `Enemy.hurt`, `Skills.hit`, `Main.drop_coins` / `_mark_bounty`, `GunGen.roll_rarity` |
 | Задания Гильдии | `systems/quests.gd` (`TYPES`, `active`, `progress(тип)` — зовётся из `Main`); экран — `Menu._build_guild`, строки на HUD — `HudDraw._draw_zone_info` |
 | Фляги лечения | `Player.flasks` / `drink()` / `FLASK_MAX`, `FLASK_HEAL`; дроп — `Main.spawn_flask` (`world/flask_drop.gd`); Лекарь — `Shops.heal_price` / `flask_price`, экран `Menu._build_healer` |
 | Монеты | `Game.coins` (забег, `START_COINS`, `coin_value`), `Game.meta_coins` (древние, мета, сохраняются в `[meta]` deviant.cfg сразу); `world/coin.gd`; дроп — `Main.drop_coins` в `on_enemy_killed` / `open_chest` / `_boss_dead` |
@@ -104,6 +105,7 @@ godot --headless --path . --quit          # загрузить проект: в�
 | Лут и монеты с врагов/сундуков/боссов | `Main` (обработчики смерти врага/босса, `open_chest`) |
 | Новый перк навыка | `Heroes.PERKS` + эффект: попадание навыком — `systems/skills.gd` (`hit`, `explode`), применение — `Player._use_skill` / `_bless_proj` + строки и справочник (`heroes`) |
 | Новый вид задания | `Quests.TYPES` + вызов `Quests.progress("вид")` в нужном месте + строки |
+| Новый навык дерева | запись в `data/skill_tree.json` (эффекты — `stat` из `LevelTree.KNOWN_STATS`; нужен новый stat — добавить в `KNOWN_STATS` и прочитать там, где он действует) + строки `ru`/`nb` |
 | Новый герой / навык | `Heroes.LIST` + ветка в `Player._use_skill` (+ рисунок в `Player._draw`) + строки в `lang/*.json` + страница `heroes` в `data/codex.json` |
 | Лавка, открывающая экран меню | `Stall.KINDS[...]["menu"]` → `Menu.open_town(экран)`; «Назад» — `Menu._back()` |
 | Вид/имена городов | `Biomes.LIST` (`town`, `town_style`), `TownGen.SUFFIXES`; переводы ключей `"Dust-"`, `"-ville"` |

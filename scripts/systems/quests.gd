@@ -36,6 +36,8 @@ static func make_offers(level: int, rng: RandomNumberGenerator) -> Array:
 			break
 		if has_type(str(k)):
 			continue
+		if k == "chests" and not bool(Game.run["chests"]):
+			continue   # сундуки включаются только в настраиваемом старте — без них задание невыполнимо
 		var t: Dictionary = TYPES[k]
 		var need := rng.randi_range(int(t["min"]), int(t["max"]))
 		if k == "coins":

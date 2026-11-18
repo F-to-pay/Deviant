@@ -118,6 +118,15 @@
 		"ops": [["add", "armor", 0.15], ["min", "armor", 0.5]]
 	},
 	{
+		"id": "shove",
+		"name": "Concussive",
+		"weight": 5.0,
+		"min_rarity": 1,
+		"group": "",
+		"tags": [],
+		"ops": [["set", "knock_boost", 0.8]]
+	},
+	{
 		"id": "light",
 		"name": "Light",
 		"weight": 5.0,

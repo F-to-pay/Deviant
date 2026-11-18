@@ -5,6 +5,9 @@ extends RefCounted
 const W := 340.0
 const ROW := 19.0
 const ICON_H := 84.0
+const FX_SIZE := 12      # шрифт строк «что дают марка и перки» внизу карточки
+const FX_LINE := 15.0
+const FX_MAX_LINES := 4
 
 
 ## Сколько строк займёт имя (полные названия марок длинные — до 3 строк).
@@ -12,11 +15,31 @@ static func name_lines(g: Gun) -> int:
 	return clampi(ceili(U.text_w(U.font_bold(), g.gun_name, 17) * 1.08 / (W - 24.0)), 1, 3)
 
 
+## Дальность для сравнения: у пушки без спада урона — «бесконечная».
+static func _range_value(g: Gun) -> float:
+	return 1.0e9 if g.no_falloff else g.eff_range()
+
+
+## Сколько строк займёт текст эффекта (с переносом по ширине карточки).
+static func fx_lines(s: String) -> int:
+	return clampi(ceili(U.text_w(U.font(), s, FX_SIZE) * 1.08 / (W - 28.0)), 1, FX_MAX_LINES)
+
+
+static func fx_height(g: Gun) -> float:
+	var fx := g.effect_lines()
+	if fx.is_empty():
+		return 0.0
+	var h := 10.0
+	for s in fx:
+		h += FX_LINE * fx_lines(str(s)) + 3.0
+	return h
+
+
 static func height(g: Gun) -> float:
-	var rows := 8 + (1 if g.element >= 0 else 0)
+	var rows := 9 + (1 if g.element >= 0 else 0)
 	var perks := g.perk_lines().size()
 	var fl_lines := clampi(ceili(U.text_w(U.font(), U.t(g.flavor), 13) / (W - 24.0)), 1, 3)
-	return 14.0 + 22.0 * name_lines(g) + 20.0 + 18.0 + 4.0 + ICON_H + 6.0 + ROW * rows + 8.0 + 18.0 * perks + 6.0 + 17.0 * fl_lines + 12.0
+	return 14.0 + 22.0 * name_lines(g) + 20.0 + 18.0 + 4.0 + ICON_H + 6.0 + ROW * rows + 8.0 + 18.0 * perks + 6.0 + fx_height(g) + 17.0 * fl_lines + 12.0
 
 
 static func draw_card(ci: CanvasItem, g: Gun, pos: Vector2, cmp: Gun = null) -> float:
@@ -60,9 +83,12 @@ static func draw_card(ci: CanvasItem, g: Gun, pos: Vector2, cmp: Gun = null) -> 
 	rows.append([U.t("DPS"), U.fmt(g.dps()), g.dps(), cmp.dps() if cmp else 0.0, true])
 	rows.append([U.t("Fire rate"), U.t("%.1f/s") % g.fire_rate, g.fire_rate, cmp.fire_rate if cmp else 0.0, true])
 	rows.append([U.t("Accuracy"), "%d%%" % g.accuracy(), float(g.accuracy()), float(cmp.accuracy()) if cmp else 0.0, true])
-	rows.append([U.t("Range"), U.t("%d m") % roundi(g.eff_range() / 40.0), g.eff_range(), cmp.eff_range() if cmp else 0.0, true])
+	# у пушки без спада урона (револьвер) дальности нет: пуля летит до стены, урон не падает — пишем прочерк
+	var rng_s := "-" if g.no_falloff else U.t("%d m") % roundi(g.eff_range() / 40.0)
+	rows.append([U.t("Range"), rng_s, _range_value(g), _range_value(cmp) if cmp else 0.0, true])
 	rows.append([U.t("Magazine"), str(g.mag_size), float(g.mag_size), float(cmp.mag_size) if cmp else 0.0, true])
 	rows.append([U.t("Reload"), U.t("%.1f s") % g.reload_time, g.reload_time, cmp.reload_time if cmp else 0.0, false])
+	rows.append([U.t("Knockback"), str(roundi(g.volley_knock())), g.volley_knock(), cmp.volley_knock() if cmp else 0.0, true])
 	rows.append([U.t("Crit"), "%d%% ×%.1f" % [roundi(g.crit_chance * 100.0), g.crit_mult],
 		g.crit_chance * g.crit_mult, cmp.crit_chance * cmp.crit_mult if cmp else 0.0, true])
 	for r in rows:
@@ -80,6 +106,17 @@ static func draw_card(ci: CanvasItem, g: Gun, pos: Vector2, cmp: Gun = null) -> 
 		U.draw_text(ci, f, Vector2(pos.x + 14.0, y + 13.0), "• " + str(pl[0]), 13, pl[1])
 		y += 18.0
 	y += 6.0
+
+	# Что дают марка и перки: «Тяжёлый: урон +35%, скорострельность −15%»
+	var fxs := g.effect_lines()
+	if not fxs.is_empty():
+		ci.draw_rect(Rect2(pos.x + 12.0, y + 1.0, W - 24.0, 1.0), Color(1, 1, 1, 0.12))
+		y += 10.0
+		for s in fxs:
+			var nl2 := fx_lines(str(s))
+			ci.draw_multiline_string(f, Vector2(pos.x + 14.0, y + 11.0), str(s), HORIZONTAL_ALIGNMENT_LEFT, W - 28.0, FX_SIZE, nl2,
+				Color(0.72, 0.76, 0.84))
+			y += FX_LINE * nl2 + 3.0
 
 	# Флейвор
 	var fl_col := Color(1.0, 0.45, 0.3) if g.rarity >= GunData.R_LEGENDARY else Color(0.6, 0.6, 0.65)

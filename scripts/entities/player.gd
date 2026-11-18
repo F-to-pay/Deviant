@@ -1,6 +1,7 @@
 class_name Player
 extends Actor
-## Игрок. Уровней нет — вся сила в пушках. 4 слота + рюкзак. Плюс герой (Heroes) с активным навыком.
+## Игрок. Вся сила в пушках, а уровни героя (Game.hero_level) дают очки дерева навыков (LevelTree) на один забег.
+## 4 слота + рюкзак. Плюс герой (Heroes) с активным навыком.
 
 const BASE_HP := 100.0
 const SPEED := 265.0
@@ -51,6 +52,28 @@ var reload_total: float = 1.0   # полная длительность теку
 var hurt_this_zone := false     # получал ли урон в этой зоне (задание «без урона»)
 var flasks: int = FLASK_MAX     # фляги лечения (выпить — действие flask)
 var flask_cd: float = 0.0
+var temp_hp: float = 0.0        # временное здоровье (узел «Осколочный щит»): съедается уроном раньше основного
+var temp_t: float = 0.0         # через сколько секунд оно пропадёт
+var haste_t: float = 0.0        # сколько ещё длится ускорение после фляги (узел «Быстрый глоток»)
+
+
+## Здоровье без пушек: база плюс узлы дерева навыков (LevelTree, stat max_hp).
+func base_max_hp() -> float:
+	return BASE_HP + LevelTree.stat("max_hp")
+
+
+## Сколько фляг переносится дальше: база плюс узлы дерева.
+func flask_max() -> int:
+	return FLASK_MAX + int(LevelTree.stat("flask_max"))
+
+
+## Дерево навыков изменилось (покупка узла): пересчитать здоровье — прибавка сразу и лечит на столько же.
+func on_tree_changed() -> void:
+	var before := max_hp
+	max_hp = base_max_hp()
+	if max_hp > before:
+		hp += max_hp - before
+	hp = minf(hp, max_hp)
 
 
 func reset() -> void:
@@ -63,9 +86,13 @@ func reset() -> void:
 	run_perks = {}
 	flasks = 0 if bool(Game.run.get("no_heal", false)) else FLASK_MAX
 	flask_cd = 0.0
+	temp_hp = 0.0
+	temp_t = 0.0
+	haste_t = 0.0
 	skill_element = -1
 	trophy_bonus = 0.0
-	max_hp = BASE_HP
+	LevelTree.recompute()
+	max_hp = base_max_hp()
 	hp = max_hp
 	dead = false
 	visible = true
@@ -84,6 +111,7 @@ func reset() -> void:
 ## Сменить героя (в стартовом городе): навык готов сразу.
 func set_hero(id: String) -> void:
 	hero = id if Heroes.LIST.has(id) else Heroes.DEFAULT
+	LevelTree.recompute()   # личные узлы дерева — у своего героя
 	skill_cd = 0.0
 	skill_charges = max_charges()
 	parry_cd = 0.0
@@ -111,10 +139,10 @@ func perk(id: String) -> int:
 	return int(run_perks.get(id, 0))
 
 
-## Множитель урона навыка от перков: разделение, тяжёлый, яд, точный, трофеи, вандализм.
+## Множитель урона навыка от перков: разделение, тяжёлый, яд, точный, трофеи, вандализм и дерево навыков (skill_dmg).
 func skill_dmg_mult() -> float:
 	var k := (1.0 + 0.2 * perk("split")) * (1.0 + 0.2 * perk("heavy")) * (1.0 + 0.5 * perk("poison")) \
-		* (1.0 + 0.1 * perk("precise")) * (1.0 + trophy_bonus)
+		* (1.0 + 0.1 * perk("precise")) * (1.0 + trophy_bonus) * (1.0 + LevelTree.stat("skill_dmg"))
 	if perk("vandal") > 0:
 		k *= 0.5
 	return k
@@ -225,7 +253,7 @@ func on_gun_changed() -> void:
 		Game.main.sfx.reload_cancel()
 	reload_t = 0.0
 	burst_left = 0
-	max_hp = BASE_HP
+	max_hp = base_max_hp()
 	hp = minf(hp, max_hp)
 
 
@@ -248,6 +276,7 @@ func take_damage(amount: float) -> bool:
 		return false
 	hurt_this_zone = true
 	amount *= 1.0 - armor()
+	amount = _absorb(amount)
 	hp -= amount
 	invuln = 0.4
 	flash = 0.12
@@ -259,6 +288,23 @@ func take_damage(amount: float) -> bool:
 	if hp <= 0.0:
 		_die()
 	return true
+
+
+## Временное здоровье (узел «Осколочный щит») принимает урон первым. Возвращает остаток, который пойдёт в основное.
+func _absorb(amount: float) -> float:
+	if temp_hp <= 0.0:
+		return amount
+	var taken := minf(temp_hp, amount)
+	temp_hp -= taken
+	return amount - taken
+
+
+## Дали временное здоровье: не больше максимума здоровья, таймер обновляется.
+func add_temp_hp(amount: float) -> void:
+	if dead or amount <= 0.0:
+		return
+	temp_hp = minf(max_hp, temp_hp + amount)
+	temp_t = maxf(temp_t, LevelTree.stat("temp_hp_time"))
 
 
 func _on_dodged() -> void:
@@ -277,6 +323,7 @@ func hurt_dot(amount: float, el: int) -> void:
 		return
 	hurt_this_zone = true
 	amount *= 1.0 - armor()
+	amount = _absorb(amount)
 	hp -= amount
 	Game.main.fx.damage_number(position + Vector2(0, -radius), amount, false, el, true)
 	if hp <= 0.0:
@@ -325,7 +372,16 @@ func drink() -> void:
 		return
 	flasks -= 1
 	flask_cd = 0.5
-	heal(max_hp * FLASK_HEAL, true)
+	heal(max_hp * FLASK_HEAL * (1.0 + LevelTree.stat("flask_heal")), true)
+	if LevelTree.stat("flask_haste") > 0.0:
+		haste_t = LevelTree.stat("flask_haste_time")   # узел «Быстрый глоток»
+
+
+## Подобрали флягу с земли: узел «Второе дыхание» снимает долю перезарядки навыка.
+func on_flask_pickup() -> void:
+	var f := LevelTree.stat("flask_skill_refund")
+	if f > 0.0 and skill_charges < max_charges():
+		skill_cd -= f * skill_max_cd()
 
 
 ## +n фляг. В зоне их может быть сколько угодно — лишние сгорают при переходе (trim_flasks).
@@ -335,7 +391,7 @@ func add_flask(n: int = 1) -> void:
 
 ## Переход в следующую зону или город: с собой — не больше FLASK_MAX.
 func trim_flasks() -> void:
-	flasks = mini(flasks, FLASK_MAX)
+	flasks = mini(flasks, flask_max())
 
 
 func _die() -> void:
@@ -371,6 +427,12 @@ func _physics_process(delta: float) -> void:
 		muzzle -= delta
 	if flask_cd > 0.0:
 		flask_cd -= delta
+	if haste_t > 0.0:
+		haste_t -= delta
+	if temp_t > 0.0:
+		temp_t -= delta
+		if temp_t <= 0.0:
+			temp_hp = 0.0
 	if skill_charges < max_charges():
 		skill_cd -= delta
 		if skill_cd <= 0.0:
@@ -396,6 +458,8 @@ func _physics_process(delta: float) -> void:
 			spd *= FIRE_SLOW
 	if chill > 0.0:
 		spd *= 0.65
+	if haste_t > 0.0:
+		spd *= 1.0 + LevelTree.stat("flask_haste")
 	if slash_t > 0.0:
 		spd *= 1.0 - float(Heroes.get_hero(hero).get("slow", 0.0))
 	if main.transitioning:
@@ -759,10 +823,11 @@ func _fire_shells(g: Gun, mpos: Vector2, spr: float, n: int) -> void:
 
 func _fire(g: Gun) -> void:
 	var main: Main = Game.main
-	g.ammo = maxi(0, g.ammo - g.ammo_per_shot)
+	if randf() >= LevelTree.free_shot_chance():   # узел «Экономный стрелок»: выстрел без траты патрона
+		g.ammo = maxi(0, g.ammo - g.ammo_per_shot)
 	g.shot_count += 1
 	var base := aim.angle()
-	var spr := deg_to_rad(g.spread + bloom)
+	var spr := deg_to_rad((g.spread + bloom) * LevelTree.spread_mult())
 	var mpos := position + aim * (radius + 16.0)
 	var n := g.pellets
 	if g.proj_kind == GunData.K_SHELL:

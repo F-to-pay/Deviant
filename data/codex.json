@@ -131,7 +131,7 @@
 					"• [b]Slash[/b]: a 130° cleaving strike in front of you, reach 95, 15 damage to everyone in the arc. Cooldown 0.7 s; while striking (0.25 s) you move 50% slower.",
 					"",
 					"[color=#ff9a40][b]Engineer — 35 ancient coins[/b][/color]",
-					"• [b]Turret[/b]: lobbed like a mortar shell to the aim point (up to 420 away; on touch it is aimed like the grenade). It takes all the rounds left in your active gun's magazine, and you start reloading (free for a Synergis gun), has as much health as you and shoots the nearest visible enemies within the gun's effective range with a copy of your gun. Whenever the turret is hit, nearby enemies are knocked away from it and stunned for 1 s. Enemies go for whoever is closer — the turret or you. It stands until it is smashed, but is destroyed the moment the magazine runs dry. Its bullets deal 50% of the gun's damage. At most as many turrets as you have skill charges (1 by default); when all slots are taken, the next turret removes the oldest one. Cooldown 10 s.",
+					"• [b]Turret[/b]: lobbed like a mortar shell to the aim point (up to 420 away; on touch it is aimed like the grenade). It takes all the rounds left in your active gun's magazine, and you start reloading (free for a Synergis gun), has as much health as you and shoots the nearest visible enemies within the gun's effective range (but at least 10 m and at most 40 m) with a copy of your gun. Whenever the turret is hit, nearby enemies are knocked away from it and stunned for 1 s. Enemies go for whoever is closer — the turret or you. It stands until it is smashed, but is destroyed the moment the magazine runs dry. Its bullets deal 50% of the gun's damage. At most as many turrets as you have skill charges (1 by default); when all slots are taken, the next turret removes the oldest one. Cooldown 10 s.",
 					"",
 					"[color=#ff9a40][b]Skill perks (Mystic)[/b][/color]",
 					"One gift per town from the [b]Mystic[/b], for coins, until the end of the run. Only perks of your hero are offered.",
@@ -167,7 +167,7 @@
 					"• [b]Рассечение[/b]: удар дугой 130° перед собой на 95, 15 урона всем в дуге. Перезарядка 0,7 с; во время удара (0,25 с) ты на 50% медленнее.",
 					"",
 					"[color=#ff9a40][b]Инженер — 35 древних монет[/b][/color]",
-					"• [b]Турель[/b]: летит в точку прицела, как мина миномёта (до 420; на сенсоре целится так же, как граната). Забирает все патроны, что остались в обойме активной пушки, а ты начинаешь перезарядку (у пушек Синергис она бесплатная), у неё столько же здоровья, как у тебя, и она стреляет по ближайшим видимым врагам в пределах эффективной дальности пушки копией твоей пушки. Когда по турели попадают, ближайшие враги отлетают от неё и оглушаются на 1 с. Враги идут к тому, кто ближе — к турели или к тебе. Стоит, пока её не разбили, но ломается, как только обойма кончилась. Её пули бьют на 50% от урона пушки. Одновременно не больше турелей, чем у тебя зарядов навыка (по умолчанию 1); когда места заняты, новая турель убирает самую старую. Перезарядка 10 с.",
+					"• [b]Турель[/b]: летит в точку прицела, как мина миномёта (до 420; на сенсоре целится так же, как граната). Забирает все патроны, что остались в обойме активной пушки, а ты начинаешь перезарядку (у пушек Синергис она бесплатная), у неё столько же здоровья, как у тебя, и она стреляет по ближайшим видимым врагам в пределах эффективной дальности пушки (но не меньше 10 м и не больше 40 м) копией твоей пушки. Когда по турели попадают, ближайшие враги отлетают от неё и оглушаются на 1 с. Враги идут к тому, кто ближе — к турели или к тебе. Стоит, пока её не разбили, но ломается, как только обойма кончилась. Её пули бьют на 50% от урона пушки. Одновременно не больше турелей, чем у тебя зарядов навыка (по умолчанию 1); когда места заняты, новая турель убирает самую старую. Перезарядка 10 с.",
 					"",
 					"[color=#ff9a40][b]Перки навыков (Мистик)[/b][/color]",
 					"Один дар за город у [b]Мистика[/b], за монеты, до конца забега. Предлагаются только перки твоего героя.",
@@ -203,7 +203,7 @@
 					"• [b]Kutt[/b]: et kløyvende slag på 130° foran deg, rekkevidde 95, 15 skade til alle i buen. Nedkjøling 0,7 s; mens du slår (0,25 s) går du 50 % saktere.",
 					"",
 					"[color=#ff9a40][b]Ingeniør — 35 eldgamle mynter[/b][/color]",
-					"• [b]Tårn[/b]: kastes som en mortermine mot siktepunktet (opptil 420 unna; på berøringsskjerm sikter du som med granaten). Tar alle skuddene som er igjen i magasinet til det aktive våpenet, og du begynner å lade om (gratis for et Synergis-våpen), har like mye liv som deg og skyter på nærmeste synlige fiender innenfor våpenets effektive rekkevidde med en kopi av våpenet ditt. Når tårnet blir truffet, slås fiender i nærheten bort fra det og er lamslått i 1 s. Fiendene går på den som er nærmest — tårnet eller deg. Står til det blir knust, men ødelegges i det magasinet går tomt. Kulene gjør 50 % av våpenets skade. Høyst like mange tårn som du har ferdighetsladninger (1 som standard); når alle plassene er tatt, fjerner neste tårn det eldste. Nedkjøling 10 s.",
+					"• [b]Tårn[/b]: kastes som en mortermine mot siktepunktet (opptil 420 unna; på berøringsskjerm sikter du som med granaten). Tar alle skuddene som er igjen i magasinet til det aktive våpenet, og du begynner å lade om (gratis for et Synergis-våpen), har like mye liv som deg og skyter på nærmeste synlige fiender innenfor våpenets effektive rekkevidde (men minst 10 m og høyst 40 m) med en kopi av våpenet ditt. Når tårnet blir truffet, slås fiender i nærheten bort fra det og er lamslått i 1 s. Fiendene går på den som er nærmest — tårnet eller deg. Står til det blir knust, men ødelegges i det magasinet går tomt. Kulene gjør 50 % av våpenets skade. Høyst like mange tårn som du har ferdighetsladninger (1 som standard); når alle plassene er tatt, fjerner neste tårn det eldste. Nedkjøling 10 s.",
 					"",
 					"[color=#ff9a40][b]Ferdighetsegenskaper (Mystiker)[/b][/color]",
 					"Én gave per by fra [b]Mystikeren[/b], for mynter, til løpet er over. Bare egenskaper for helten din tilbys.",
@@ -222,6 +222,57 @@
 					"• [b]Økonomi[/b] (Ingeniør): tårnet får 40 % flere skudd enn det tar fra deg (+40 % per gang).",
 					"• [b]Gal vitenskapsmann[/b] (Ingeniør, én gang): tårnet får et tilfeldig Synergis-våpen én sjeldenhet over ditt aktive våpen, med fullt magasin. Ingenting tas fra reserven din.",
 					"Med flere ladninger viser ferdighetslinjen ×N; neste ladning lades mens du bruker de andre."
+				]
+			}
+		},
+		{
+			"id": "skills",
+			"section": "basics",
+			"order": 16,
+			"title": {
+				"en": "Skill tree",
+				"ru": "Дерево навыков",
+				"nb": "Evnetre"
+			},
+			"text": {
+				"en": [
+					"Every level of your hero gives [b]5 skill points[/b]. Spend them in the skill tree: [b]K[/b] (D-pad down on a gamepad), or Pause → Skill tree. A hint shows in the corner while you have unspent points.",
+					"The tree lives for one run: a new run starts from zero. There are four branches — [b]Weapon[/b], [b]Vitality[/b], [b]Abilities[/b], [b]Utility[/b] — each on its own screen, switched with the tabs on top.",
+					"Level N of a skill costs N points (tier 1) or 2×N (tier 2: 2, 4, 6…). A tier 2 skill opens once each of its parents has at least one level. Hybrids (two or three parents) are listed in every branch they belong to.",
+					"Skills of the same [b]class[/b] exclude each other: only one can be taken (accuracy — Steady Aim or Hip Fire; flasks — Bigger Belt or Quick Sip). A skill with a hero's name is personal: it exists only for that hero. «Lv 2/5» is the level cap, no cap — no number.",
+					"",
+					"• [b]Firepower[/b] — weapon damage +2% per level. [b]Toughness[/b] — +2 health. [b]Skill Power[/b] — skill damage +5%. These three also grow with your hero level: bonus = skill level × hero level × the base bonus. [b]Greed[/b] — 10% chance to double the coins of a drop (above 100% — triple, and so on).",
+					"• [b]Treasure Hunter[/b] — rarer guns drop more often. [b]Steady Aim[/b] / [b]Hip Fire[/b] — accuracy +10% / accuracy −10% and damage +5%. [b]Strong Brew[/b] — flasks heal 10% more.",
+					"• [b]Bigger Belt[/b] — +1 flask carried. [b]Quick Sip[/b] — speed after a flask. [b]Chilling Touch[/b] — skill hits slow the target. [b]Second Wind[/b] — picking up a flask restores 60% of the skill cooldown.",
+					"• Personal: [b]Executioner[/b] (Assassin) — more damage to wounded targets; [b]Thrifty Gunner[/b] (Engineer) — a chance not to spend a round, the turret too; [b]Shrapnel Shield[/b] (Pioneer) — temporary health from grenade hits; [b]Bounty Hunter[/b] (Sheriff) — every zone has a marked target with extra coins and a guaranteed gun.",
+					"",
+					"Modders can add branches and skills with data/skill_branches.json and data/skill_tree.json (see the modding guide)."
+				],
+				"ru": [
+					"Каждый уровень героя даёт [b]5 очков навыков[/b]. Тратятся в дереве навыков: [b]K[/b] (крестовина вниз на геймпаде) или Пауза → Дерево навыков. Пока есть непотраченные очки, в углу экрана подсказка.",
+					"Дерево живёт один забег: новый забег начинается с нуля. Четыре ветки — [b]Оружие[/b], [b]Живучесть[/b], [b]Способности[/b], [b]Утилити[/b] — у каждой свой экран, переключение вкладками сверху.",
+					"Уровень N навыка стоит N очков (тир 1) или 2×N (тир 2: 2, 4, 6…). Навык тира 2 открывается, когда в каждом из родителей есть хотя бы один уровень. Гибриды (два-три родителя) показаны в каждой своей ветке.",
+					"Навыки одного [b]класса[/b] исключают друг друга: можно взять только один (точность — Твёрдая рука или Стрельба от бедра; фляги — Широкий пояс или Быстрый глоток). Навык с именем героя личный: он есть только у этого героя. «Ур. 2/5» — пик уровня, нет числа — без предела.",
+					"",
+					"• [b]Огневая мощь[/b] — урон оружия +2% за уровень. [b]Крепость[/b] — +2 здоровья. [b]Сила навыка[/b] — урон навыка +5%. Эти три растут ещё и с уровнем героя: бонус = уровень навыка × уровень героя × базовый бонус. [b]Жадность[/b] — шанс 10% удвоить монеты с дропа (выше 100% — утроить и так далее).",
+					"• [b]Охотник за сокровищами[/b] — редкие пушки выпадают чаще. [b]Твёрдая рука[/b] / [b]Стрельба от бедра[/b] — точность +10% / точность −10% и урон +5%. [b]Крепкое зелье[/b] — фляги лечат на 10% больше.",
+					"• [b]Широкий пояс[/b] — +1 фляга в запасе. [b]Быстрый глоток[/b] — ускорение после фляги. [b]Ледяное касание[/b] — попадания навыком замедляют цель. [b]Второе дыхание[/b] — подбор фляги возвращает 60% перезарядки навыка.",
+					"• Личные: [b]Палач[/b] (Ассасин) — больше урона по раненым целям; [b]Экономный стрелок[/b] (Инженер) — шанс не потратить патрон, и у турели тоже; [b]Осколочный щит[/b] (Первопроходец) — временное здоровье от попаданий гранатой; [b]Охотник за головами[/b] (Шериф) — в каждой зоне есть отмеченная цель: с неё больше монет и всегда пушка.",
+					"",
+					"Моддеры добавляют ветки и навыки через data/skill_branches.json и data/skill_tree.json (см. руководство по модам)."
+				],
+				"nb": [
+					"Hvert nivå for helten gir [b]5 evnepoeng[/b]. Bruk dem i evnetreet: [b]K[/b] (D-pad ned på spillkontroller) eller Pause → Evnetre. Mens du har ubrukte poeng, vises et hint i hjørnet.",
+					"Treet varer én runde: en ny runde starter fra null. Fire grener — [b]Våpen[/b], [b]Vitalitet[/b], [b]Evner[/b], [b]Nytte[/b] — hver på sin skjerm, bytt med fanene øverst.",
+					"Nivå N av en evne koster N poeng (tier 1) eller 2×N (tier 2: 2, 4, 6…). En tier 2-evne åpnes når hver av foreldrene har minst ett nivå. Hybrider (to–tre foreldre) vises i hver av grenene sine.",
+					"Evner i samme [b]klasse[/b] utelukker hverandre: bare én kan velges (treffsikkerhet — Fast hånd eller Skudd fra hoften; flasker — Større belte eller Rask slurk). En evne med heltens navn er personlig: den finnes bare for den helten. «Nv 2/5» er nivågrensen, uten tall — ingen grense.",
+					"",
+					"• [b]Ildkraft[/b] — våpenskade +2 % per nivå. [b]Seighet[/b] — +2 helse. [b]Evnekraft[/b] — evneskade +5 %. Disse tre vokser også med heltens nivå: bonus = evnenivå × heltenivå × grunnbonus. [b]Grådighet[/b] — 10 % sjanse for å doble myntene i et fall (over 100 % — tredoble, og så videre).",
+					"• [b]Skattejeger[/b] — sjeldnere våpen faller oftere. [b]Fast hånd[/b] / [b]Skudd fra hoften[/b] — treffsikkerhet +10 % / treffsikkerhet −10 % og skade +5 %. [b]Sterk brygg[/b] — flasker helbreder 10 % mer.",
+					"• [b]Større belte[/b] — +1 flaske i beholdningen. [b]Rask slurk[/b] — fart etter en flaske. [b]Iskald berøring[/b] — evnetreff bremser målet. [b]Nytt pust[/b] — å plukke opp en flaske gjenoppretter 60 % av evnens nedkjøling.",
+					"• Personlige: [b]Bøddel[/b] (Snikmorder) — mer skade på sårede mål; [b]Sparsom skytter[/b] (Ingeniør) — sjanse for å ikke bruke en patron, også for tårnet; [b]Splintskjold[/b] (Pioner) — midlertidig helse fra granattreff; [b]Dusørjeger[/b] (Sheriff) — hver sone har et merket mål med ekstra mynter og alltid et våpen.",
+					"",
+					"Moddere kan legge til grener og evner via data/skill_branches.json og data/skill_tree.json (se modding-guiden)."
 				]
 			}
 		},
@@ -311,7 +362,7 @@
 					"",
 					"[color=#ff9a40][b]Loot[/b][/color]",
 					"• Guns drop from normal enemies (5.5%), champions (40%, better rarity) and leaders (always, 50% for a second one).",
-					"• [b]Chests[/b]: 2–3 guns, at least Uncommon. A [color=#ffd24c]golden chest[/color] (12% + 0.4% per zone) gives one more gun, at least Rare, with much better odds.",
+					"• [b]Chests[/b]: 2–3 guns, at least Uncommon. A [color=#ffd24c]golden chest[/color] (12% + 0.4% per zone) gives one more gun, at least Rare, with much better odds. Chests are off by default: switch them on in Custom start (the rating multiplier drops by 20%).",
 					"• [b]Boss[/b]: a Legendary (40%) or Epic gun from the next zone, two Rare guns, 2 flasks and 4 magazines."
 				],
 				"ru": [
@@ -326,7 +377,7 @@
 					"",
 					"[color=#ff9a40][b]Добыча[/b][/color]",
 					"• Пушки падают с обычных врагов (5,5%), чемпионов (40%, редкость лучше) и вожаков (всегда, и 50% на вторую).",
-					"• [b]Сундуки[/b]: 2–3 пушки, не хуже необычной. [color=#ffd24c]Золотой сундук[/color] (12% + 0,4% за зону) — на пушку больше, не хуже редкой и с куда лучшими шансами.",
+					"• [b]Сундуки[/b]: 2–3 пушки, не хуже необычной. [color=#ffd24c]Золотой сундук[/color] (12% + 0,4% за зону) — на пушку больше, не хуже редкой и с куда лучшими шансами. По умолчанию сундуков нет: включаются в настраиваемом старте (множитель рейтинга падает на 20%).",
 					"• [b]Босс[/b]: легендарка (40%) или эпическая пушка уровнем выше, две редкие пушки, 2 фляги и 4 магазина."
 				],
 				"nb": [
@@ -341,7 +392,7 @@
 					"",
 					"[color=#ff9a40][b]Bytte[/b][/color]",
 					"• Våpen faller fra vanlige fiender (5,5 %), mestere (40 %, bedre sjeldenhet) og ledere (alltid, 50 % for et til).",
-					"• [b]Kister[/b]: 2–3 våpen, minst uvanlige. En [color=#ffd24c]gullkiste[/color] (12 % + 0,4 % per sone) gir et våpen til, minst sjeldent, med mye bedre odds.",
+					"• [b]Kister[/b]: 2–3 våpen, minst uvanlige. En [color=#ffd24c]gullkiste[/color] (12 % + 0,4 % per sone) gir et våpen til, minst sjeldent, med mye bedre odds. Kister er av som standard: slå dem på i tilpasset start (rangeringsmultiplikatoren synker med 20 %).",
 					"• [b]Boss[/b]: et legendarisk (40 %) eller episk våpen fra neste sone, to sjeldne våpen, 2 flasker og 4 magasiner."
 				]
 			}
@@ -699,15 +750,18 @@
 			"text": {
 				"en": [
 					"Rating = points × multiplier. The best rating is saved for any run. Best zone and kills count only in standard runs (New game, or Custom start with default settings).",
-					"The multiplier comes from the difficulty (enemy health × enemy damage from Custom start) and the run options below. The current multiplier is shown in Custom start and in the pause menu."
+					"The multiplier comes from the difficulty (enemy health × enemy damage from Custom start) and the run options below. The current multiplier is shown in Custom start and in the pause menu.",
+					"The same multiplier applies to the experience your hero earns: harder settings level you (and the skill tree) up faster, easier ones slower."
 				],
 				"ru": [
 					"Рейтинг = очки × множитель. Лучший рейтинг сохраняется в любом забеге. Рекорды зоны и убийств — только в стандартных (Новая игра или «Настраиваемый старт» без изменений).",
-					"Множитель складывается из сложности (здоровье × урон врагов в «Настраиваемом старте») и опций забега ниже. Текущий множитель видно в «Настраиваемом старте» и в меню паузы."
+					"Множитель складывается из сложности (здоровье × урон врагов в «Настраиваемом старте») и опций забега ниже. Текущий множитель видно в «Настраиваемом старте» и в меню паузы.",
+					"Тот же множитель действует на опыт героя: жёстче настройки — быстрее растут уровни (и дерево навыков), мягче — медленнее."
 				],
 				"nb": [
 					"Rangering = poeng × multiplikator. Beste rangering lagres for alle løp. Beste sone og drap teller bare i vanlige løp (Nytt spill, eller Tilpasset start uten endringer).",
-					"Multiplikatoren kommer fra vanskelighetsgraden (fiendeliv × fiendeskade i Tilpasset start) og valgene for løpet under. Gjeldende multiplikator vises i Tilpasset start og i pausemenyen."
+					"Multiplikatoren kommer fra vanskelighetsgraden (fiendeliv × fiendeskade i Tilpasset start) og valgene for løpet under. Gjeldende multiplikator vises i Tilpasset start og i pausemenyen.",
+					"Den samme multiplikatoren gjelder heltens erfaring: vanskeligere innstillinger gir raskere nivåer (og evnetre), enklere gir langsommere."
 				]
 			},
 			"auto": "rating"

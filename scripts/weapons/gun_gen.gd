@@ -16,7 +16,7 @@ static var force_legendary := ""
 static func roll_rarity(level: int, rng: RandomNumberGenerator, bonus: float) -> int:
 	if bool(Game.run["chaos"]):
 		return rng.randi_range(0, GunData.RARITIES.size() - 1)   # Хаос: все редкости равновероятны
-	var b := bonus + minf(float(level) * 0.03, 1.2)
+	var b := bonus + minf(float(level) * 0.03, 1.2) + LevelTree.stat("rare_luck")   # дерево навыков: «Охотник за сокровищами»
 	var weights: Array = []
 	for i in GunData.RARITIES.size():
 		var w := float(GunData.RARITIES[i].get("weight", 0.0))
@@ -254,6 +254,16 @@ static func _apply_base(g: Gun, rng: RandomNumberGenerator = null) -> void:
 		# скорострельность — смесь с уклоном к основе патронов (30% узора, 70% патронов, геометрически):
 		# пулемёт на минах — 1.5 выстр/с, а не 14; снайперка на патронах ПП — 5, а не 0.8
 		g.fire_rate = pow(float(a.get("fire_rate", 2.0)), 1.0 - HYBRID_AMMO_RATE) * pow(float(am.get("fire_rate", 2.0)), HYBRID_AMMO_RATE)
+		# Урон «снайперки» при скорострельности «пулемёта» давал DPS в 3–5 раз выше обычных пушек (пулемёт+снайперка Синергис — 133
+		# при среднем ~30): сырой DPS гибрида (урон × снаряды × выстр/с) не выше смеси сырых DPS основ тем же уклоном 30/70.
+		# Только срезаем, не подтягиваем; у легендарок баланс ручной.
+		if g.legendary == "":
+			var raw := g.damage * float(g.pellets) * g.fire_rate
+			var dps_a := float(a.get("damage", 10.0)) * float(a.get("pellets", 1)) * float(a.get("fire_rate", 2.0))
+			var dps_m := float(am.get("damage", 10.0)) * float(am.get("pellets", 1)) * float(am.get("fire_rate", 2.0))
+			var cap := pow(dps_a, 1.0 - HYBRID_AMMO_RATE) * pow(dps_m, HYBRID_AMMO_RATE)
+			if raw > cap and raw > 0.0:
+				g.damage *= cap / raw
 		# Навесная мина — снаряд с первым приоритетом: если в гибриде есть миномёт (с любой стороны),
 		# он стреляет минами вместо пуль, дроби, ракет и гранат. Патроны, урон и узор — по обычным правилам.
 		var sh: Dictionary = a if _is_shell(a) else (b if _is_shell(b) else {})
@@ -287,6 +297,7 @@ static func _apply_base(g: Gun, rng: RandomNumberGenerator = null) -> void:
 	# Пулевой дробовик (slug_chance основы): вся дробь в одном снаряде, точно и дальше
 	if g.legendary == "" and g.pellets > 1 and randf() < float(a.get("slug_chance", 0.0)):
 		g.damage *= float(g.pellets) * 0.85
+		g.slug_n = g.pellets   # один снаряд толкает как весь залп (Gun.volley_knock_mult считает по slug_n)
 		g.pellets = 1
 		g.spread *= 0.12
 		g.lifetime *= 2.0

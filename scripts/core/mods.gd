@@ -289,6 +289,9 @@ static func validate() -> void:
 					", ".join(PackedStringArray(Codex.ACTIONS))], "codex")
 		if not p.has("title"):
 			DebugLog.warn("codex page '%s' has no title" % pid, "codex")
+	DebugLog.info("skill tree: %d branches, %d nodes" % [LevelTree.branches.size(), LevelTree.nodes.size()], "mods")
+	for prob in LevelTree.problems():
+		DebugLog.warn(str(prob), "skill_tree")
 	_check_translations()
 	DebugLog.info("--- validate done: %d warnings, %d errors" % [DebugLog.warns, DebugLog.errors], "mods")
 
@@ -321,6 +324,11 @@ static func _check_translations() -> void:
 		names.append(str(l.get("name", "")))
 		names.append(str(l.get("flavor", "")))
 	names.append_array(GunData.NICKNAMES)
+	for b in LevelTree.branches:
+		names.append(str(b.get("name", "")))
+	for n in LevelTree.nodes:
+		names.append(str(n.get("name", "")))
+		names.append(str(n.get("desc", "")))
 	for code in I18n.available():
 		if code == "en":
 			continue

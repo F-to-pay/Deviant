@@ -30,7 +30,7 @@ func note_spawn(level: int, elite: int) -> void:
 
 ## Сколько уровней героя дал бы весь запас XP зоны из текущего состояния (дробное: остаток — доля следующего).
 func levels_worth() -> float:
-	var x: float = Game.xp + pool_xp
+	var x: float = Game.xp + pool_xp * Game.rating_mult()   # опыт в зоне идёт с множителем рейтинга
 	var lvl: int = Game.hero_level
 	while x >= Game.xp_need(lvl):
 		x -= Game.xp_need(lvl)

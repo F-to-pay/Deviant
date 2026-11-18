@@ -282,6 +282,7 @@ func load_zone(level: int) -> void:
 		for c in (data["chests"] if bool(Game.run["chests"]) else []):
 			_spawn_chest(zone.cell_center(c), rng.randf() < 0.12 + float(level) * 0.004)
 		_spawn_portal(zone.cell_center(data["portal"]), level + 1)
+		_mark_bounty()
 	zone.explore(player.position, 11)
 	_update_wake()
 	music.on_zone(boss != null)
@@ -313,7 +314,8 @@ func load_town(next_level: int) -> void:
 	_spawn_portal(zone.cell_center(data["portal"]), next_level)
 	if next_level == 1:
 		reset_stone = ResetStone.new()
-		reset_stone.position = zone.random_free_near(player.position, 80.0, 120.0)
+		# камень — в центре площади (на самом центре может быть пруд или памятник — берём ближайшую свободную точку)
+		reset_stone.position = zone.open_spot_near(zone.cell_center(data.get("center", data["spawn"])), 34.0)
 		item_layer.add_child(reset_stone)
 	zone.explore(player.position, 11)
 	music.on_town()
@@ -551,6 +553,8 @@ func drop_gun(g: Gun, pos: Vector2, pop: bool = true) -> void:
 func drop_coins(pos: Vector2, total: int, pieces: int = 1, meta: bool = false) -> void:
 	if total <= 0:
 		return
+	if not meta:
+		total *= LevelTree.coin_mult()   # узел «Жадность»: шанс удвоить дроп
 	var n := clampi(pieces, 1, mini(8, total))
 	var left := total
 	for i in n:
@@ -767,14 +771,20 @@ func on_enemy_killed(e: Enemy, by_player: bool = true) -> void:
 		spawn_flask(e.position)
 	# монеты (на первом этапе): обычный — в среднем 0.35, чемпион — 2–4, вожак — 5–8 и иногда древняя.
 	# Game.kill_coins: ×1.2 за этап и делится на рост числа врагов в зоне
+	var coin_total := 0
 	if e.elite == 0:
-		drop_coins(e.position, Game.kill_coins(lvl, 0.35, rng))
+		coin_total = Game.kill_coins(lvl, 0.35, rng)
+		drop_coins(e.position, coin_total)
 	elif e.elite == 1:
-		drop_coins(e.position, Game.kill_coins(lvl, float(rng.randi_range(2, 4)), rng), 3)
+		coin_total = Game.kill_coins(lvl, float(rng.randi_range(2, 4)), rng)
+		drop_coins(e.position, coin_total, 3)
 	else:
-		drop_coins(e.position, Game.kill_coins(lvl, float(rng.randi_range(5, 8)), rng), 5)
+		coin_total = Game.kill_coins(lvl, float(rng.randi_range(5, 8)), rng)
+		drop_coins(e.position, coin_total, 5)
 		if rng.randf() < 0.15:
 			drop_coins(e.position, 1, 1, true)
+	if e.bounty:
+		_pay_bounty(e, coin_total)
 	# патроны: обычный — 15% на полмагазина, чемпион — 60% на магазин, вожак — 2 магазина
 	if e.elite == 0:
 		if rng.randf() < 0.15:
@@ -785,6 +795,38 @@ func on_enemy_killed(e: Enemy, by_player: bool = true) -> void:
 	else:
 		spawn_ammo(e.position, 1.0)
 		spawn_ammo(e.position, 1.0)
+
+
+## Цель заказа Шерифа (узел «Охотник за головами») убита: добавка к монетам и гарантированная пушка.
+func _pay_bounty(e: Enemy, coin_total: int) -> void:
+	var extra := maxi(1, roundi(float(coin_total) * LevelTree.stat("bounty_coins")))
+	drop_coins(e.position, extra, 4)
+	if LevelTree.stat("bounty_gun") > 0.0:
+		drop_gun(_loot(GunGen.generate(Game.zone_level, rng, 0.6)), e.position)
+	fx.ring(e.position, 90.0, Color(1.0, 0.35, 0.25), 0.5)
+	Game.say(U.t("Bounty collected!"), Color(1.0, 0.45, 0.35))
+
+
+## Заказ на зону: цель — случайный чемпион (нет их — любой обычный враг). Рандом — глобальный, чтобы не сбивать сид забега.
+func _mark_bounty() -> void:
+	if LevelTree.stat("bounty_gun") <= 0.0 and LevelTree.stat("bounty_coins") <= 0.0:
+		return
+	var pool: Array = []
+	var champs: Array = []
+	for o in enemies:
+		var e: Enemy = o
+		if e.summoned or e.dead or e.elite >= 3:
+			continue
+		pool.append(e)
+		if e.elite >= 1:
+			champs.append(e)
+	var from: Array = champs if not champs.is_empty() else pool
+	if from.is_empty():
+		return
+	var t: Enemy = from[randi() % from.size()]
+	t.bounty = true
+	t.queue_redraw()
+	Game.say(U.t("Bounty: %s") % t.title, Color(1.0, 0.45, 0.35))
 
 
 func _boss_dead(b: Enemy) -> void:

@@ -182,6 +182,8 @@ func fire_gun(g: Gun, pos: Vector2, dir: Vector2, team: int, dmg_mult: float = 1
 	p.vel = dir * spd
 	p.kind = g.proj_kind
 	p.dmg = g.damage * dmg_mult
+	if team == 0:
+		p.dmg *= (1.0 + LevelTree.stat("weapon_dmg")) * g.pellet_dmg_mult()   # дерево навыков: урон пуль героя и турели; +1% за дробину
 	p.proc = clampf(g.proc_coef() * dmg_mult, 0.08, 1.0)
 	# секунда стрельбы = +10% кислоты/холода, независимо от скорострельности
 	p.st = 0.1 * g.elem_mult / maxf(0.25, g.fire_rate * float(g.pellets))
@@ -227,7 +229,7 @@ func fire_gun(g: Gun, pos: Vector2, dir: Vector2, team: int, dmg_mult: float = 1
 	p.elem_chance = g.elem_chance * g.elem_mult
 	p.crit_chance = g.crit_chance
 	p.crit_mult = g.crit_mult
-	p.knock = g.knock
+	p.knock = g.pellet_knock()   # суммарный толчок залпа растёт с числом дробин медленнее и медленнее (потолок ×6): на одну дробину — меньше
 	p.chaos = g.special == "chaos"
 	p.no_falloff = g.no_falloff
 	p.range_dmg = g.range_dmg if p.kind != K_SHELL else 0.0

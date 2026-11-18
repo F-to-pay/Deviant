@@ -38,6 +38,7 @@ const DEFAULTS := {
 	"slot_2": {"kb": [KEY_2], "pad": []},
 	"slot_3": {"kb": [KEY_3], "pad": []},
 	"slot_4": {"kb": [KEY_4], "pad": []},
+	"skill_tree": {"kb": [KEY_K], "pad": [JOY_BUTTON_DPAD_DOWN]},   # дерево навыков (LevelTree)
 	"pause": {"kb": [KEY_ESCAPE], "pad": [JOY_BUTTON_START]},
 	"restart": {"kb": [KEY_ENTER], "pad": [JOY_BUTTON_A]},
 	"debug": {"kb": [KEY_F3], "pad": []},
@@ -57,7 +58,7 @@ const REBINDABLE := [
 	["interact", "Pick up / open"], ["swap", "Swap with current"], ["scrap", "Scrap for ammo"],
 	["next_weapon", "Next weapon"], ["prev_weapon", "Previous weapon"], ["last_weapon", "Last weapon"],
 	["slot_1", "Weapon 1"], ["slot_2", "Weapon 2"], ["slot_3", "Weapon 3"], ["slot_4", "Weapon 4"],
-	["inventory", "Inventory"], ["pause", "Pause"],
+	["inventory", "Inventory"], ["skill_tree", "Skill tree"], ["pause", "Pause"],
 ]
 
 const PAD_BUTTONS := {

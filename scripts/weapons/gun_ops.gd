@@ -15,7 +15,7 @@ extends RefCounted
 ## Условие: ["stat", "<", 12] — сравнение (==, !=, <, <=, >, >=); ["arch", "==", "shotgun"] — основа;
 ##   ["and", усл, усл...], ["or", усл, усл...], ["not", усл].
 ## stat — любое свойство Gun (см. weapons/gun.gd): damage, fire_rate, pellets, spread, proj_speed, lifetime,
-##   mag_size, reload_time, crit_chance, crit_mult, element, elem_chance, burst, ammo_per_shot, knock,
+##   mag_size, reload_time, crit_chance, crit_mult, element, elem_chance, burst, ammo_per_shot, knock, knock_boost,
 ##   proj_kind, proj_size, pierce, bounces, explode_r, explode_chance, explode_on_expire, homing, accel,
 ##   drag, sine, boomerang, split_n, split_depth, chain_n, cluster_n, leech, vortex, seeder, teleport,
 ##   armor, free_ammo, proc_mult, elem_mult, move_mult, shake.
@@ -290,6 +290,7 @@ const STAT_LABELS := {
 	"burst": "burst",
 	"ammo_per_shot": "rounds per shot",
 	"knock": "knockback",
+	"knock_boost": "knockback boost for weak guns",
 	"proj_kind": "projectile kind",
 	"proj_size": "projectile size",
 	"pierce": "pierce",
@@ -317,7 +318,7 @@ const STAT_LABELS := {
 	"shake": "screen shake",
 }
 ## Эти статы — доли (0.15 = 15%).
-const PERCENT_STATS := ["crit_chance", "elem_chance", "explode_chance", "leech", "armor"]
+const PERCENT_STATS := ["crit_chance", "elem_chance", "explode_chance", "leech", "armor", "knock_boost"]
 
 
 static func _lbl(stat: String) -> String:
