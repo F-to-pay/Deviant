@@ -19,6 +19,7 @@ const FLASK_PRICE := 20         # Лекарь: наполнить одну фл
 const MYSTIC_OFFER := 3         # перков на выбор у Мистика
 const MYSTIC_BASE := 40         # первый перк; каждый следующий за забег — +50%
 const REROLL_SHARE := 0.35      # переброс перка — доля цены пушки
+const COMBINE_SHARE := 0.5     # объединение двух пушек — доля цены пушки итоговой (лучшей) редкости и уровня
 const RARITY_UP_SHARE := 0.7    # повышение редкости — доля цены пушки новой редкости
 
 static func cv(level: int) -> float:
@@ -39,6 +40,11 @@ static func sell_price(g: Gun) -> int:
 
 static func reroll_price(g: Gun) -> int:
 	return maxi(1, roundi(float(gun_price(g)) * REROLL_SHARE))
+
+
+## Цена объединения пушек в гибрид (обе пушки пропадают, появляется одна).
+static func combine_price(a: Gun, b: Gun) -> int:
+	return maxi(1, roundi(float(price_of(maxi(a.rarity, b.rarity), maxi(a.level, b.level))) * COMBINE_SHARE))
 
 
 ## Поднять редкость можно до эпической и не у легендарок/абсурдных.

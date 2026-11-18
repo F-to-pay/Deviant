@@ -7,7 +7,7 @@
 		"gun_nick": "{adj} {type_l} «{nick}»",
 		"gun_nick2": "{adj} {adj2_l} {type_l} «{nick}»",
 		"gun_legendary": "«{name}»",
-		"type_hybrid": "{a}-{b_l}",
+		"type_hybrid": "{a} & {b_l}",
 		"elite": "{prefix} {type_l}",
 		"rare": "{first} {last}",
 		"boss": "{title} {name}"
@@ -958,6 +958,17 @@
 		"Knockback": "Отбрасывание",
 		"Concussive": {"m": "Сотрясающий", "f": "Сотрясающая"},
 		"knockback boost for weak guns": "усиление отбрасывания у слабых пушек",
-		"Concussive: weak knockback is boosted": "Сотрясающий: слабое отбрасывание усилено"
+		"Concussive: weak knockback is boosted": "Сотрясающий: слабое отбрасывание усилено",
+		"Reroll «%s» (pick 1 of 3) — %d": "Перебросить «%s» (выбор из 3) — %d",
+		"Pick a replacement for «%s»:": "Выбери замену для «%s»:",
+		"Combine guns": "Объединить пушки",
+		"Legendary and hybrid guns can't be combined": "Легендарные пушки и гибриды объединять нельзя",
+		"With «%s» — %d": "С «%s» — %d",
+		"No suitable gun to combine with": "Нет подходящей пушки для объединения",
+		"Who shoots and who loads? Both guns are consumed — {0}": "Кто стреляет, а кто заряжает? Обе пушки пропадут — {0}",
+		"price %d": "цена %d",
+		"«%s» shoots, «%s» loads": "«%s» стреляет, «%s» заряжает",
+		"Combined: %s": "Объединено: %s",
+		"No perk fits this gun": "Этой пушке ничего не подходит"
 	}
 }

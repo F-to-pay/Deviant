@@ -143,7 +143,7 @@ func ammo_name() -> String:
 	return GunData.ammo_label(ammo_type())
 
 
-## «Дробовик-гранатомёт» и прочие мутанты (порядок — шаблон языка type_hybrid).
+## «Дробовик & гранатомёт» и прочие мутанты (порядок — шаблон языка type_hybrid).
 func type_name() -> String:
 	var a := _arch_name(archetype)
 	if archetype2 == "":

@@ -18,7 +18,7 @@ const EN_TEMPLATES := {
 	"gun_nick": "{adj} {type} \"{nick}\"",
 	"gun_nick2": "{adj} {adj2} {type} \"{nick}\"",
 	"gun_legendary": "\"{name}\"",
-	"type_hybrid": "{a}-{b}",
+	"type_hybrid": "{a} & {b}",
 	"elite": "{prefix} {type}",
 	"rare": "{first} {last}",
 	"boss": "{name} the {title}",

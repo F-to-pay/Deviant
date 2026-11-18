@@ -155,11 +155,11 @@ next to the exe — the text from `data/guide.json` plus a reference of every lo
 - **Stages and towns**: 5 zones (the last with a boss) make a stage. Before every stage — and at the start of a run —
   you visit a procedural **town**: a plaza with five stalls: the **Gun Shop** (8 guns, buy / sell, new stock for coins,
   one magazine of ammo for 1.5× its scrap value),
-  the **Mystic** (one run-long perk for the hero's skill per town: split, poison, heavy shell, parry, extra charges, element...), the **Workshop** (reroll a perk,
-  raise rarity up to Epic) and the **Healer** (heal to full, refill flasks), the **Guild** (one contract at a time; pays ancient and regular coins the moment it is done)
+  the **Mystic** (one run-long perk for the hero's skill per town: split, poison, heavy shell, parry, extra charges, element...), the **Workshop** (reroll a perk and pick the new one out of three,
+  raise rarity up to Epic, combine two guns into a hybrid of your choice) and the **Healer** (heal to full, refill flasks), the **Guild** (one contract at a time; pays ancient and regular coins the moment it is done)
   and a rift onward. The town takes its colors, layout and name from the zone that comes next.
   Custom start can turn towns off. The **starting town** also has the Recruiter (pick a hero), the Relic Keeper
-  (meta perks — stub), the Oddsmaker (custom start) and a Restart stone at the entrance: a new run in a new
+  (meta perks — stub), the Oddsmaker (custom start) and a Restart stone in the middle of the square: a new run in a new
   starting town, to reroll the stock.
 - **Heroes**, each with an active skill (RMB / LT): Pioneer — grenade (30 damage, radius 60, 6 s),
   Sheriff — the next shot deals +40 (6 s), Assassin — melee slash for 15, reach 95 (0.7 s, slowed while striking),
@@ -203,7 +203,7 @@ X over a gun — recycle. You can't drop or recycle your last gun in hand.
 - **Type traits**: effective range −30% for everything; shooting slows you by 15% (not pistols/SMGs); pistol and SMG
   reload twice as fast with lower damage (same DPS); revolver has no damage falloff; assault rifle is 30% more accurate;
   sniper +30% damage that grows with distance from 30% to 100% at half its effective range.
-  That's how you get a "Shotgun-Grenade Launcher": 8 grenades in a fan.
+  That's how you get a "Shotgun & Grenade Launcher": 8 grenades in a fan.
 - **11 makers** with a guaranteed effect:
   | Maker | Effect |
   |---|---|

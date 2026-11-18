@@ -162,7 +162,7 @@ static func rerollable(g: Gun) -> Array:
 
 ## Пересобрать пушку с той же основой, маркой, легендаркой и уровнем, но редкостью rarity:
 ## перки сохраняются, кроме drop (он меняется на другой случайный). Разброс статов и имя — новые.
-static func rebuild(old: Gun, rarity: int, drop: String, rng: RandomNumberGenerator) -> Gun:
+static func rebuild(old: Gun, rarity: int, drop: String, rng: RandomNumberGenerator, pick: String = "") -> Gun:
 	var g := Gun.new()
 	g.level = old.level
 	g.rarity = rarity
@@ -180,8 +180,71 @@ static func rebuild(old: Gun, rarity: int, drop: String, rng: RandomNumberGenera
 	for m in old.mods:
 		if str(m) != drop:
 			keep.append(m)
+	if pick != "" and not (pick in keep):
+		keep.append(pick)   # перк, выбранный игроком из предложенных (reroll_options), вместо случайного
 	_build(g, rng, leg, keep, [drop] if drop != "" else [])
 	g.ammo = mini(old.ammo, g.mag_size)
+	return g
+
+
+## Перки на выбор при переброске перка drop: до count штук, каждый подошёл бы пушке без сбрасываемого и ещё не стоит на ней.
+## Пусто — выбирать не из чего (переброска не продаётся).
+static func reroll_options(old: Gun, drop: String, rng: RandomNumberGenerator, count: int = 3) -> Array:
+	var tmp := old.copy()
+	tmp.mods.erase(drop)
+	var out: Array = []
+	while out.size() < count:
+		var id := _roll_mod(tmp, rng, [drop] + out)
+		if id == "":
+			break
+		out.append(id)
+	return out
+
+
+# --- Ручной гибрид (Мастерская) ----------------------------------------------------
+
+## Почему pat с ammo не объединить: "" — можно; "same", "legendary", "hybrid" (оба должны быть обычными основами),
+## "type" (одна и та же основа), "maker" (марка узора не умеет такой снаряд или сама собирает гибрид).
+static func combine_block(pat: Gun, ammo: Gun) -> String:
+	if pat == ammo:
+		return "same"
+	if pat.legendary != "" or ammo.legendary != "":
+		return "legendary"
+	if pat.archetype2 != "" or ammo.archetype2 != "":
+		return "hybrid"
+	if pat.archetype == ammo.archetype:
+		return "type"
+	var mk := _maker(pat)
+	if str(mk.get("projectile_arch", "")) != "":
+		return "maker"   # Гипернова сама превращает любую основу в ракетницу
+	if bool(mk.get("no_explosive", false)) and _arch_explosive(ammo.archetype):
+		return "maker"
+	return ""
+
+
+## Гибрид из двух пушек: pat — узор стрельбы и марка, ammo — снаряд и патроны (как у случайных гибридов, см. _apply_base).
+## Редкость и уровень — лучшие из двух; перки обеих, сколько влезает по редкости (первыми — перки pat, без двух из одной группы).
+static func combine(pat: Gun, ammo: Gun, rng: RandomNumberGenerator) -> Gun:
+	var g := Gun.new()
+	g.level = maxi(pat.level, ammo.level)
+	g.rarity = maxi(pat.rarity, ammo.rarity)
+	g.maker = pat.maker
+	g.archetype = pat.archetype
+	g.archetype2 = ammo.archetype
+	var cap := int(GunData.RARITIES[g.rarity].get("perks", 0))
+	var keep: Array = []
+	var groups: Dictionary = {}
+	for src in [pat, ammo]:
+		for id in rerollable(src):
+			var sid := str(id)
+			var grp := str(GunData.perk(sid).get("group", ""))
+			if sid in keep or keep.size() >= cap or (grp != "" and groups.has(grp)):
+				continue
+			keep.append(sid)
+			if grp != "":
+				groups[grp] = true
+	_build(g, rng, {}, keep)
+	g.ammo = g.mag_size
 	return g
 
 
@@ -602,7 +665,7 @@ static func _make_name(g: Gun, rng: RandomNumberGenerator, leg: Dictionary) -> v
 
 
 ## Имя пушки на текущем языке — по шаблонам языка (I18n.tpl):
-##  en: "Hypernova-38 Armored Grenade Launcher-Rocket Launcher", "Mean Sniper Rifle "Mortgage""
+##  en: "Hypernova-38 Armored Grenade Launcher & Rocket Launcher", "Mean Sniper Rifle "Mortgage""
 ##  ru: «Бронированный гранатомёт-ракетница Гипернова-38», «Злая снайперка «Ипотека»»
 static func build_name(g: Gun) -> String:
 	var p := g.name_parts

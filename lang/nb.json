@@ -7,7 +7,7 @@
 		"gun_nick": "{adj} {type_l} «{nick}»",
 		"gun_nick2": "{adj} {adj2_l} {type_l} «{nick}»",
 		"gun_legendary": "«{name}»",
-		"type_hybrid": "{a}-{b_l}",
+		"type_hybrid": "{a} & {b_l}",
 		"elite": "{prefix} {type_l}",
 		"rare": "{first} {last}",
 		"boss": "{name} den {title}"
@@ -958,6 +958,17 @@
 		"Knockback": "Tilbakeslag",
 		"Concussive": {"m": "Slagkraftig", "f": "Slagkraftig", "n": "Slagkraftig"},
 		"knockback boost for weak guns": "tilbakeslagsøkning for svake våpen",
-		"Concussive: weak knockback is boosted": "Slagkraftig: svakt tilbakeslag forsterkes"
+		"Concussive: weak knockback is boosted": "Slagkraftig: svakt tilbakeslag forsterkes",
+		"Reroll «%s» (pick 1 of 3) — %d": "Trekk «%s» på nytt (velg 1 av 3) — %d",
+		"Pick a replacement for «%s»:": "Velg erstatning for «%s»:",
+		"Combine guns": "Kombiner våpen",
+		"Legendary and hybrid guns can't be combined": "Legendariske våpen og hybrider kan ikke kombineres",
+		"With «%s» — %d": "Med «%s» — %d",
+		"No suitable gun to combine with": "Ingen passende våpen å kombinere med",
+		"Who shoots and who loads? Both guns are consumed — {0}": "Hvem skyter og hvem lader? Begge våpnene forsvinner — {0}",
+		"price %d": "pris %d",
+		"«%s» shoots, «%s» loads": "«%s» skyter, «%s» lader",
+		"Combined: %s": "Kombinert: %s",
+		"No perk fits this gun": "Ingen perk passer til dette våpenet"
 	}
 }
