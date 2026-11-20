@@ -106,8 +106,9 @@ and reading it via `Game.setting("key")`.
 ## Languages
 
 The source language is English: strings in code and in `data/*.json` are the translation keys. Translations are
-`lang/<code>.json` — Russian (`lang/ru.json`) and Norwegian Bokmål (`lang/nb.json`) are built in; the codex and the
-modding guide are in all three languages. Mods can extend them or add new languages. The switch is the button under
+`lang/<code>.json` — Russian (`lang/ru.json`) is built in; the codex and the modding guide are in English and Russian.
+Norwegian Bokmål lives in a separate mod, `Mods/Norwegian/` (enabled by default, **frozen**: new strings are shown in English).
+Mods can extend the languages or add new ones. The switch is the button under
 Quit in the main menu (cycles through all languages found; setting `language`, defaults to the system language).
 - In code: `U.t("Text")`; format strings are translated before substitution: `U.t("Zone %d") % n`.
 - In a translation, nouns have a lower-case form and a gender (`{"text", "lower", "g"}`), adjectives have gender forms
@@ -153,7 +154,7 @@ next to the exe — the text from `data/guide.json` plus a reference of every lo
   (mostly for guns in your slots) and scrapping guns (X on the ground or over a gun in the inventory).
   New guns arrive with an empty magazine (`LOOT_GUN_LOADED`). The magazine is always a multiple of rounds per shot.
 - **Stages and towns**: 5 zones (the last with a boss) make a stage. Before every stage — and at the start of a run —
-  you visit a procedural **town**: a plaza with five stalls: the **Gun Shop** (8 guns, buy / sell, new stock for coins,
+  you visit a procedural **town**: a plaza with five stalls: the **Gun Shop** (11 guns, the rarest one — the **Deal of the day** — at half price; buy / sell, new stock for coins,
   one magazine of ammo for 1.5× its scrap value),
   the **Mystic** (one run-long perk for the hero's skill per town: split, poison, heavy shell, parry, extra charges, element...), the **Workshop** (reroll a perk and pick the new one out of three,
   raise rarity up to Epic, combine two guns into a hybrid of your choice) and the **Healer** (heal to full, refill flasks), the **Guild** (one contract at a time; pays ancient and regular coins the moment it is done)
@@ -166,7 +167,7 @@ next to the exe — the text from `data/guide.json` plus a reference of every lo
   Engineer — lobs a turret (10 s): it takes all the rounds from your gun's current magazine (you reload), has your health and shoots the nearest visible enemies,
   who go for whichever is closer, you or the turret; it shoots at the gun's effective range (at least 10 m, at most 40 m), deals 50% of the gun's damage, knocks nearby enemies away and stuns them for 1 s whenever it is hit, and is destroyed the moment the magazine runs dry. Up to as many turrets as skill charges; beyond that the oldest one is removed.
   The Pioneer is free, the others are unlocked with ancient coins. Skill damage does not grow with depth.
-- **Coins**: you start with 100 and a single gun; enemies, chests and bosses drop more, income and prices grow 20% per stage (10:12). Lost on death.
+- **Coins**: you start with 120 and a single gun; enemies, chests and bosses drop more, income and prices grow 20% per stage (10:12). Lost on death. Deep in the run amounts are written in **ultra coins**: 1 UC = 10^17 coins.
   **Ancient coins** (meta-progression) drop from bosses, leaders and golden chests and are saved forever.
 - Death = start over. The best zone and ancient coins are saved.
 
@@ -189,7 +190,11 @@ X over a gun — recycle. You can't drop or recycle your last gun in hand.
 
 `rarity → type (or hybrid) → maker → perks → legendary effect → random spread → zone scaling → name`
 
-- **10 types**: pistol, revolver, SMG, assault rifle, shotgun, sniper rifle, rocket launcher, machine gun, grenade launcher, mortar.
+- **12 types**: pistol, revolver, SMG, assault rifle, shotgun, sniper rifle, rocket launcher, machine gun, grenade launcher, mortar, ship cannon, crossbow.
+  - **Ship Cannon** — one huge cannonball (the highest single hit in the game), 4 in the magazine, a long reload, strong knockback. The **recoil** throws you back
+    about 11–14 m (the field `recoil`; walls stop you). Perks may add pellets. Never a hybrid.
+  - **Crossbow** (Chu-Ko-Nu) — damage ×1.5 of the Pistol, **infinite ammo**, a reload of 15 s and a **rhythm game**: a ring shrinks every second, press [R] or fire when it meets the target ring
+    and you cut 2 s off the reload. A miss or an extra press takes the ability away for 4 s. Every hit on the beat (every cut of the reload) adds +8% damage to the next magazine, and the bonuses stack; a miss does not take them away. Never made by Synergis, never a hybrid.
   - **Revolver** — slower than the pistol, hits twice as hard, its own ammo.
   - **Mortar** — uses rockets. A shell flies in an arc to the aim point (no farther than its range) and explodes
     after 1 s. Spread = deviation of the landing point. Highest damage per shot, a magazine of 1 shell.
@@ -220,8 +225,8 @@ X over a gun — recycle. You can't drop or recycle your last gun in hand.
   | BOARDING | magazine 30%, projectile speed ×3 (same range), +40% damage, knockback ×2 |
   The starting pistol is always a Synergis.
   Hypernova, Chaos Forge, Atlas and Godforce never appear on legendaries.
-- **38 perks**: grenades, rockets, ricochet, piercing, splitting, fractal splitting, boomerang, wave flight,
-  chain lightning, cluster bombs, knockback boost for weak guns (Concussive), "seeding" projectiles, quantum teleport, nuke, and so on.
+- **40 perks**: grenades, rockets, ricochet, piercing, splitting, fractal splitting, boomerang, wave flight,
+  chain lightning, cluster bombs, knockback boost for weak guns (Concussive), instant bullets (Laser), rhythm reload (Rhythmic), "seeding" projectiles, quantum teleport, nuke, and so on.
   Piercing, lifesteal and black holes are rare (Epic and up). Black hole chance depends on the damage of a single projectile,
   so a machine gun barely ever procs it. Bullets explode by chance, rockets and grenades always.
 - Explosions: 100% damage at the center → 20% at the edge; your own explosions hurt you too, but 10 times less.
@@ -290,8 +295,8 @@ scripts/
   ui/                   hud, hud_draw, gun_card, inventory_ui, cursor_draw, menu, menu_bg, touch_controls,
                         ui_fit (interface size and margins), debug_console
 data/                   archetypes, makers, perks, legendaries, rarities, names, codex, guide (JSON)
-lang/                   translations (ru.json, nb.json)
-Mods/                   mods (+ README for modders, ExampleMod)
+lang/                   translations (ru.json)
+Mods/                   mods (+ README for modders, ExampleMod, Norwegian — frozen translation)
 ```
 
 ## Want more absurdity — where to dig
@@ -302,7 +307,7 @@ Mods/                   mods (+ README for modders, ExampleMod)
 - A new legendary special (`special`) — code in `player.gd`/`projectiles.gd`.
 - A new enemy: an entry in `EnemyData.TYPES` + a branch in `Enemy._behave()`.
 - A new biome: an entry in `Biomes.LIST`.
-- Balance curves: `game.gd` → `enemy_hp_mult / enemy_dmg_mult / gun_dmg_mult`.
+- Balance curves: `game.gd` → `enemy_hp_mult / enemy_dmg_mult / gun_dmg_mult`. Up to zone 200 enemy health grows ×1.2 per zone and enemy damage linearly; after it both follow the power of a reference hero (a third of the points in Firepower and in Toughness) plus +20% per 100 zones, so the game stays playable at any depth.
 
 ## Not there yet
 

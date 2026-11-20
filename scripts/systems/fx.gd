@@ -10,6 +10,7 @@ const P_RING := 1
 const P_SPARK := 2
 const P_FLASH := 3
 const P_BOLT := 4
+const P_BEAM := 5
 
 
 class Part:
@@ -49,7 +50,7 @@ func _process(delta: float) -> void:
 		p.life -= delta
 		if p.life <= 0.0:
 			continue
-		if p.kind != P_BOLT:
+		if p.kind != P_BOLT and p.kind != P_BEAM:
 			p.pos += p.vel * delta
 			p.vel *= maxf(0.0, 1.0 - p.drag * delta)
 		alive.append(p)
@@ -132,6 +133,11 @@ func lightning(a: Vector2, b: Vector2, color: Color) -> void:
 	_part(a, b, 0.14, 2.0, color, P_BOLT)
 
 
+## Мгновенный луч «Фонарика»: линия от a до b, гаснет за ~0.12 с (как у молнии, vel хранит конечную точку).
+func beam(a: Vector2, b: Vector2, color: Color) -> void:
+	_part(a, b, 0.12, 2.5, color, P_BEAM)
+
+
 func blink(a: Vector2, b: Vector2, color: Color) -> void:
 	_part(a, Vector2.ZERO, 0.2, 14.0, color, P_RING)
 	_part(b, Vector2.ZERO, 0.2, 14.0, color, P_RING)
@@ -205,6 +211,9 @@ func _draw() -> void:
 				draw_circle(p.pos, p.size * (0.6 + 0.4 * k), Color(p.color, k * 0.75))
 			P_BOLT:
 				_draw_bolt(p.pos, p.vel, Color(p.color, k), p.size)
+			P_BEAM:
+				draw_line(p.pos, p.vel, Color(p.color, 0.22 * k), p.size * 4.0 * k + 1.0)
+				draw_line(p.pos, p.vel, Color(p.color.lightened(0.6), 0.9 * k), p.size * k + 0.5)
 	var f := U.font_bold()
 	for n in nums:
 		var a := clampf(n.life / 0.25, 0.0, 1.0)

@@ -8,6 +8,10 @@ extends CanvasLayer
 const ACCENT := Color(1.0, 0.55, 0.2)
 const TEXT := Color(0.9, 0.9, 0.95)
 const DIM := Color(0.6, 0.6, 0.68)
+## Панели экранов — как карточка пушки (GunCard): тёмный фон, цветная полоса сверху и рамка того же цвета.
+const PANEL_BG := Color(0.05, 0.05, 0.07, 0.94)
+const SCREEN_ACCENT := {"shop": Color(1.0, 0.62, 0.25), "mystic": Color(0.78, 0.45, 1.0), "workshop": Color(0.45, 0.75, 1.0),
+	"guild": Color(0.5, 0.9, 0.45), "healer": Color(1.0, 0.4, 0.45), "heroes": Color(0.4, 0.85, 1.0), "custom": Color(1.0, 0.82, 0.35)}
 
 var mode := "main"
 var current := ""
@@ -15,6 +19,7 @@ var bg: MenuBg
 var dim: ColorRect
 var cursor: CursorDraw
 var screens := {}
+var _panels := {}         # экран -> PanelContainer-рамка (цвет полосы меняет дерево навыков по ветке)
 var records: Label
 var _settings_ui := {}    # ключ -> [контрол, подпись значения или null, формат]
 var _first_focus := {}    # экран -> кнопка, получающая фокус
@@ -31,6 +36,8 @@ var _restart_armed := false
 var _town_sub := {}       # экран лавки -> Label с репликой торговца
 var _town_coins := {}     # экран лавки -> Label с монетами
 var _shop_buy: VBoxContainer
+var _shop_deal_panel: PanelContainer   # «Товар дня» — отдельный блок над списком
+var _shop_deal: VBoxContainer
 var _shop_sell: VBoxContainer
 var _shop_prev: GunPreview
 var _shop_reroll: Button
@@ -869,7 +876,7 @@ func _reset_binds() -> void:
 
 ## Заголовок лавки: название, реплика торговца (подставляется при открытии), монеты.
 func _shop_head(box: VBoxContainer, sname: String, title: String) -> void:
-	box.add_child(_label(title, 48, ACCENT, true))
+	box.add_child(_label(title, 48, SCREEN_ACCENT.get(sname, ACCENT), true))
 	var sub := _label("", 18, DIM)
 	box.add_child(sub)
 	_town_sub[sname] = sub
@@ -879,7 +886,7 @@ func _shop_head(box: VBoxContainer, sname: String, title: String) -> void:
 
 
 func _shop_coins_text() -> String:
-	return U.t("Coins: %s") % U.fmt(float(Game.coins)) + "   ·   " + U.t("Ancient coins: %s") % U.fmt(float(Game.meta_coins))
+	return U.t("Coins: %s") % U.money(Game.coins) + "   ·   " + U.t("Ancient coins: %s") % U.fmt(float(Game.meta_coins))
 
 
 ## Обновить шапку лавки (монеты) после покупки.
@@ -963,22 +970,33 @@ func _build_shop(root: Control) -> void:
 	row.add_theme_constant_override("separation", 24)
 	box.add_child(row)
 	var left := VBoxContainer.new()
+	left.add_theme_constant_override("separation", 6)
 	left.add_child(_label(U.t("For sale"), 22, TEXT))
-	var lb := _list_box(460, 400)
-	left.add_child(lb[0])
-	_shop_buy = lb[1]
+	# «Товар дня» — своя рамка над списком; сам список без прокрутки: в нём все остальные пушки сразу
+	_shop_deal_panel = PanelContainer.new()
+	_shop_deal_panel.add_theme_stylebox_override("panel", _box(Color(0.22, 0.17, 0.05, 0.55), Color(1.0, 0.82, 0.35), 3))
+	_shop_deal = VBoxContainer.new()
+	_shop_deal.add_theme_constant_override("separation", 6)
+	_shop_deal_panel.add_child(_shop_deal)
+	left.add_child(_shop_deal_panel)
+	_shop_buy = VBoxContainer.new()
+	_shop_buy.add_theme_constant_override("separation", 6)
+	_shop_buy.custom_minimum_size = Vector2(460, 0)
+	left.add_child(_shop_buy)
 	_shop_reroll = _small_button("", _reroll_stock, 460.0)
 	left.add_child(_shop_reroll)
-	left.add_child(_label(U.t("Ammo — one magazine"), 22, TEXT))
-	var ab := _list_box(460, 150)
-	left.add_child(ab[0])
-	_shop_ammo = ab[1]
 	row.add_child(left)
 	var mid := VBoxContainer.new()
+	mid.add_theme_constant_override("separation", 6)
 	mid.add_child(_label(U.t("Your guns — sell"), 22, TEXT))
-	var mb := _list_box(460, 560)
+	var mb := _list_box(460, 380)
 	mid.add_child(mb[0])
 	_shop_sell = mb[1]
+	mid.add_child(_label(U.t("Ammo — one magazine"), 22, TEXT))
+	_shop_ammo = VBoxContainer.new()
+	_shop_ammo.add_theme_constant_override("separation", 6)
+	_shop_ammo.custom_minimum_size = Vector2(460, 0)
+	mid.add_child(_shop_ammo)
 	row.add_child(mid)
 	_shop_prev = GunPreview.new()
 	row.add_child(_shop_prev)
@@ -992,6 +1010,7 @@ func _build_shop(root: Control) -> void:
 func _refresh_shop() -> void:
 	_shop_refresh_head("shop")
 	_clear_box(_shop_buy)
+	_clear_box(_shop_deal)
 	_clear_box(_shop_sell)
 	var town: Dictionary = Game.main.town
 	var stock: Array = town.get("stock", [])
@@ -999,20 +1018,27 @@ func _refresh_shop() -> void:
 		_shop_buy.add_child(_label(U.t("Sold out"), 18, DIM))
 	for o in stock:
 		var g: Gun = o
-		var price := Shops.gun_price(g)
-		var b := _gun_row(g, "%s — %d" % [g.gun_name, price], _buy_gun.bind(g), _shop_prev)
+		var price := Shops.buy_price(g, town)
+		var is_deal: bool = g == town.get("deal")
+		var b := _gun_row(g, ("%s — %s" % [g.gun_name, U.money(price)]) if not is_deal else U.tm("%s — %d (was %d)", [g.gun_name, U.money(price), U.money(Shops.gun_price(g))]),
+			_buy_gun.bind(g), _shop_prev)
 		b.disabled = Game.coins < price
-		_shop_buy.add_child(b)
+		if is_deal:
+			_shop_deal.add_child(_label(U.t("Deal of the day: 50% off"), 16, Color(1.0, 0.82, 0.35), true, HORIZONTAL_ALIGNMENT_LEFT))
+			_shop_deal.add_child(b)
+		else:
+			_shop_buy.add_child(b)
+	_shop_deal_panel.visible = _shop_deal.get_child_count() > 0
 	var p: Player = Game.main.player
 	for e in _player_guns():
 		var g: Gun = e[0]
-		var b := _gun_row(g, "+%d · %s (%s)" % [Shops.sell_price(g), g.gun_name, _gun_where(e)], _sell_gun.bind(g), _shop_prev)
+		var b := _gun_row(g, "+%s · %s (%s)" % [U.money(Shops.sell_price(g)), g.gun_name, _gun_where(e)], _sell_gun.bind(g), _shop_prev)
 		# последнюю пушку в руках не продать — стрелять будет нечем
 		b.disabled = str(e[1]) == "slot" and p.gun_count() <= 1
 		_shop_sell.add_child(b)
 	var lvl := int(town.get("level", 1))
 	var rp := Shops.stock_reroll_price(lvl, int(town.get("rerolls", 0)))
-	_shop_reroll.text = U.t("New stock — %d") % rp
+	_shop_reroll.text = U.tm("New stock — %d", [U.money(rp)])
 	_shop_reroll.disabled = Game.coins < rp
 	# патроны: по магазину к каждой пушке в слотах
 	_clear_box(_shop_ammo)
@@ -1028,14 +1054,14 @@ func _refresh_shop() -> void:
 			b.disabled = true
 		else:
 			var price := Shops.ammo_price(g, n)
-			b = _gun_row(g, "+%d %s — %d  (%s)" % [n, g.ammo_name(), price, g.gun_name], _buy_ammo.bind(g), _shop_prev)
+			b = _gun_row(g, "+%d %s — %s  (%s)" % [n, g.ammo_name(), U.money(price), g.gun_name], _buy_ammo.bind(g), _shop_prev)
 			b.disabled = Game.coins < price
 		_shop_ammo.add_child(b)
 	if _shop_ammo.get_child_count() == 0:
 		_shop_ammo.add_child(_label(U.t("Your guns don't need ammo"), 16, DIM))
 	if not stock.is_empty():
 		_shop_prev.show_gun(stock[0], p.gun())
-	_grab_first(_shop_buy)
+	_grab_first(_shop_deal if _shop_deal_panel.visible else _shop_buy)
 
 
 func _reroll_stock() -> void:
@@ -1048,6 +1074,7 @@ func _reroll_stock() -> void:
 	Game.add_coins(-rp)
 	town["rerolls"] = int(town.get("rerolls", 0)) + 1
 	town["stock"] = Shops.make_stock(lvl, Game.main.rng)
+	town["deal"] = (town["stock"] as Array)[0]
 	_shop_status.text = U.t("New stock arrived")
 	Sfx.ui("world/chest", -6.0)
 	_refresh_shop()
@@ -1070,13 +1097,16 @@ func _buy_ammo(g: Gun) -> void:
 
 
 func _buy_gun(g: Gun) -> void:
-	var price := Shops.gun_price(g)
-	var stock: Array = Game.main.town.get("stock", [])
+	var town: Dictionary = Game.main.town
+	var price := Shops.buy_price(g, town)
+	var stock: Array = town.get("stock", [])
 	if Game.coins < price or not (g in stock):
 		Sfx.ui("ui/error", -6.0)
 		return
 	Game.add_coins(-price)
 	stock.erase(g)
+	if g == town.get("deal"):
+		town["deal"] = null
 	var p: Player = Game.main.player
 	if p.add_gun(g):
 		_shop_status.text = U.t("Bought: %s") % g.gun_name
@@ -1102,7 +1132,7 @@ func _sell_gun(g: Gun) -> void:
 			return
 		p.backpack.remove_at(i)
 	Game.add_coins(Shops.sell_price(g))
-	_shop_status.text = U.t("Sold: %s (+%d)") % [g.gun_name, Shops.sell_price(g)]
+	_shop_status.text = U.tm("Sold: %s (+%d)", [g.gun_name, U.money(Shops.sell_price(g))])
 	Sfx.at("pickup/coin", p.position, -6.0)
 	_refresh_shop()
 
@@ -1154,8 +1184,8 @@ func _refresh_mystic() -> void:
 	for o in offer:
 		var id := str(o)
 		var have := int(p.run_perks.get(id, 0))
-		var t := "%s%s — %s   ·   %d" % [Heroes.perk_name(id, p.hero), (" ×%d" % (have + 1)) if have > 0 else "",
-			Heroes.perk_desc(id, have), price]
+		var t := "%s%s — %s   ·   %s" % [Heroes.perk_name(id, p.hero), (" ×%d" % (have + 1)) if have > 0 else "",
+			Heroes.perk_desc(id, have), U.money(price)]
 		var b := _small_button(t, _buy_mystic.bind(id, -1), 1100.0)
 		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		b.custom_minimum_size = Vector2(1100, 58)
@@ -1269,7 +1299,7 @@ func _ws_fill_actions() -> void:
 	_ws_partner = null
 	if Shops.can_rarity_up(g):
 		var rp := Shops.rarity_up_price(g)
-		var rb := _small_button(U.t("Raise rarity: %s — %d") % [U.t(str(GunData.RARITIES[g.rarity + 1]["name"])), rp],
+		var rb := _small_button(U.tm("Raise rarity: %s — %d", [U.t(str(GunData.RARITIES[g.rarity + 1]["name"])), U.money(rp)]),
 			_ws_rarity, 460.0)
 		rb.disabled = Game.coins < rp
 		_ws_actions.add_child(rb)
@@ -1279,7 +1309,7 @@ func _ws_fill_actions() -> void:
 		_ws_actions.add_child(_label(U.t("No perks to reroll"), 16, DIM, false, HORIZONTAL_ALIGNMENT_LEFT))
 	for id in perks:
 		var nm := I18n.word(str(GunData.perk(str(id)).get("name", id)), "m")
-		var pb := _small_button(U.t("Reroll «%s» (pick 1 of 3) — %d") % [nm, rr], _ws_reroll.bind(str(id)), 460.0)
+		var pb := _small_button(U.tm("Reroll «%s» (pick 1 of 3) — %d", [nm, U.money(rr)]), _ws_reroll.bind(str(id)), 460.0)
 		pb.disabled = Game.coins < rr
 		_ws_actions.add_child(pb)
 	_ws_fill_combine_list(g)
@@ -1335,7 +1365,7 @@ func _ws_fill_combine_list(g: Gun) -> void:
 			continue
 		any = true
 		var price := Shops.combine_price(g, h)
-		var b := _small_button(U.t("With «%s» — %d") % [h.gun_name, price], _ws_pick_partner.bind(h), 460.0)
+		var b := _small_button(U.tm("With «%s» — %d", [h.gun_name, U.money(price)]), _ws_pick_partner.bind(h), 460.0)
 		b.disabled = Game.coins < price
 		_ws_actions.add_child(b)
 	if not any:
@@ -1350,7 +1380,7 @@ func _ws_pick_partner(h: Gun) -> void:
 ## Выбор, как объединить: кто даёт узор стрельбы (и марку), а чьи снаряд и патроны.
 func _ws_fill_combine(g: Gun, h: Gun) -> void:
 	var price := Shops.combine_price(g, h)
-	var hd := _label(U.t("Who shoots and who loads? Both guns are consumed — {0}").replace("{0}", U.t("price %d") % price),
+	var hd := _label(U.t("Who shoots and who loads? Both guns are consumed — {0}").replace("{0}", U.tm("price %d", [U.money(price)])),
 		16, Color(0.75, 1.0, 0.55), false, HORIZONTAL_ALIGNMENT_LEFT)
 	hd.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	hd.custom_minimum_size = Vector2(460, 0)
@@ -1458,7 +1488,8 @@ func _build_tree(root: Control) -> void:
 	for b in LevelTree.branches:
 		var bid := str(b["id"])
 		var box := _screen(root, "tree_" + bid)
-		box.add_child(_label(U.t("SKILLS"), 52, ACCENT, true))
+		(_panels["tree_" + bid] as PanelContainer).add_theme_stylebox_override("panel", _card_style(LevelTree.branch_color(b), 30, 18))
+		box.add_child(_label(U.t("SKILLS"), 52, LevelTree.branch_color(b), true))
 		var tabs := HBoxContainer.new()
 		tabs.alignment = BoxContainer.ALIGNMENT_CENTER
 		tabs.add_theme_constant_override("separation", 10)
@@ -1496,51 +1527,81 @@ func _refresh_tree(bid: String) -> void:
 	_grab_first(rows)
 
 
-## Строка узла: слева название, уровень и описание (что даёт сейчас и на следующем уровне), справа кнопка покупки.
+## Карточка навыка (как карточка пушки): рамка цвета ветки, название и уровень, строки «сейчас / дальше ▲», справа кнопка покупки.
 func _tree_row(n: Dictionary, bid: String, bcol: Color) -> Control:
 	var id := str(n["id"])
 	var lv := LevelTree.level(id)
 	var mx := LevelTree.max_level(n)
 	var why := LevelTree.block(id)
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 16)
+	var locked := why == "req" or why == "class"
+	var outer := HBoxContainer.new()
 	var pad := Control.new()
 	pad.custom_minimum_size = Vector2(26.0 * float(int(n.get("tier", 1)) - 1), 0)
-	row.add_child(pad)
+	outer.add_child(pad)
+	var card := PanelContainer.new()
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	card.add_theme_stylebox_override("panel", _card_style(Color(0.4, 0.4, 0.46) if locked else (bcol if lv > 0 or why == "" else bcol.darkened(0.45)), 16, 10, 4))
+	outer.add_child(card)
+	var hb := HBoxContainer.new()
+	hb.add_theme_constant_override("separation", 16)
+	card.add_child(hb)
 	var info := VBoxContainer.new()
 	info.custom_minimum_size = Vector2(760, 0)
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var locked := why == "req" or why == "class"
-	var title := "%s   %s" % [U.t(str(n.get("name", id))), (U.t("Lv %d/%d") % [lv, mx]) if mx > 0 else (U.t("Lv %d") % lv)]
+	info.add_theme_constant_override("separation", 3)
+	hb.add_child(info)
+	# название слева, уровень справа
+	var th := HBoxContainer.new()
+	var title := U.t(str(n.get("name", id)))
 	var hero := str(n.get("hero", ""))
 	if hero != "":
 		title += "   · " + Heroes.hero_name(hero)
-	info.add_child(_label(title, 22, DIM if locked else (bcol.lightened(0.3) if lv > 0 else TEXT), true, HORIZONTAL_ALIGNMENT_LEFT))
-	var d := _label(LevelTree.describe(n, maxi(lv, 1)), 17, TEXT if not locked else DIM, false, HORIZONTAL_ALIGNMENT_LEFT)
-	d.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	info.add_child(d)
+	var tl := _label(title, 22, DIM if locked else (bcol.lightened(0.3) if lv > 0 else TEXT), true, HORIZONTAL_ALIGNMENT_LEFT)
+	tl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	th.add_child(tl)
+	th.add_child(_label((U.t("Lv %d/%d") % [lv, mx]) if mx > 0 else (U.t("Lv %d") % lv), 20, bcol.lightened(0.2) if lv > 0 else DIM, true, HORIZONTAL_ALIGNMENT_RIGHT))
+	info.add_child(th)
+	if lv > 0:
+		info.add_child(_tree_stat_row(U.t("Now"), LevelTree.describe(n, lv), TEXT if not locked else DIM, false))
+	if why != "max":
+		info.add_child(_tree_stat_row(U.t("Next level") if lv > 0 else U.t("Level 1"), LevelTree.describe(n, lv + 1),
+			Color(0.6, 0.95, 0.7) if not locked else DIM, not locked))
 	if LevelTree.scales_with_hero(n):
-		info.add_child(_label(U.t("Grows with hero level (now ×%s)") % U.fmt(float(Game.hero_level)), 15, DIM, false, HORIZONTAL_ALIGNMENT_LEFT))
-	if lv > 0 and why != "max":
-		var nx := _label(U.t("Next level: ") + LevelTree.describe(n, lv + 1), 16, Color(0.6, 0.95, 0.7), false, HORIZONTAL_ALIGNMENT_LEFT)
-		nx.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		info.add_child(nx)
+		info.add_child(_tree_stat_row(U.t("Hero level"), "×" + U.fmt(float(Game.hero_level)), DIM, false))
 	if why == "req":
 		var names: Array = []
 		for r in n.get("requires", []):
 			if LevelTree.level(str(r)) <= 0:
 				names.append(U.t(str(LevelTree.node(str(r)).get("name", r))))
-		info.add_child(_label(U.t("Requires: %s") % ", ".join(PackedStringArray(names)), 16, Color(1.0, 0.6, 0.45), false, HORIZONTAL_ALIGNMENT_LEFT))
+		info.add_child(_tree_stat_row(U.t("Requires"), ", ".join(PackedStringArray(names)), Color(1.0, 0.6, 0.45), false))
 	elif why == "class":
 		var rival := LevelTree.node(LevelTree.class_rival(n))
-		info.add_child(_label(U.t("Excluded by: %s") % U.t(str(rival.get("name", "?"))), 16, Color(1.0, 0.6, 0.45), false, HORIZONTAL_ALIGNMENT_LEFT))
-	row.add_child(info)
+		info.add_child(_tree_stat_row(U.t("Excluded by"), U.t(str(rival.get("name", "?"))), Color(1.0, 0.6, 0.45), false))
 	var btn := _small_button(
 		U.t("MAX") if why == "max" else (U.t("Locked") if locked else U.t("Upgrade — %d") % LevelTree.cost_of(n, lv + 1)),
 		_tree_buy.bind(id, bid), 230.0)
 	btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	btn.disabled = why != ""
-	row.add_child(btn)
+	hb.add_child(btn)
+	return outer
+
+
+## Строка карточки: подпись слева (серым), значение справа; у «дальше» зелёная стрелка ▲, как в карточке пушки.
+func _tree_stat_row(tag: String, text: String, col: Color, arrow: bool) -> Control:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	var t := _label(tag, 15, DIM, false, HORIZONTAL_ALIGNMENT_LEFT)
+	t.custom_minimum_size = Vector2(120, 0)
+	t.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	row.add_child(t)
+	var v := _label(text, 17, col, false, HORIZONTAL_ALIGNMENT_LEFT)
+	v.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(v)
+	if arrow:
+		var ar := _label("▲", 14, Color(0.45, 1.0, 0.5), false, HORIZONTAL_ALIGNMENT_RIGHT)
+		ar.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		row.add_child(ar)
 	return row
 
 
@@ -1578,16 +1639,16 @@ func _refresh_healer() -> void:
 		_healer_box.add_child(_label(U.t("Hardcore run — the healer won't touch you."), 18, DIM))
 		return
 	var hp_price := Shops.heal_price(lvl, 1.0 - p.hp / p.max_hp)
-	var hb := _small_button(U.t("Heal to full — %d") % hp_price if hp_price > 0 else U.t("Health is full"), _heal_full, 560.0)
+	var hb := _small_button(U.tm("Heal to full — %d", [U.money(hp_price)]) if hp_price > 0 else U.t("Health is full"), _heal_full, 560.0)
 	hb.disabled = hp_price <= 0 or Game.coins < hp_price
 	_healer_box.add_child(hb)
 	var fp := Shops.flask_price(lvl)
 	var need := p.flask_max() - p.flasks
-	var fb := _small_button(U.t("Fill a flask — %d") % fp if need > 0 else U.t("Flasks are full"), _buy_flask.bind(1), 560.0)
+	var fb := _small_button(U.tm("Fill a flask — %d", [U.money(fp)]) if need > 0 else U.t("Flasks are full"), _buy_flask.bind(1), 560.0)
 	fb.disabled = need <= 0 or Game.coins < fp
 	_healer_box.add_child(fb)
 	if need > 1:
-		var ab := _small_button(U.t("Fill all (%d) — %d") % [need, fp * need], _buy_flask.bind(need), 560.0)
+		var ab := _small_button(U.tm("Fill all (%d) — %d", [str(need), U.money(fp * need)]), _buy_flask.bind(need), 560.0)
 		ab.disabled = Game.coins < fp * need
 		_healer_box.add_child(ab)
 	_grab_first(_healer_box)
@@ -1646,7 +1707,7 @@ func _refresh_guild() -> void:
 	if offers.is_empty():
 		_guild_offers.add_child(_label(U.t("The board is empty."), 18, DIM))
 	for q in offers:
-		var b := _small_button(U.t("Take: %s — +%d ancient coins, +%d coins") % [Quests.text(q), int(q["reward"]), int(q["coins"])],
+		var b := _small_button(U.tm("Take: %s — +%d ancient coins, +%d coins", [Quests.text(q), str(int(q["reward"])), U.money(float(q["coins"]))]),
 			_take_quest.bind(q), 1000.0)
 		b.disabled = not Quests.can_take() or Quests.has_type(str(q["type"]))
 		_guild_offers.add_child(b)
@@ -1655,7 +1716,7 @@ func _refresh_guild() -> void:
 		var q: Dictionary = Quests.active[i]
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 12)
-		var l := _label(U.t("%s — +%d ancient, +%d coins") % [Quests.line(q), int(q["reward"]), int(q["coins"])], 18, Color(0.6, 1.0, 1.0), false, HORIZONTAL_ALIGNMENT_LEFT)
+		var l := _label(U.tm("%s — +%d ancient, +%d coins", [Quests.line(q), str(int(q["reward"])), U.money(float(q["coins"]))]), 18, Color(0.6, 1.0, 1.0), false, HORIZONTAL_ALIGNMENT_LEFT)
 		l.custom_minimum_size = Vector2(700, 0)
 		row.add_child(l)
 		row.add_child(_small_button(U.t("Abandon"), _abandon_quest.bind(i), 190.0))
@@ -2146,29 +2207,53 @@ func _records_text() -> String:
 
 ## top = true: экран прижат к верху, а не по центру. Нужен экранам с карточкой пушки: высота их содержимого не должна
 ## двигать заголовок и списки, когда карточка меняется (у Кузни хаоса она выше обычных).
+## Все экраны, кроме главного, стоят в рамке-панели «как у карточки пушки» (цвет — лавка или ветка дерева).
 func _screen(root: Control, sname: String, top: bool = false) -> VBoxContainer:
+	var framed := sname != "main"
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 10)
+	var holder: Control = box
+	if framed:
+		var panel := PanelContainer.new()
+		panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		panel.add_theme_stylebox_override("panel", _card_style(SCREEN_ACCENT.get(sname, ACCENT), 30, 18))
+		panel.add_child(box)
+		holder = panel
+		_panels[sname] = panel
 	if top:
 		var wrap := VBoxContainer.new()
 		wrap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		wrap.alignment = BoxContainer.ALIGNMENT_BEGIN
 		root.add_child(wrap)
 		wrap.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		var tbox := VBoxContainer.new()
-		tbox.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		tbox.add_theme_constant_override("separation", 10)
-		wrap.add_child(tbox)
+		holder.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		wrap.add_child(holder)
 		screens[sname] = wrap
-		return tbox
+		return box
 	var center := CenterContainer.new()
 	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(center)
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var box := VBoxContainer.new()
 	box.alignment = BoxContainer.ALIGNMENT_CENTER
-	box.add_theme_constant_override("separation", 10)
-	center.add_child(box)
+	center.add_child(holder)
 	screens[sname] = center
 	return box
+
+
+## Рамка как у карточки пушки: фон PANEL_BG, полоса accent сверху (6 px), рамка accent (2 px).
+func _card_style(accent: Color, mx: int = 14, my: int = 10, top_bar: int = 6) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = PANEL_BG
+	sb.border_color = Color(accent, 0.85)
+	sb.border_width_left = 2
+	sb.border_width_right = 2
+	sb.border_width_bottom = 2
+	sb.border_width_top = top_bar
+	sb.content_margin_left = mx
+	sb.content_margin_right = mx
+	sb.content_margin_top = my
+	sb.content_margin_bottom = my
+	return sb
 
 
 func _label(text: String, fsize: int, col: Color, bold: bool = false,

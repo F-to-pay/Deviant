@@ -78,7 +78,8 @@ static func pick_type(level: int, rng: RandomNumberGenerator, exclude: Array = [
 
 
 ## Пак: состав, элитность (0/1 чемпионы/2 редкий вожак), число аффиксов.
-static func roll_pack(level: int, rng: RandomNumberGenerator) -> Dictionary:
+## elite_mult > 1 — судья «любит элиток» (Director.ELITE_LOVE): шансы чемпионов и вожаков растут во столько раз, но не выше 45% и 32%.
+static func roll_pack(level: int, rng: RandomNumberGenerator, elite_mult: float = 1.0) -> Dictionary:
 	var size := rng.randi_range(4, 6 + mini(level / 3, 5))
 	var t1 := pick_type(level, rng)
 	var t2 := pick_type(level, rng)
@@ -102,6 +103,9 @@ static func roll_pack(level: int, rng: RandomNumberGenerator) -> Dictionary:
 	var r := rng.randf()
 	var rare_chance := minf(0.07 + float(level) * 0.01, 0.25)
 	var champ_chance := minf(0.14 + float(level) * 0.012, 0.35)
+	if elite_mult > 1.0:
+		rare_chance = minf(rare_chance * elite_mult, 0.32)
+		champ_chance = minf(champ_chance * elite_mult, 0.45)
 	if level >= 2 and r < rare_chance:
 		elite = 2
 		n_aff = 2 + (1 if level >= 15 else 0)

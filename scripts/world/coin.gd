@@ -3,7 +3,7 @@ extends Node2D
 ## Монетка на земле. Обычная — деньги забега (Game.coins), древняя (meta) — мета-прогрессия
 ## (Game.meta_coins, сохраняется сразу). Подлетает к игроку, как сферы здоровья.
 
-var value := 1
+var value: float = 1.0
 var meta := false
 var vel := Vector2.ZERO
 var t := 0.0

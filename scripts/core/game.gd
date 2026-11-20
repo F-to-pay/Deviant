@@ -54,7 +54,7 @@ var best_zone: int = 0
 var best_kills: int = 0
 var best_rating: int = 0
 var bosses: int = 0                 # боссов убито за забег
-var coins: int = 0                  # монеты забега (тратятся в городе, после смерти сгорают)
+var coins: float = 0.0                  # монеты забега (тратятся в городе, после смерти сгорают)
 var meta_coins: int = 0             # древние монеты — мета-прогрессия, копятся между забегами (deviant.cfg)
 var meta_run: int = 0               # древних монет подобрано за этот забег (для экрана смерти)
 var hero := Heroes.DEFAULT          # выбранный герой (Heroes), сохраняется
@@ -74,7 +74,7 @@ const RUN_DEFAULTS := {
 }
 ## Этап = TOWN_EVERY зон (последняя — с боссом). Перед каждым этапом, и в начале забега, — город.
 const TOWN_EVERY := 5
-const START_COINS := 100
+const START_COINS := 120
 const DIFFICULTY := [
 	{"n": "Easy", "hp": 0.8, "dmg": 0.5},
 	{"n": "Normal", "hp": 1.0, "dmg": 1.0},
@@ -177,6 +177,19 @@ static func xp_need(lvl: int) -> float:
 	return XP_NEED_BASE * pow(float(lvl), XP_NEED_POW)
 
 
+## Сколько XP нужно, чтобы пройти `levels` уровней (дробное число) с начала уровня lvl: целые уровни по xp_need,
+## дробный остаток — долей следующего. Нужен судье: «1,5 уровня за зону» = xp_need(L) + 0,5 × xp_need(L+1).
+static func xp_span(lvl: int, levels: float) -> float:
+	var total := 0.0
+	var l := lvl
+	var left := maxf(0.0, levels)
+	while left >= 1.0:
+		total += xp_need(l)
+		l += 1
+		left -= 1.0
+	return total + left * xp_need(l)
+
+
 ## Сколько XP даёт убийство врага уровня lvl (elite: 0 обычный … 3 босс).
 static func enemy_xp(lvl: int, elite: int) -> float:
 	return (XP_BASE + XP_PER_LEVEL * float(maxi(0, lvl - 1))) * float(XP_ELITE_MULT[clampi(elite, 0, 3)])
@@ -226,9 +239,8 @@ func new_run() -> void:
 
 
 # --- Кривые сложности -------------------------------------------------------
-# Здоровье врагов растёт чуть быстрее урона пушек: старые стволы постепенно
-# устаревают, и приходится лутаться. Урон врагов растёт линейно — у игрока
-# нет уровней, вся его сила — в пушках.
+# До зоны FLAT_FROM: здоровье врагов растёт чуть быстрее урона пушек (старые стволы устаревают, приходится лутаться),
+# урон врагов — линейно. Дальше кривые «сшиты» с силой героя: см. enemy_hp_mult / enemy_dmg_mult и ref_*.
 
 ## Рост за зону. Пушка с зоны N на зоне N+k: враги толще в ENEMY_HP_GROWTH^k — через 4 зоны ×2,
 ## новая пушка той же зоны отстаёт от врагов на (1.20/1.18)^k — лутаться и менять стволы надо постоянно.
@@ -268,22 +280,39 @@ func expected_enemies(level: int) -> float:
 
 
 ## Монеты из base «монет первого этапа»: × econ, дробная часть — случайно (0.4 — с шансом 40% одна монета).
-func coins_for(level: int, base: float, r: RandomNumberGenerator) -> int:
+func coins_for(level: int, base: float, r: RandomNumberGenerator) -> float:
 	return _round_rand(base * econ(level), r)
 
 
 ## То же для добычи с врагов: ещё и делится на рост числа врагов, чтобы доход за зону не рос с ним.
-func kill_coins(level: int, base: float, r: RandomNumberGenerator) -> int:
+func kill_coins(level: int, base: float, r: RandomNumberGenerator) -> float:
 	return _round_rand(base * econ(level) * COIN_REF_ENEMIES / expected_enemies(level), r)
 
 
-func _round_rand(x: float, r: RandomNumberGenerator) -> int:
-	var n := floori(x)
-	return n + (1 if r.randf() < x - float(n) else 0)
+func _round_rand(x: float, r: RandomNumberGenerator) -> float:
+	if is_nan(x) or x >= MONEY_MAX:
+		return MONEY_MAX
+	if x >= 1.0e15:
+		return roundf(x)   # такие суммы дробной части не имеют
+	var n := floorf(x)
+	return n + (1.0 if r.randf() < x - n else 0.0)
 
 
-func add_coins(n: int) -> void:
-	coins = maxi(0, coins + n)
+## Деньги — дробные числа (double): цены растут как 1.2^этап, а int64 кончается на 9.2e18 (зона ~1200) — там они уходили в минус.
+## Целые до 9×10^15 хранятся точно, дальше — приблизительно, как и должно быть у таких сумм. 10^17 монет = 1 ультамонета (U.ULTRA),
+## при показе (U.money) большие суммы пишутся в ультамонетах. Потолок — MONEY_MAX, чтобы не получить inf.
+const MONEY_MAX := 1.0e300
+
+
+## Сумму (цену, награду) — в целые монеты, не ниже 0 и не выше MONEY_MAX.
+func money(x: float) -> float:
+	if is_nan(x) or x >= MONEY_MAX:
+		return MONEY_MAX
+	return maxf(0.0, roundf(x))
+
+
+func add_coins(n: float) -> void:
+	coins = clampf(coins + n, 0.0, MONEY_MAX)
 
 
 ## Герой открыт (бесплатный — всегда).
@@ -324,16 +353,70 @@ func add_meta(n: int) -> void:
 	_save()
 
 
+## Ровный рост на глубине. Экспонента врагов (1.2^зона) обгоняла и пушки (1.18^зона), и дерево навыков (оно растёт ~ зона^1.5),
+## и после зоны ~250 урона у героя не оставалось. Теперь после FLAT_FROM сложность считается от «эталонной сборки»:
+##  · HP врага растёт так же, как урон свежей пушки × урон дерева эталона (врагам та же экспонента пушек, что и пушкам);
+##  · урон врага растёт так же, как HP героя от дерева эталона;
+##  · плюс медленный подъём FLAT_RISE за каждые 100 зон — сложность растёт, но не рвётся.
+## Эталон — герой с уровнем ref_level(зона), у которого по трети очков в W1 и V1 (так играют в среднем; REF_W1 / REF_V1 — базовые бонусы узлов).
+const FLAT_FROM := 200
+const FLAT_RISE := 0.2          # +20% сложности за каждые 100 зон после FLAT_FROM
+const REF_LEVEL_K := 0.88       # уровень героя на зоне z ≈ K × z^POW (по замерам: зона 40 — 31, 1000 — ~500)
+const REF_LEVEL_POW := 0.92
+const REF_SHARE := 1.0 / 3.0    # доля очков эталона в W1 и (отдельно) в V1
+const REF_W1 := 0.02            # +к урону за уровень навыка и уровень героя (W1 Firepower)
+const REF_V1 := 2.0             # +HP за уровень навыка и уровень героя (V1 Toughness)
+const FLOAT_CAP := 1.0e300      # потолок кривых: pow() на глубине тысяч зон даёт inf
+
+
+func ref_level(z: int) -> float:
+	return maxf(1.0, REF_LEVEL_K * pow(float(z), REF_LEVEL_POW))
+
+
+## Уровень навыка тира 1 у эталона (цена уровня N — N очков, всего L(L+1)/2).
+func ref_skill_level(z: int) -> float:
+	var p := float(LevelTree.POINTS_PER_LEVEL) * (ref_level(z) - 1.0) * REF_SHARE
+	return (sqrt(1.0 + 8.0 * p) - 1.0) * 0.5
+
+
+## Во сколько раз эталонный герой на зоне z бьёт сильнее (множитель «Огневой мощи»).
+func ref_dmg_mult(z: int) -> float:
+	return 1.0 + REF_W1 * ref_skill_level(z) * ref_level(z)
+
+
+## HP эталонного героя на зоне z.
+func ref_hero_hp(z: int) -> float:
+	return Player.BASE_HP + REF_V1 * ref_skill_level(z) * ref_level(z)
+
+
+func _flat_rise(level: int) -> float:
+	return 1.0 + FLAT_RISE * float(level - FLAT_FROM) / 100.0
+
+
 func enemy_hp_mult(level: int) -> float:
-	return pow(ENEMY_HP_GROWTH, level - 1) * float(run["hp"])
+	var k := pow(ENEMY_HP_GROWTH, float(level - 1))
+	if level > FLAT_FROM:
+		k = pow(ENEMY_HP_GROWTH, float(FLAT_FROM - 1)) * pow(GUN_DMG_GROWTH, float(level - FLAT_FROM)) 			* ref_dmg_mult(level) / ref_dmg_mult(FLAT_FROM) * _flat_rise(level)
+	return minf(k, FLOAT_CAP) * float(run["hp"])
 
 
 func enemy_dmg_mult(level: int) -> float:
-	return (1.0 + 0.1 * float(level - 1)) * float(run["dmg"])
+	var k := 1.0 + 0.1 * float(level - 1)
+	if level > FLAT_FROM:
+		k = (1.0 + 0.1 * float(FLAT_FROM - 1)) * ref_hero_hp(level) / ref_hero_hp(FLAT_FROM) * _flat_rise(level)
+	return minf(k, FLOAT_CAP) * float(run["dmg"])
 
 
 func gun_dmg_mult(level: int) -> float:
-	return pow(GUN_DMG_GROWTH, level - 1)
+	return minf(pow(GUN_DMG_GROWTH, float(level - 1)), FLOAT_CAP)
+
+
+## Уровень, под который подгоняются белые пушки (`Gun.sync_level`): текущая зона, а в городе — следующая
+## (по ней же сделан товар Оружейной).
+func white_level() -> int:
+	if main != null and main.zone != null:
+		return main.zone.level
+	return zone_level
 
 
 # --- Статистика ---------------------------------------------------------------

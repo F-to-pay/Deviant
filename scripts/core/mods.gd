@@ -236,9 +236,9 @@ static func validate() -> void:
 		for f in ["damage", "fire_rate", "mag", "reload", "speed", "lifetime"]:
 			if not a.has(f):
 				DebugLog.warn("archetype '%s' has no '%s' — default used" % [k, f], src)
-		if not banks.is_empty() and not banks.has("guns/" + str(k)):
-			DebugLog.info("archetype '%s' has no shot sounds (sfx/guns/%s/)" % [k, k], src)
 		var snd: Dictionary = a.get("sound", {})
+		if not banks.is_empty() and not banks.has(str(snd.get("bank", "guns/" + str(k)))):
+			DebugLog.info("archetype '%s' has no shot sounds (sfx/guns/%s/ or sound.bank)" % [k, k], src)
 		for key in ["reload", "reload_done"]:
 			if snd.has(key) and not banks.is_empty() and not banks.has(str(snd[key])):
 				DebugLog.warn("archetype '%s': sound.%s '%s' — no such sound" % [k, key, str(snd[key])], src)

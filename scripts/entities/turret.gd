@@ -167,7 +167,9 @@ func _fire(main: Main) -> void:
 		g.nuke_charge += g.norm_damage() * float(n) / Gun.NUKE_COST
 		if g.nuke_charge >= 1.0:
 			g.nuke_charge -= 1.0
-			main.projectiles.fire_nuke(g, mpos, aim, DMG_MULT)
+			var nk: Projectiles.Proj = main.projectiles.fire_nuke(g, mpos, aim, DMG_MULT)
+			if nk != null:
+				nk.leech = 0.0   # и ядерка турели не лечит героя
 	recoil = 4.0
 	main.fx.muzzle_flash(mpos, aim, g.proj_color)
 	main.sfx.gun_shot(g, mpos)
@@ -183,6 +185,7 @@ func _tint(p: Projectiles.Proj) -> void:
 	p.dmg *= DMG_MULT
 	p.home = self   # бумеранг возвращается к турели, а не к герою
 	p.home_pos = position
+	p.leech = 0.0   # вампиризм пушки не лечит героя за пули турели (деления/кассеты копируют это поле уже нулём)
 	if element < 0:
 		return
 	p.element = element

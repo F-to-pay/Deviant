@@ -105,6 +105,12 @@ Mods/MyMod/
 }
 ```
 
+- `recoil` — отдача: выстрел отбрасывает стрелка назад (импульс px/с, торможение 1800 px/с²; корабельная пушка — 1400).
+- `free_ammo` — основа с бесконечным боезапасом (как у Синергиса: запас не тратится, перки с повышенным расходом не выпадают).
+- `rhythm` — ритм-перезарядка: кольцо сжимается раз в секунду, нажатие R в такт сокращает перезарядку на 2 с, промах запрещает это на 4 с, каждое попадание в такт даёт +8% урона следующей обойме (складывается) (у арбалета перезарядка 15 с; тот же эффект даёт перк `rhythm`).
+- `no_makers` — список марок, которые не делают эту основу (у арбалета `["synergis"]`).
+- `no_hybrid` — основа не сочетается в гибриды (в Мастерской её тоже не объединить).
+- `sound.bank` — какой банк звуков выстрела использовать, если у основы нет своей папки `sfx/guns/<id>/` (например `"guns/pistol"`).
 - `kind` — тип снаряда: `bullet`, `pellet`, `rocket`, `grenade`, `orb`, `shell` (мина по дуге).
 - `ammo` — чьи патроны ест основа (миномёт ест `rocket`). По умолчанию свои.
 - `explosive` — основа взрывная: её не получает Синергис и другие марки с `no_explosive`.
@@ -167,6 +173,7 @@ Mods/MyMod/
   - `heal` — убирается в хардкоре;
   - `no_shell` — бессмыслен для мин.
 - `fits` — условия, при которых перк может выпасть (все должны выполняться).
+- `excludes` — (необязательно) id перков, с которыми этот не сочетается, например `["homing"]` у «Лазерного» (работает в обе стороны; у абсурдных пушек не действует).
 
 ## Дерево навыков (skill_branches.json, skill_tree.json)
 
@@ -234,7 +241,7 @@ Mods/MyMod/
 **Статы пушки** (поля `Gun`, см. `scripts/weapons/gun.gd`):
 - урон и стрельба: `damage`, `fire_rate`, `pellets`, `spread`, `burst`, `ammo_per_shot`, `crit_chance`, `crit_mult`;
 - магазин: `mag_size`, `reload_time`, `free_ammo`;
-- снаряд: `proj_speed`, `lifetime`, `proj_kind`, `proj_size`, `knock`, `knock_boost`, `pierce`, `bounces`, `homing`, `accel`, `drag`, `sine`, `boomerang`, `split_n`, `split_depth`, `teleport`;
+- снаряд: `proj_speed`, `lifetime`, `proj_kind`, `proj_size`, `knock`, `knock_boost`, `beam`, `pierce`, `bounces`, `homing`, `accel`, `drag`, `sine`, `boomerang`, `split_n`, `split_depth`, `teleport`;
 - взрывы и спецэффекты: `explode_r`, `explode_chance`, `explode_on_expire`, `chain_n`, `cluster_n`, `vortex`, `seeder`;
 - стихии: `element`, `elem_chance`, `elem_mult`, `proc_mult`;
 - носитель: `leech`, `armor`, `move_mult`, `shake`.

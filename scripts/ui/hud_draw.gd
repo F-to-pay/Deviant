@@ -67,6 +67,14 @@ func _draw() -> void:
 		_draw_death(vp, f, fb)
 
 
+## Панель как у карточки пушки (GunCard): тёмный фон, полоса accent сверху, рамка того же цвета.
+func _panel(r: Rect2, accent: Color, bar: float = 4.0) -> void:
+	draw_rect(r.grow(3.0), Color(0, 0, 0, 0.45))
+	draw_rect(r, Color(0.05, 0.05, 0.07, 0.94))
+	draw_rect(Rect2(r.position, Vector2(r.size.x, bar)), accent)
+	draw_rect(r, Color(accent, 0.8), false, 2.0)
+
+
 func _bar(r: Rect2, k: float, col: Color, bg: Color = Color(0, 0, 0, 0.6)) -> void:
 	draw_rect(r.grow(2.0), Color(0, 0, 0, 0.7))
 	draw_rect(r, bg)
@@ -134,7 +142,7 @@ func _draw_zone_info(main: Main, f: Font, fb: Font) -> void:
 	# монеты забега и древние (мета)
 	var y := 152.0
 	Coin.draw_icon(self, Vector2(32, y - 5.0), 7.0, false)
-	var cs := U.fmt(float(Game.coins))
+	var cs := U.money(Game.coins)
 	U.draw_text(self, fb, Vector2(44, y), cs, 15, Color(1.0, 0.85, 0.35), 3)
 	var x := 44.0 + U.text_w(fb, cs, 15) + 22.0
 	Coin.draw_icon(self, Vector2(x, y - 5.0), 7.0, true)
@@ -205,10 +213,11 @@ func _draw_weapons(p: Player, vp: Vector2, f: Font, fb: Font) -> void:
 		var r := weapon_rect(i)
 		var g: Gun = p.guns[i]
 		var is_active := i == p.active
-		draw_rect(r, Color(0.05, 0.05, 0.08, 0.85 if is_active else 0.6))
+		draw_rect(r, Color(0.05, 0.05, 0.07, 0.94 if is_active else 0.7))
 		if g != null:
 			var rc := g.rarity_color()
-			draw_rect(r, Color(rc, 1.0 if is_active else 0.45), false, 3.0 if is_active else 1.5)
+			draw_rect(Rect2(r.position, Vector2(r.size.x, 4.0 if is_active else 3.0)), Color(rc, 1.0 if is_active else 0.55))   # полоса редкости, как на карточке
+			draw_rect(r, Color(rc, 0.9 if is_active else 0.4), false, 2.0)
 			var sc := clampf(110.0 / maxf(60.0, float(g.vis.get("len", 80.0))), 0.5, 1.4)
 			GunIcon.draw_gun(self, g, r.get_center() + Vector2(0, -4), sc, 0.0, false, true)
 			_bar(Rect2(r.position.x + 6, r.end.y - 9, r.size.x - 12, 4), float(g.ammo) / float(g.mag_size), Color(1.0, 0.85, 0.4))
@@ -229,12 +238,17 @@ func _draw_weapons(p: Player, vp: Vector2, f: Font, fb: Font) -> void:
 			res = 1
 			ammo_s = U.t("%d / %d   ·   reserve ∞") % [ag.ammo, ag.mag_size]
 		if p.is_reloading():
-			ammo_s = U.t("RELOADING")
+			ammo_s = U.t("RELOADING") + ("  ·  " + U.t("on the beat: [%s] or fire") % Controls.label("reload") if ag.rhythm else "")
 		elif ag.ammo <= 0:
 			if res > 0:
 				ammo_s = U.t("EMPTY — [%s]") % Controls.label("reload") if Controls.mode != "touch" else U.t("EMPTY")
 			else:
 				ammo_s = U.t("NO AMMO: %s") % ag.ammo_name()
+		var rb := ag.rhythm_bonus
+		if ag.rhythm and p.is_reloading():
+			rb = float(p.rhythm_hits) * Gun.RHYTHM_BONUS   # во время перезарядки — сколько набрано попаданиями в такт
+		if rb > 0.0:
+			ammo_s += "  ·  " + U.t("+%d%% damage") % roundi(rb * 100.0)
 		U.draw_text_c(self, fb, Vector2(vp.x * 0.5, cy), ammo_s, 16, Color(1.0, 0.9, 0.6), 3)
 		if p.is_reloading():
 			_bar(Rect2(vp.x * 0.5 - 90, cy + 6, 180, 5), p.reload_progress(), Color(1, 1, 1))
@@ -246,7 +260,7 @@ func _draw_minimap(main: Main, vp: Vector2, f: Font) -> void:
 	if z.minimap_tex == null or z.w == 0:
 		return
 	var r := Rect2(vp.x - MINI - 20.0, 20.0, MINI, MINI)
-	draw_rect(r.grow(3.0), Color(0, 0, 0, 0.6))
+	_panel(r.grow(5.0), Color(z.biome.get("rock_top", Color(0.5, 0.5, 0.6))) if z.biome.has("rock_top") else Color(0.5, 0.5, 0.6), 4.0)
 	draw_rect(r, Color(0.02, 0.02, 0.03, 0.7))
 	draw_texture_rect(z.minimap_tex, r, false)
 	var ws := z.world_size()

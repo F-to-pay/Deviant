@@ -147,7 +147,7 @@ func gun_shot(g: Gun, pos: Vector2) -> void:
 	var pitch := float(snd.get("pitch", 1.0)) * float(msnd.get("pitch", 1.0))
 	# чем выше скорострельность, тем тише каждый выстрел
 	vol -= clampf(log(maxf(g.fire_rate, 1.0) / 4.0) / log(2.0) * 2.0, 0.0, 6.0)
-	play_at("guns/" + arch, pos, vol, pitch, 0.05, 4, 0.025)
+	play_at(str(snd.get("bank", "guns/" + arch)), pos, vol, pitch, 0.05, 4, 0.025)   # "bank" в sound — чужие звуки выстрела (новые основы без своих записей)
 	# гибриды и моды: снаряд другого типа добавляет свой звук поверх
 	var own_kind := int(GunData.ARCH.get(arch, {}).get("kind", 0))
 	if g.proj_kind != own_kind and KIND_LAYER.has(g.proj_kind):

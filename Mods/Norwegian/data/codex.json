@@ -1,0 +1,598 @@
+{
+	"sections": [
+		{
+			"id": "basics",
+			"title": {
+				"nb": "Grunnleggende"
+			}
+		},
+		{
+			"id": "weapons",
+			"title": {
+				"nb": "Våpen"
+			}
+		},
+		{
+			"id": "enemies",
+			"title": {
+				"nb": "Fiender"
+			}
+		},
+		{
+			"id": "rating",
+			"title": {
+				"nb": "Rangering"
+			}
+		},
+		{
+			"id": "modding",
+			"title": {
+				"nb": "Modding"
+			}
+		}
+	],
+	"pages": [
+		{
+			"id": "character",
+			"title": {
+				"nb": "Karakteren"
+			},
+			"text": {
+				"nb": [
+					"En ensom skytter med [b]100 liv[/b] og ingen nivåer. All kraften din ligger i våpnene du bærer.",
+					"",
+					"[color=#ff9a40][b]Bevegelse[/b][/color]",
+					"• Løpefart 265. Tunge våpen bremser deg litt (maskingevær −12 %, rakettkaster −8 %, bombekaster −10 %), egenskapen [i]Lett[/i] gjør deg raskere.",
+					"• [b]Unnvikelse[/b] (Mellomrom / Shift) — et 0,32 s langt sprang der du er usårbar. Nedkjøling 4 s, men bare [b]0,5 s[/b] hvis du faktisk unngikk noe (perfekt unnvikelse, «UNNVEK!»).",
+					"• Etter hvert treff er du usårbar i 0,4 s.",
+					"",
+					"[color=#ff9a40][b]Liv[/b][/color]",
+					"• [b]Ingen regenerering.[/b] En flaske helbreder 20 % av maks liv — C (styrekors opp på håndkontroll, flaskeknappen på berøringsskjerm). I en sone kan du bære så mange du vil; når du går videre til neste sone eller by, beholder du høyst [b]3[/b]. Et løp starter med 3.",
+					"• Flasker faller fra vanlige fiender (3 %), mestere (25 %) og kister (25 %) — høyst 2 per sone; ledere gir alltid 1 og bosser 2 i tillegg.",
+					"• [b]Helbrederen[/b] i byen helbreder deg helt og fyller flasker for mynter.",
+					"• Livstyveri fra våpen helbreder høyst 4 liv i sekundet.",
+					"• Rustning (egenskap på våpenet i hånden) kutter innkommende skade med 15 %, høyst 50 %.",
+					"• Dine egne eksplosjoner gir deg bare 10 % av skaden.",
+					"• Syre- og lavapytter brenner for 4 skade hvert 0,5 s (mer i dypere soner). En fiendes frostaura bremser deg med 35 %.",
+					"",
+					"[color=#ff9a40][b]Våpen og ammo[/b][/color]",
+					"• 4 våpenplasser (1-4, musehjul, Q) og en sekk med plass til 12 til.",
+					"• [b]Tab / I[/b] — inventar: dra våpen mellom plassene og sekken, slipp dem på bakken eller i resirkuleringen.",
+					"• Hver våpentype bruker sin egen ammo; lageret rommer 4 fulle magasiner av hver type. Våpen fra bakken kommer med tomt magasin.",
+					"• [b]Demonter[/b] (X) ødelegger et våpen og gjør det om til ammo av samme type — jo sjeldnere våpen, jo mer ammo.",
+					"• Ammo faller: vanlige fiender 15 % (et halvt magasin), mestere 60 % (et magasin), ledere 2 magasiner, bosser 4.",
+					"",
+					"[color=#ff9a40][b]Kontroller[/b][/color]",
+					"Tastene kan endres i Innstillinger → Kontroller. Håndkontroll og berøringsskjerm fungerer også.",
+					"WASD — gå · mus — sikt · VMK — skyt · R — lad om",
+					"E — plukk opp / åpne kiste · F — bytt med nåværende · X — demonter",
+					"Tab / I — inventar · Esc — pause · F3 — feilsøking",
+					"− / + og M — musikk · [lb] / ] — lyder"
+				]
+			}
+		},
+		{
+			"id": "heroes",
+			"title": {
+				"nb": "Helter"
+			},
+			"text": {
+				"nb": [
+					"Hver helt har én [b]aktiv ferdighet[/b] — [b]HMK[/b] (LT på håndkontroll, Ferdighet-knappen på berøringsskjerm). Hold knappen, så brukes den igjen så snart den er klar.",
+					"På berøringsskjerm har Pioneerens granat egen sikting: hold Ferdighet-knappen og dra — landingspunktet vises, slipp for å kaste (et enkelt trykk kaster dit pistolen peker). Assassinens slag sikter på samme måte (slagsektoren vises); Sheriffens velsignelse virker med en gang.",
+					"Velg helt hos [b]Ververen[/b] i startbyen. Pioneren er gratis, de andre låses opp med [b]eldgamle mynter[/b] og forblir åpne for alltid.",
+					"Skaden fra ferdigheter er fast og vokser ikke med dybden — dypere ned er de et hjelpemiddel, ikke hovedvåpenet.",
+					"",
+					"[color=#ff9a40][b]Pioner — gratis[/b][/color]",
+					"• [b]Håndgranat[/b]: kastes mot siktepunktet (opptil 420 unna), 30 skade i radius 60, lik i hele radiusen. Nedkjøling 6 s.",
+					"",
+					"[color=#ff9a40][b]Sheriff — 25 eldgamle mynter[/b][/color]",
+					"• [b]Velsignelse[/b]: neste skudd gjør +40 skade (fordeles på haglene i et hagleskudd eller minene i en mortersalve). Nedkjøling 6 s.",
+					"",
+					"[color=#ff9a40][b]Snikmorder — 30 eldgamle mynter[/b][/color]",
+					"• [b]Kutt[/b]: et kløyvende slag på 130° foran deg, rekkevidde 95, 15 skade til alle i buen. Nedkjøling 0,7 s; mens du slår (0,25 s) går du 50 % saktere.",
+					"",
+					"[color=#ff9a40][b]Ingeniør — 35 eldgamle mynter[/b][/color]",
+					"• [b]Tårn[/b]: kastes som en mortermine mot siktepunktet (opptil 420 unna; på berøringsskjerm sikter du som med granaten). Tar alle skuddene som er igjen i magasinet til det aktive våpenet, og du begynner å lade om (gratis for et Synergis-våpen), har like mye liv som deg og skyter på nærmeste synlige fiender innenfor våpenets effektive rekkevidde (men minst 10 m og høyst 40 m) med en kopi av våpenet ditt. Når tårnet blir truffet, slås fiender i nærheten bort fra det og er lamslått i 1 s. Fiendene går på den som er nærmest — tårnet eller deg. Står til det blir knust, men ødelegges i det magasinet går tomt. Kulene gjør 50 % av våpenets skade. Høyst like mange tårn som du har ferdighetsladninger (1 som standard); når alle plassene er tatt, fjerner neste tårn det eldste. Nedkjøling 10 s.",
+					"",
+					"[color=#ff9a40][b]Ferdighetsegenskaper (Mystiker)[/b][/color]",
+					"Én gave per by fra [b]Mystikeren[/b], for mynter, til løpet er over. Bare egenskaper for helten din tilbys.",
+					"• [b]Deling[/b] (Pioner, Sheriff): ×3 prosjektiler (+3 per gang), +20 % total skade (+20 %), fordelt likt. Granatene lander i et felt rundt siktepunktet, som morsermine.",
+					"• [b]Farlige sår[/b] (Pioner, Sheriff, Snikmorder, én gang): treff med ferdigheten bremser målet med 10 % for godt, opptil 30 %; eliter trenger 2 treff per trinn, bosser 3.",
+					"• [b]Giftprosjektil / Giftkutt[/b] (Pioner, Sheriff, Snikmorder): skaden kommer 5 s senere (+2 s), men er 50 % høyere (+50 %).",
+					"• [b]Tungt prosjektil[/b] (Pioner, Sheriff): +1 s nedkjøling (+1 s), +20 % skade (+20 %), lammer i 0,7 s (+0,4 s).",
+					"• [b]Parering[/b] (Snikmorder): hvert 4. sekund sender neste slag fiendens prosjektiler tilbake; hver ny gang — +30 % skade på dem.",
+					"• [b]Ekstra hånd[/b] (alle): +1 ferdighetsladning (+1).",
+					"• [b]Hærverk[/b] (Snikmorder, én gang): enormt tilbakeslag, −50 % skade.",
+					"• [b]Element[/b] (alle, én gang): ferdigheten får et element du velger. Som på våpen legger et treff det på med 35 % sjanse. Ild brenner like sterkt som før; syre, kulde og forbannelse bygges opp med 10 % per sekund av ferdighetens nedkjøling per treff (granat 6 s → +60 %, slag 0,7 s → +7 %); røyk gir i snitt like mye som ett granattreff per sekund.",
+					"• [b]Trofeer[/b] (Snikmorder): et drap med ferdigheten gir 1 mynt og +0,2 % ferdighetsskade (+0,05 % per ny gang).",
+					"• [b]Røykgranat[/b] (Pioner): granaten blir til røyk med radius 300, 25 % av skaden per sekund (5 tikk i sekundet) i 4 s (+1 s).",
+					"• [b]Presist skudd[/b] (Sheriff): det velsignede skuddet søker mål, +20 % rekkevidde (+20 %), +10 % skade (+10 %).",
+					"• [b]Beredskap[/b] (Snikmorder, Sheriff, én gang): skade med ferdigheten trekker 1 s fra nedkjølingen for unnvikelse.",
+					"• [b]Økonomi[/b] (Ingeniør): tårnet får 40 % flere skudd enn det tar fra deg (+40 % per gang).",
+					"• [b]Gal vitenskapsmann[/b] (Ingeniør, én gang): tårnet får et tilfeldig Synergis-våpen én sjeldenhet over ditt aktive våpen, med fullt magasin. Ingenting tas fra reserven din.",
+					"Med flere ladninger viser ferdighetslinjen ×N; neste ladning lades mens du bruker de andre."
+				]
+			}
+		},
+		{
+			"id": "skills",
+			"title": {
+				"nb": "Evnetre"
+			},
+			"text": {
+				"nb": [
+					"Hvert nivå for helten gir [b]5 evnepoeng[/b]. Bruk dem i evnetreet: [b]K[/b] (D-pad ned på spillkontroller) eller Pause → Evnetre. Mens du har ubrukte poeng, vises et hint i hjørnet.",
+					"Treet varer én runde: en ny runde starter fra null. Fire grener — [b]Våpen[/b], [b]Vitalitet[/b], [b]Evner[/b], [b]Nytte[/b] — hver på sin skjerm, bytt med fanene øverst.",
+					"Nivå N av en evne koster N poeng (tier 1) eller 2×N (tier 2: 2, 4, 6…). En tier 2-evne åpnes når hver av foreldrene har minst ett nivå. Hybrider (to–tre foreldre) vises i hver av grenene sine.",
+					"Evner i samme [b]klasse[/b] utelukker hverandre: bare én kan velges (treffsikkerhet — Fast hånd eller Skudd fra hoften; flasker — Større belte eller Rask slurk). En evne med heltens navn er personlig: den finnes bare for den helten. «Nv 2/5» er nivågrensen, uten tall — ingen grense.",
+					"",
+					"• [b]Ildkraft[/b] — våpenskade +2 % per nivå. [b]Seighet[/b] — +2 helse. [b]Evnekraft[/b] — evneskade +5 %. Disse tre vokser også med heltens nivå: bonus = evnenivå × heltenivå × grunnbonus. [b]Grådighet[/b] — 10 % sjanse for å doble myntene i et fall (over 100 % — tredoble, og så videre).",
+					"• [b]Skattejeger[/b] — sjeldnere våpen faller oftere. [b]Fast hånd[/b] / [b]Skudd fra hoften[/b] — treffsikkerhet +10 % / treffsikkerhet −10 % og skade +5 %. [b]Sterk brygg[/b] — flasker helbreder 10 % mer.",
+					"• [b]Større belte[/b] — +1 flaske i beholdningen. [b]Rask slurk[/b] — fart etter en flaske. [b]Iskald berøring[/b] — evnetreff bremser målet. [b]Nytt pust[/b] — å plukke opp en flaske gjenoppretter 60 % av evnens nedkjøling.",
+					"• Personlige: [b]Bøddel[/b] (Snikmorder) — mer skade på sårede mål; [b]Sparsom skytter[/b] (Ingeniør) — sjanse for å ikke bruke en patron, også for tårnet; [b]Splintskjold[/b] (Pioner) — midlertidig helse fra granattreff; [b]Dusørjeger[/b] (Sheriff) — hver sone har et merket mål med ekstra mynter og alltid et våpen.",
+					"",
+					"Moddere kan legge til grener og evner via data/skill_branches.json og data/skill_tree.json (se modding-guiden)."
+				]
+			}
+		},
+		{
+			"id": "combat",
+			"title": {
+				"nb": "Skade og elementer"
+			},
+			"text": {
+				"nb": [
+					"[color=#ff9a40][b]Skade[/b][/color]",
+					"• [b]Kritiske treff[/b]: hvert våpen har en kritisk sjanse og en kritisk multiplikator (vanligvis ×2).",
+					"• [b]Rekkevidde[/b]: etter den effektive rekkevidden mister et prosjektil skade fort: +33 % avstand — 37 % skade, dobbel avstand — 5 %.",
+					"• [b]Rikosjetter[/b] kutter 30 % skade hver (granater ruller uten å miste noe).",
+					"• [b]Eksplosjoner[/b]: full skade i midten, 20 % i kanten.",
+					"• Skaden vokser ×1,18 for hver sone våpenet ble funnet i.",
+					"",
+					"[color=#ff9a40][b]Effektsjanse[/b][/color]",
+					"Elementer, eksplosjoner ved sjanse, kjedelyn og andre effekter utløses oftere av tunge prosjektiler: sjanse × (treffskade uten sonevekst / 40), fra 8 % til 100 %. Et snikskyttergevær utløser nesten hvert treff, et maskingevær sjelden. Derfor faller effekt-egenskaper ofte bort på raske våpen.",
+					"",
+					"[color=#ff9a40][b]Elementer[/b][/color]",
+					"[color=#ff731f][b]Ild[/b][/color] — brann: 45 % av treffskaden per sekund i 3 s. Sterkere treff erstatter svakere brann.",
+					"[color=#73bfff][b]Elektrisitet[/b][/color] — hopper til 2 fiender i nærheten for 35 % skade og lammer i 0,5 s, deretter er målet immunt mot lamming i et sekund.",
+					"[color=#99ff33][b]Syre[/b][/color] — etsing: hvert sekund med treff gir +10 % mottatt skade, opptil +50 %. Forsvinner 3 s etter siste treff.",
+					"[color=#b8f2ff][b]Kulde[/b][/color] — bremser 10 % per sekund med treff, opptil 40 %; ved 50 % fryser målet fast i 1,3 s.",
+					"[color=#b340f2][b]Forbannelse[/b][/color] — måleren fylles med 40 % per sekund med treff; når den er full, tar målet 30 % av sitt [i]tapte[/i] liv. Forbannede våpen gjør 20 % mindre skade.",
+					"",
+					"[color=#9aa0b0]Elitefiender og bosser motstår statuser: oppbygging, lamming og forbannelsesskade deles på motstanden (mestere 1,5, ledere 2, bosser 3).[/color]"
+				]
+			}
+		},
+		{
+			"id": "world",
+			"title": {
+				"nb": "Soner og bytte"
+			},
+			"text": {
+				"nb": [
+					"[color=#ff9a40][b]Soner[/b][/color]",
+					"• Verden er en endeløs kjede av soner. Hver sone har en [b]rift[/b] til den neste — gå inn i den, og du faller dypere. Du trenger ikke drepe alle.",
+					"• Hver 5. sone er en [b]bossarena[/b]: én boss, og riften dukker opp først når den dør.",
+					"• Biomene skifter hver sone: ødemark, giftige myrer, frosne sletter, lavafelt, neonruiner, skraphaug. Myrer og lava har farlige pytter; kløfter og vann stopper deg, men ikke kuler.",
+					"",
+					"[color=#ff9a40][b]Vanskelighetsvekst[/b][/color]",
+					"• Fiendenes liv ×1,20 per sone, fiendenes skade +10 % per sone.",
+					"• Våpenskade ×1,14 per sone — et våpen fra sone 20 er omtrent 23 ganger sterkere enn et fra sone 1, og et våpen som er 4 soner gammelt møter allerede dobbelt så seige fiender. Fortsett å plukke bytte og bytte våpen.",
+					"",
+					"[color=#ff9a40][b]Bytte[/b][/color]",
+					"• Våpen faller fra vanlige fiender (5,5 %), mestere (40 %, bedre sjeldenhet) og ledere (alltid, 50 % for et til).",
+					"• [b]Kister[/b]: 2–3 våpen, minst uvanlige. En [color=#ffd24c]gullkiste[/color] (12 % + 0,4 % per sone) gir et våpen til, minst sjeldent, med mye bedre odds. Kister er av som standard: slå dem på i tilpasset start (rangeringsmultiplikatoren synker med 20 %).",
+					"• [b]Boss[/b]: et legendarisk (40 %) eller episk våpen fra neste sone, to sjeldne våpen, 2 flasker og 4 magasiner."
+				]
+			}
+		},
+		{
+			"id": "town",
+			"title": {
+				"nb": "Byer og mynter"
+			},
+			"text": {
+				"nb": [
+					"Løpet er delt inn i [b]etapper[/b] på 5 soner, den siste med en boss. Før hver etappe — og helt i starten — kommer du til en [b]by[/b].",
+					"",
+					"[color=#ff9a40][b]By[/b][/color]",
+					"• Ingen fiender. Et torg med fem boder og en rift til neste sone.",
+					"• [b]Startbyen[/b] har tre til: [b]Ververen[/b] (velg helt), [b]Relikvievokteren[/b] (metaegenskaper — kommer snart) og [b]Oddssetteren[/b] (tilpasset start).",
+					"• Byen lages på nytt hver gang og ligner sonen som kommer etterpå: farger, bebyggelse og navn.",
+					"• Gå bort til en bod og trykk [b]E[/b] (Y på håndkontroll) for å snakke.",
+					"",
+					"[color=#ff9a40][b]Boder[/b][/color]",
+					"• [b]Våpenbutikk[/b] — 11 våpen til salgs (ett er minst sjeldent); det sjeldneste er «Dagens tilbud» til halv pris (først i listen); «Nye varer» trekker dem på nytt for mynter (hver gang 50 % dyrere). Ett magasin ammunisjon til et våpen i sporene koster 1,5 ganger det demontering ville gitt. Pris etter sjeldenhet: 15 / 30 / 60 / 120 / 300 / 500 mynter, dyrere jo dypere. Kjøper våpnene dine for en fjerdedel av prisen; det siste våpenet i hendene kan ikke selges.",
+					"• [b]Mystiker[/b] — én egenskap for heltens ferdighet per by, av 3, til løpet er over (se «Helter»). Hver neste koster 50 % mer.",
+					"• [b]Verksted[/b] — for valgt våpen: trekk én egenskap på nytt og velg den nye blant tre (35 % av prisen), kombiner to vanlige våpen til en hybrid (velg hvem som skyter og hvem som lader; begge våpnene forsvinner; 50 % av prisen for resultatet) eller øk sjeldenheten opp til episk med en ny egenskap (70 % av prisen for den nye sjeldenheten). Ny trekning og sjeldenhet bygger våpenet om: egenskapene blir, statistikken trekkes på nytt, navnet endres.",
+					"• [b]Laug[/b] — 3 kontrakter på tavla, én om gangen: drep fiender eller eliter, åpne kister, fullfør soner, fullfør en sone uten skade, drep en etappeboss, samle mynter. En kontrakt betaler [b]eldgamle mynter[/b] og vanlige mynter i det øyeblikket den er fullført, uansett hvor du er; den aktive vises under myntene dine.",
+					"• [b]Helbreder[/b] — helbreder deg helt (opptil 40 mynter fra null liv, billigere jo mindre du mangler) og fyller flasker (20 mynter stykket); dyrere jo dypere. Ikke i hardcore-løp.",
+					"",
+					"[color=#ff9a40][b]Mynter[/b][/color]",
+					"• Hvert løp starter med [b]120 mynter[/b] og ett våpen. Myntene går tapt når du dør.",
+					"• Steinen [b]«På nytt»[/b] ved inngangen til startbyen starter løpet på nytt i en helt ny startby — nye varer, gaver og kontrakter.",
+					"• Vanlige fiender slipper en mynt i 35 % av tilfellene, mestere 2–4, ledere 5–8, kister 4–7 (gylne — dobbelt så mange), bosser en hel haug.",
+					"• Inntekt og alle priser i byene øker med 20 % for hver etappe (antall fiender spiller ingen rolle: mynter fra fiender fordeles på så mange som det er).",
+					"",
+					"[color=#ff9a40][b]Eldgamle mynter[/b][/color]",
+					"• Valuta for metaprogresjon. Lagres i det øyeblikket du plukker dem opp og beholdes for alltid, mellom løp.",
+					"• Etappebosser slipper 3 eller flere (flere i dypere etapper), vandrende kaosbosser og gylne kister — 1, ledere — 1 med 15 % sjanse.",
+					"• Brukes på helter hos Ververen i startbyen; Lauget betaler også med dem. Hvor mange du har vises i hovedmenyen og på dødsskjermen.",
+					"",
+					"Tilpasset start → [i]Byer mellom etapper[/i] slår av byene."
+				]
+			}
+		},
+		{
+			"id": "archetypes",
+			"title": {
+				"nb": "Våpentyper"
+			},
+			"text": {
+				"nb": [
+					"Typen gir grunnlaget: skade, skuddtakt, hagl, magasin, prosjektil og ammo. Tallene under gjelder et vanlig våpen fra sone 1, før den tilfeldige spredningen på ±10 %.",
+					"En [b]hybrid[/b] («Hagle-Rakettkaster») tar skytemønsteret — hagl, spredning, magasin — fra den første typen og prosjektilet og ammunisjonen fra den andre; skuddtakten er en blanding som heller 70 % mot ammunisjonens type. [b]Skaden kommer fra ammunisjonen:[/b] én patron treffer like hardt som et skudd fra typen den hører til, fordelt på haglene. En snikskytterrifle med maskingeværammo treffer som et maskingevær; et maskingevær med snikskytterammo treffer som en snikskytterrifle, men den ammoen tar fort slutt.",
+					"Hybrider får også egenskapene til begge typene. En hybrid med [b]morter[/b] (uansett rekkefølge) skyter alltid bueskutte miner i stedet for kuler, hagl, raketter eller granater; ammunisjon, skade og skytemønster følger de vanlige reglene. Et [b]maskingevær[/b] gir sitt enorme magasin.",
+					"",
+					"[color=#ff9a40][b]Typeegenskaper[/b][/color]",
+					"• Alle våpen: effektiv rekkevidde er 30 % kortere enn fart × flytid. Mens du skyter og mellom skudd går du 15 % saktere — unntatt [b]pistoler[/b] og [b]maskinpistoler[/b] (lette).",
+					"• [b]Hagle[/b]: 5–30 hagl, vanligvis 8–10 (samme skade per salve, fordelt på dem). Egenskapen [i]Spredende[/i] gir 5–30 til, så en Sprade-hagle har 10–60, vanligvis rundt 20.",
+					"• [b]Pistol[/b], [b]maskinpistol[/b]: lader dobbelt så fort, lavere skade, så DPS er den samme.",
+					"• [b]Revolver[/b]: skaden faller ikke etter effektiv rekkevidde.",
+					"• [b]Automatgevær[/b]: 30 % nærmere perfekt presisjon.",
+					"• [b]Snikskytterrifle[/b]: +30 % skade, men skuddet starter på 30 % og når full skade ved halve effektive rekkevidde.",
+					"• [b]Maskingevær[/b]: gir magasinet sitt til hybrider. [b]Morter[/b]: en hybrid med den skyter alltid bueskutte miner."
+				]
+			}
+		},
+		{
+			"id": "makers",
+			"title": {
+				"nb": "Produsenter"
+			},
+			"text": {
+				"nb": [
+					"Hvert våpen har en produsent. Produsenten farger våpenet og legger et særpreg oppå typen. Tallet i navnet («Hypernova-512») er bare et serienummer."
+				]
+			}
+		},
+		{
+			"id": "generation",
+			"title": {
+				"nb": "Slik lages våpen"
+			},
+			"text": {
+				"nb": [
+					"Hvert våpen bygges fra bunnen, steg for steg:",
+					"",
+					"[b]1. Sjeldenhet.[/b] Trekkes etter vekt (tabellen under). Jo dypere sone og jo bedre kilde (mester, leder, kiste, boss), desto mer flyttes oddsen mot sjeldne våpen. [color=#ff4cb8]Absurde[/color] våpen faller ikke før sone 8 — bortsett fra fra bosser.",
+					"[b]2. Produsent[/b] — etter vekt. Noen produsenter dukker aldri opp på legendariske.",
+					"[b]3. Type.[/b] Et legendarisk våpen har fast type. Ellers tilfeldig, og med sjeldenhetens hybridsjanse — to typer på en gang.",
+					"[b]4. Grunnverdier[/b] for typen, deretter [b]produsentens særpreg[/b].",
+					"[b]5. Egenskaper.[/b] Så mange som sjeldenheten tillater. Egenskaper i samme gruppe kombineres ikke (to elementer, to prosjektiltyper), og en egenskap dukker bare opp der den gir mening — absurde våpen bryr seg ikke om noe av dette.",
+					"    Egenskaper for verdier kommer først; effekt-egenskaper (elementer, eksplosjoner, rikosjetter...) sjekkes mot den endelige skuddtakten: sjansen for å bli værende er 4 / (skudd per sekund × hagl). En effekt-egenskap som ikke består, erstattes av en verdi-egenskap.",
+					"[b]6. Legendarisk effekt[/b] — oppå alt.",
+					"[b]7. Tilfeldig spredning[/b]: skade, skuddtakt, spredning, prosjektilfart, omlading og magasin ganges hver med 0,9–1,1. En hagle har 30 % sjanse til å bli et [b]kulevåpen[/b] — alle haglene i én presis kule.",
+					"[b]8. Sonevekst[/b] ×1,18 per sone og sjeldenhetens skademultiplikator. Så grenser: skuddtakt 0,25–30/s, opptil 60 hagl, omlading 0,35–6 s, kritisk sjanse opptil 75 %.",
+					"[b]9. Navn[/b] fra produsenten, egenskapene og et tilfeldig kallenavn."
+				]
+			}
+		},
+		{
+			"id": "perks",
+			"title": {
+				"nb": "Egenskaper"
+			},
+			"text": {
+				"nb": [
+					"Egenskaper er det som gjør et våpen spesielt. Uvanlige våpen får 1, sjeldne 2, episke 3, absurde 5. Legendariske har sine faste egenskaper pluss én tilfeldig.",
+					"[color=#9aa0b0]«effekt» — en effekt-egenskap: sjansen for at den blir værende faller på raske våpen (se «Slik lages våpen»).[/color]"
+				]
+			}
+		},
+		{
+			"id": "legendaries",
+			"title": {
+				"nb": "Legendariske"
+			},
+			"text": {
+				"nb": [
+					"Unike våpen med fast type, egenskaper og en egen effekt. Bosser slipper dem med 40 % sjanse."
+				]
+			}
+		},
+		{
+			"id": "enemies",
+			"title": {
+				"nb": "Fiendetyper"
+			},
+			"text": {
+				"nb": [
+					"Fiender kommer i flokker på 4–6 (flere i dypere soner), av én eller to typer. En flokk sover til du kommer nær.",
+					"Berøringsskade: halvparten av skaden i tabellen hvert 0,8 s (løpere gjør full skade)."
+				]
+			}
+		},
+		{
+			"id": "elites",
+			"title": {
+				"nb": "Elitefiender"
+			},
+			"text": {
+				"nb": [
+					"[color=#ff9a40][b]Mestere[/b][/color]",
+					"En hel flokk på opptil 5 mestere med de samme egenskapene. ×3 liv, ×1,25 skade, statusmotstand 1,5. Én egenskap, to fra sone 10.",
+					"Sjanse per flokk: 14 % + 1,2 % per sone, høyst 35 %.",
+					"",
+					"[color=#ff9a40][b]Ledere[/b][/color]",
+					"En sjelden elitefiende med eget navn som leder en vanlig flokk. ×5 liv, ×1,35 skade, statusmotstand 2. To egenskaper, tre fra sone 15. Slipper alltid et våpen.",
+					"Sjanse per flokk: 7 % + 1 % per sone (fra sone 2), høyst 25 %.",
+					"",
+					"[color=#ff9a40][b]Egenskaper[/b][/color]"
+				]
+			}
+		},
+		{
+			"id": "bosses",
+			"title": {
+				"nb": "Bosser"
+			},
+			"text": {
+				"nb": [
+					"Hver 5. sone er en bossarena. En boss har 3200 liv og 16 skade i sone 1 (begge vokser som hos vanlige fiender), statusmotstand 3 og et tilfeldig sett angrep: 3, pluss ett til hver 10. sone. Stormangrep er alltid med.",
+					"Ved halvt liv blir bossen [b]rasende[/b]: angriper 35 % raskere og med flere kuler.",
+					"I [b]Kaos[/b]-modus kan en boss også erstatte en hvilken som helst flokk — den sover til du kommer nær, og ingen rift dukker opp for den.",
+					"",
+					"[color=#ff9a40][b]Angrep[/b][/color]"
+				]
+			}
+		},
+		{
+			"id": "rating",
+			"title": {
+				"nb": "Rangering"
+			},
+			"text": {
+				"nb": [
+					"Rangering = poeng × multiplikator. Beste rangering lagres for alle løp. Beste sone og drap teller bare i vanlige løp (Nytt spill, eller Tilpasset start uten endringer).",
+					"Multiplikatoren kommer fra vanskelighetsgraden (fiendeliv × fiendeskade i Tilpasset start) og valgene for løpet under. Gjeldende multiplikator vises i Tilpasset start og i pausemenyen.",
+					"Den samme multiplikatoren gjelder heltens erfaring: vanskeligere innstillinger gir raskere nivåer (og evnetre), enklere gir langsommere."
+				]
+			}
+		},
+		{
+			"id": "modding",
+			"title": {
+				"nb": "Slik lager du mods"
+			},
+			"text": {
+				"nb": [
+					"Alt på disse sidene — våpen, produsenter, egenskaper, legendariske, navn, oversettelser, lyder, musikk og selve oppslagsverket — kan endres eller utvides med mods uten å røre koden.",
+					"",
+					"• En mod er en mappe [b]Mods/<ModNavn>/[/b] ved siden av spillets exe. Inni gjentar den spillets oppsett: [b]data/[/b], [b]lang/[/b], [b]sfx/[/b], [b]music/[/b], [b]scripts/[/b] — alt er valgfritt.",
+					"• Slå mods av og på i hovedmenyen → Modder. Endringene gjelder med en gang.",
+					"• Slå på [b]mod-feilsøkeren[/b] der (F8 i spillet): den sjekker filene dine og viser hver feil med fil og linje.",
+					"• [b]Lag modding-guide[/b] skriver en full tekstguide ved siden av exe-filen: hver fil, hvert felt, hver operasjon, pluss en oversikt over alle id-er som er lastet nå (spillet + modsene dine). Den er mye lettere å lese i et tekstprogram enn her.",
+					"",
+					"[color=#ff9a40][b]Utvid oppslagsverket[/b][/color]",
+					"Legg [b]data/codex.json[/b] i moden din: nye sider, nye seksjoner, beskrivelser av dine våpen, produsenter og egenskaper — eller en oversettelse av eksisterende sider. Detaljene står i guiden."
+				]
+			}
+		}
+	],
+	"archetypes": {
+		"cannon": {
+			"nb": "Én diger kanonkule: det kraftigste enkeltskuddet i spillet, 4 i magasinet, lang omlading. Rekylen kaster deg ca. 11 m bakover (vegger stopper deg). Ingen hybrider."
+		},
+		"crossbow": {
+			"nb": "En repeterende armbrøst (Chu-Ko-Nu): uendelig ammunisjon, svært lang omlading (15 s) og et rytmespill: en ring krymper hvert sekund, trykk [R] eller skyt når den treffer målringen — omladingen blir 2 s kortere. En bom (eller et ekstra trykk) tar fra deg muligheten i 4 s. Hvert treff i takt (hver forkortelse av omladingen) gir +8 % skade i neste magasin, og de stables. Lages aldri av Synergis, ingen hybrider."
+		},
+		"shotgun": {
+			"nb": "Haglene sprer seg i en kjegle og mister fort kraft med avstanden. 30 % av haglene blir kulevåpen."
+		},
+		"sniper": {
+			"nb": "Enorme enkelttreff — det beste våpenet for effekter og kritiske treff."
+		},
+		"rocket": {
+			"nb": "Raketter som akselererer og eksploderer ved treff."
+		},
+		"launcher": {
+			"nb": "Granater spretter fra vegger og eksploderer ved treff eller på slutten av ferden."
+		},
+		"mortar": {
+			"nb": "Granater flyr over vegger og lander nøyaktig der du sikter etter 1 s. Spredning er hvor langt fra punktet de lander. Bruker ammo fra rakettkasteren."
+		},
+		"lmg": {
+			"nb": "Et belte på 90 skudd og lang omlading. Effekter utløses sjelden."
+		}
+	},
+	"makers": {
+		"synergis": {
+			"nb": "Aldri eksplosiv: raketter og granater blir til kuler. Får aldri egenskaper som bruker ekstra skudd per avtrekk (Dobbeltløpet): ammunisjon er gratis, så det ville ikke kostet noe. Ammunisjonstypen er energi: det faller og selges ingen ammunisjon til den, uansett våpentype."
+		},
+		"hypernova": {
+			"nb": "Alle typer beholder skytemønsteret sitt, men skyter raketter."
+		},
+		"chaos": {
+			"nb": "Får effekten til et tilfeldig legendarisk våpen."
+		},
+		"erosion": {
+			"nb": "Har alltid et element og utløser det dobbelt så ofte."
+		},
+		"noname": {
+			"nb": "Ingenting spesielt. Bokstavelig talt."
+		}
+	},
+	"perks": {
+		"blast": {
+			"nb": "Kuler eksploderer ved sjanse. På våpen som allerede eksploderer — høyere sjanse eller større smell."
+		},
+		"grenade": {
+			"nb": "Gjør prosjektilene om til sprettende granater."
+		},
+		"rocket": {
+			"nb": "Gjør prosjektilene om til akselererende raketter."
+		},
+		"big": {
+			"nb": "Enorme, langsomme kuler som går gjennom alt."
+		},
+		"split": {
+			"nb": "Et prosjektil deler seg i 3 ved treff."
+		},
+		"fractal": {
+			"nb": "Deler seg i 2, og de deler seg igjen — tre ganger."
+		},
+		"gravity": {
+			"nb": "Sjanse for å åpne et sort hull som trekker fiender inn."
+		},
+		"seeder": {
+			"nb": "Prosjektilene skyter små kuler til sidene underveis."
+		},
+		"quantum": {
+			"nb": "Prosjektilene hopper til nærmeste fiende foran og lander rett foran den."
+		},
+		"nuke": {
+			"nb": "Tre ganger så stor eksplosjonsradius."
+		},
+		"chain": {
+			"nb": "Treff hopper som lyn til 3 fiender til."
+		},
+		"cluster": {
+			"nb": "Eksplosjoner sprer 4 småbomber."
+		},
+		"double": {
+			"nb": "To skudd på en gang for dobbel ammo."
+		}
+	},
+	"enemies": {
+		"runner": {
+			"nb": "Rask og skjør, stormer mot deg og slår ved berøring."
+		},
+		"gunner": {
+			"nb": "Holder avstand og skyter hvert 1,3 s fra opptil 650 unna."
+		},
+		"brute": {
+			"nb": "Treg og seig. Løfter nevene i 0,55 s, så slår den ned et område rundt seg."
+		},
+		"bomber": {
+			"nb": "Løper bort til deg, blinker og sprenger seg selv. Unnvik når den begynner å blinke."
+		},
+		"spreader": {
+			"nb": "Skyter en vifte på 5 kuler hvert 1,9 s."
+		},
+		"charger": {
+			"nb": "Lader i 0,7 s og stormer frem med 4× fart. Gå til siden."
+		},
+		"mortar": {
+			"nb": "Kaster granater dit du kommer til å være, hvert 2,5 s, fra opptil 720 unna. Hold deg i bevegelse."
+		},
+		"summoner": {
+			"nb": "Tilkaller løpere (opptil 6 samtidig). Drep den først."
+		}
+	},
+	"affixes": {
+		"fast": {
+			"nb": "×1,4 fart og raskere angrep."
+		},
+		"tough": {
+			"nb": "×1,8 liv."
+		},
+		"explosive": {
+			"nb": "Eksploderer når den dør og slipper en ring av 12 kuler."
+		},
+		"teleport": {
+			"nb": "Hvert 4–5,5 s hopper den bort til deg hvis du er langt unna. Stedet den dukker opp, vises 0,9 s i forveien."
+		},
+		"multishot": {
+			"nb": "Flere kuler per angrep. Nærkampfiender skyter en ring av 6 kuler hvert 3,2 s."
+		},
+		"shielded": {
+			"nb": "Blir usårbar i 1,8 s hvert 7. sekund."
+		},
+		"regen": {
+			"nb": "Gjenvinner 2 % av livet sitt per sekund."
+		},
+		"frost": {
+			"nb": "En frostaura (radius 170) som bremser deg med 35 %."
+		},
+		"orbit": {
+			"nb": "Tre kuler sirkler rundt den og skader ved berøring."
+		}
+	},
+	"bosses": {
+		"radial": {
+			"name": {
+				"nb": "Ring"
+			},
+			"text": {
+				"nb": "Ringer av 16 kuler (24 i raseri)."
+			}
+		},
+		"spiral": {
+			"name": {
+				"nb": "Spiral"
+			},
+			"text": {
+				"nb": "En roterende spiral med 2 armer (3 i raseri)."
+			}
+		},
+		"shotgun": {
+			"name": {
+				"nb": "Hagle"
+			},
+			"text": {
+				"nb": "Siktede salver på 11 + 7 kuler."
+			}
+		},
+		"charge": {
+			"name": {
+				"nb": "Storm"
+			},
+			"text": {
+				"nb": "3 stormangrep mot deg (4 i raseri). Er alltid med."
+			}
+		},
+		"summon": {
+			"name": {
+				"nb": "Tilkalling"
+			},
+			"text": {
+				"nb": "Kaller inn 4 fiender (6 i raseri)."
+			}
+		},
+		"mortar": {
+			"name": {
+				"nb": "Bombardement"
+			},
+			"text": {
+				"nb": "Granater regner rundt deg hvert 0,3 s."
+			}
+		},
+		"seekers": {
+			"name": {
+				"nb": "Jegere"
+			},
+			"text": {
+				"nb": "En ring av 8 trege kuler (12 i raseri) som sakte svinger mot deg, omtrent 10° per sekund. Gå i sirkler rundt dem."
+			}
+		},
+		"anti": {
+			"name": {
+				"nb": "Antispiller"
+			},
+			"text": {
+				"nb": "En sjelden erstatning for den vanlige sjefen (fra sone 10): et speil av deg. Skyter med det beste våpenet du har funnet, holder seg på effektiv rekkevidde (maks 15 m), rygger når du kommer nær og drar til siden i et sprang. Bruker heltens ferdighet: granat (miner med forsinkelse), velsignelse (neste salve ×3) eller et slag med oppladning. Livet vokser med sonen som hos alle fiender."
+			}
+		},
+		"wall": {
+			"name": {
+				"nb": "Vegg"
+			},
+			"text": {
+				"nb": "Kulevegger med en åpning hvert 1,1 s — finn åpningen."
+			}
+		}
+	},
+	"_comment": "Norsk: oversettelser av oppslagsverket (felt-ordbøker slås sammen med spillets etter id)."
+}

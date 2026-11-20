@@ -24,6 +24,17 @@ var last_active: int = 0
 var aim: Vector2 = Vector2.RIGHT
 var fire_cd: float = 0.0
 var reload_t: float = 0.0
+var rhythm_phase := 0.0         # ритм-перезарядка: фаза такта 0..1 (такт — когда фаза переходит через 1)
+var rhythm_lock := 0.0          # после промаха сокращать перезарядку нельзя ещё столько секунд
+var rhythm_hit_beat := false    # в этом такте уже попал
+var rhythm_hits := 0            # попаданий и промахов в текущей перезарядке — по ним решается, удачная ли она
+var rhythm_fails := 0
+var _touch_fire_prev := false    # ритм-перезарядка засчитывает и нажатие кнопки огня: фронт экранной кнопки
+var rhythm_flash := 0.0         # вспышка кольца после нажатия
+var rhythm_flash_col := Color.WHITE
+var kick := Vector2.ZERO        # отдача выстрела: скорость, которой пушка отбрасывает героя назад (гаснет, Gun.recoil)
+const KICK_DECEL := 1800.0
+const KICK_MAX := 2200.0
 var burst_left: int = 0
 var burst_t: float = 0.0
 var bloom: float = 0.0
@@ -98,6 +109,7 @@ func reset() -> void:
 	visible = true
 	invuln = 1.0
 	reload_t = 0.0
+	kick = Vector2.ZERO
 	burst_left = 0
 	fire_cd = 0.0
 	dodge_t = 0.0
@@ -209,6 +221,7 @@ func reload_progress() -> float:
 
 ## Кладёт пушку в пустой слот, иначе в рюкзак. false — некуда.
 func add_gun(g: Gun) -> bool:
+	g.sync_level(Game.white_level())   # белая пушка с пола/из лавки сразу в силу текущей зоны
 	for i in 4:
 		if guns[i] == null:
 			guns[i] = g
@@ -478,6 +491,9 @@ func _physics_process(delta: float) -> void:
 			main.fx.dust(position)
 			Sfx.at("player/dodge", position, -7.0, 1.0, 0.08, 1, 0.1)
 	position = main.zone.move_circle(position, vel * delta, radius)
+	if kick.length_squared() > 1.0:
+		position = main.zone.move_circle(position, kick * delta, radius)
+		kick = kick.move_toward(Vector2.ZERO, KICK_DECEL * delta)
 
 	# Опасная жижа
 	if main.zone.is_hazard_at(position) and dodge_t <= 0.0:
@@ -723,6 +739,60 @@ func _dry(msg: String) -> void:
 	Game.main.fx.text(position + Vector2(0, -34), msg, Color(1.0, 0.5, 0.4), 15, 0.8)
 
 
+## Ритм-перезарядка: такт — раз в секунду (RHYTHM_PERIOD), окно попадания ±RHYTHM_WINDOW около него. Нажатие R в окне сокращает
+## перезарядку на RHYTHM_CUT с (один раз за такт). Нажатие мимо окна или лишнее — промах: сокращать нельзя RHYTHM_LOCK секунд.
+func _rhythm_update(g: Gun, delta: float) -> void:
+	rhythm_phase += delta / Gun.RHYTHM_PERIOD
+	if rhythm_phase >= 1.0:
+		rhythm_phase -= 1.0
+	rhythm_lock = maxf(0.0, rhythm_lock - delta)
+	rhythm_flash = maxf(0.0, rhythm_flash - delta)
+	var in_window := _rhythm_in_window()
+	if not in_window:
+		rhythm_hit_beat = false
+	# в такт можно жать и R, и огонь (ЛКМ / курок / экранная кнопка): стрелять во время перезарядки всё равно нельзя
+	var tf := Controls.touch_fire
+	var pressed := Input.is_action_just_pressed("reload") or Input.is_action_just_pressed("shoot") or (tf and not _touch_fire_prev)
+	_touch_fire_prev = tf
+	if not pressed:
+		return
+	var main: Main = Game.main
+	if rhythm_lock > 0.0:
+		Sfx.ui("ui/error", -14.0)
+		return
+	if in_window and not rhythm_hit_beat:
+		rhythm_hit_beat = true
+		rhythm_hits += 1
+		reload_t -= Gun.RHYTHM_CUT
+		rhythm_flash = 0.25
+		rhythm_flash_col = Color(0.5, 1.0, 0.6)
+		main.fx.text(position + Vector2(0, -34), "−%d s" % roundi(Gun.RHYTHM_CUT), Color(0.6, 1.0, 0.7), 15, 0.6)
+		Sfx.ui("ui/click", -6.0, 1.5)
+	else:
+		rhythm_fails += 1
+		rhythm_lock = Gun.RHYTHM_LOCK
+		rhythm_flash = 0.35
+		rhythm_flash_col = Color(1.0, 0.35, 0.3)
+		main.fx.text(position + Vector2(0, -34), U.t("MISS"), Color(1.0, 0.45, 0.4), 15, 0.8)
+		Sfx.ui("ui/error", -6.0)
+
+
+func g_rhythm_active() -> bool:
+	var g := gun()
+	return g != null and g.rhythm and reload_t > 0.0
+
+
+func _rhythm_in_window() -> bool:
+	return rhythm_phase >= 1.0 - Gun.RHYTHM_WINDOW or rhythm_phase <= Gun.RHYTHM_WINDOW
+
+
+## Перезарядка кончилась: каждое попадание в такт дало +RHYTHM_BONUS к урону новой обоймы (бонусы складываются; промахи их не отнимают).
+func _rhythm_finish(g: Gun) -> void:
+	g.rhythm_bonus = float(rhythm_hits) * Gun.RHYTHM_BONUS
+	if rhythm_hits > 0:
+		Game.main.fx.text(position + Vector2(0, -52), U.t("On the beat ×%d: +%d%% damage") % [rhythm_hits, roundi(g.rhythm_bonus * 100.0)], Color(0.6, 1.0, 0.7), 15, 1.2)
+
+
 func start_reload(manual: bool = false) -> void:
 	var g := gun()
 	if g == null or reload_t > 0.0 or g.ammo >= g.mag_size:
@@ -733,6 +803,12 @@ func start_reload(manual: bool = false) -> void:
 		return
 	reload_t = g.reload_time
 	reload_total = reload_t
+	_touch_fire_prev = Controls.touch_fire   # огонь, зажатый до перезарядки, нажатием не считается
+	rhythm_phase = 0.2   # первый такт — примерно через 0.8 с после старта
+	rhythm_lock = 0.0
+	rhythm_hit_beat = false
+	rhythm_hits = 0
+	rhythm_fails = 0
 	burst_left = 0
 	Game.main.sfx.reload_start(g)
 
@@ -745,9 +821,13 @@ func _update_gun(delta: float) -> void:
 	if g == null:
 		return
 	if reload_t > 0.0:
+		if g.rhythm:
+			_rhythm_update(g, delta)
 		reload_t -= delta
 		if reload_t <= 0.0:
 			reload_t = 0.0
+			if g.rhythm:
+				_rhythm_finish(g)
 			if g.free_ammo:
 				g.ammo = g.mag_size
 			else:
@@ -865,6 +945,9 @@ func _fire(g: Gun) -> void:
 	main.fx.muzzle_flash(mpos, aim, g.proj_color)
 	main.sfx.gun_shot(g, mpos)
 	main.fx.shake(minf(g.shake, 8.0))
+	if g.recoil > 0.0:
+		kick = (kick - aim * g.recoil).limit_length(KICK_MAX)   # отдача корабельной пушки бросает героя назад
+		main.fx.dust(position)
 
 
 # --- Отрисовка ----------------------------------------------------------------
@@ -944,3 +1027,12 @@ func _draw() -> void:
 			draw_circle(aim * (radius + 18.0), 7.0, Color(g.proj_color, 0.8))
 	if reload_t > 0.0:
 		draw_arc(Vector2(0, bob), radius + 8.0, -PI * 0.5, -PI * 0.5 + TAU * reload_progress(), 24, Color(1, 1, 1, 0.8), 3.0)
+		if g_rhythm_active():
+			var ring_r := radius + 14.0
+			var col := Color(0.55, 0.55, 0.6, 0.7) if rhythm_lock > 0.0 else (Color(0.5, 1.0, 0.6, 0.95) if _rhythm_in_window() else Color(1, 1, 1, 0.55))
+			if rhythm_flash > 0.0:
+				col = Color(rhythm_flash_col, 0.95)
+			draw_arc(Vector2(0, bob), ring_r, 0.0, TAU, 28, Color(col, 0.5), 2.0)   # цель
+			draw_arc(Vector2(0, bob), ring_r + (1.0 - rhythm_phase) * 36.0, 0.0, TAU, 32, col, 3.0)   # сжимающееся кольцо: жми, когда оно сошлось с целью
+			if rhythm_lock > 0.0:
+				draw_arc(Vector2(0, bob), ring_r + 8.0, -PI * 0.5, -PI * 0.5 + TAU * rhythm_lock / Gun.RHYTHM_LOCK, 20, Color(1.0, 0.4, 0.35, 0.9), 2.0)

@@ -27,6 +27,11 @@ static func roll_rarity(level: int, rng: RandomNumberGenerator, bonus: float) ->
 	return U.weighted(weights, rng)
 
 
+## Основа не сочетается в гибриды (поле no_hybrid: арбалет, корабельная пушка).
+static func _no_hybrid(arch: String) -> bool:
+	return bool(GunData.ARCH.get(arch, {}).get("no_hybrid", false))
+
+
 static func _maker(g: Gun) -> Dictionary:
 	return GunData.MAKERS.get(g.maker, {})
 
@@ -76,18 +81,25 @@ static func generate(level: int, rng: RandomNumberGenerator, bonus: float = 0.0,
 		var no_boom := bool(_maker(g).get("no_explosive", false))
 		g.archetype = force_arch if force_arch != "" else _pick_arch(rng, no_boom)
 		var hyb := float(GunData.RARITIES[g.rarity].get("hybrid_chance", 0.0))
-		if force_arch == "" and rng.randf() < hyb:
+		var solo := _no_hybrid(g.archetype)   # арбалет и корабельная пушка — только сами по себе
+		if force_arch == "" and not solo and rng.randf() < hyb:
 			var a2 := _pick_arch(rng, no_boom)
 			var guard := 0
-			while a2 == g.archetype and guard < 10:
+			while (a2 == g.archetype or _no_hybrid(a2)) and guard < 20:
 				a2 = _pick_arch(rng, no_boom)
 				guard += 1
-			if a2 != g.archetype:
+			if a2 != g.archetype and not _no_hybrid(a2):
 				g.archetype2 = a2
 		# Гипернова делает из любой основы ракетницу: узор стрельбы свой, снаряд — ракета
 		var pa := str(_maker(g).get("projectile_arch", ""))
-		if pa != "" and GunData.ARCH.has(pa) and g.archetype != pa and force_arch == "":
+		if pa != "" and GunData.ARCH.has(pa) and g.archetype != pa and force_arch == "" and not solo:
 			g.archetype2 = pa
+		# некоторые основы не делают отдельные марки (арбалет — Синергис): перебираем марку заново
+		var banned: Array = GunData.ARCH[g.archetype].get("no_makers", [])
+		var mk_guard := 0
+		while g.maker in banned and mk_guard < 40:
+			g.maker = _pick_maker(g.rarity, rng)
+			mk_guard += 1
 	_build(g, rng, leg)
 	return g
 
@@ -214,6 +226,8 @@ static func combine_block(pat: Gun, ammo: Gun) -> String:
 		return "hybrid"
 	if pat.archetype == ammo.archetype:
 		return "type"
+	if _no_hybrid(pat.archetype) or _no_hybrid(ammo.archetype):
+		return "special"
 	var mk := _maker(pat)
 	if str(mk.get("projectile_arch", "")) != "":
 		return "maker"   # Гипернова сама превращает любую основу в ракетницу
@@ -284,6 +298,9 @@ static func _apply_base(g: Gun, rng: RandomNumberGenerator = null) -> void:
 		g.explode_r = float(a.get("explode", 0.0))
 		g.bounces = int(a.get("bounce", 0))
 		g.drag = float(a.get("drag", 0.0))
+		g.recoil = float(a.get("recoil", 0.0))
+		g.free_ammo = bool(a.get("free_ammo", false))   # арбалет: бесконечный боезапас
+		g.rhythm = bool(a.get("rhythm", false))
 		# случайное число дробин основы (pellets_roll): общий урон залпа тот же
 		var n0 := g.pellets
 		g.pellets = _roll_pellets(a, g.pellets, rng)
@@ -450,6 +467,8 @@ static func _roll_mod(g: Gun, rng: RandomNumberGenerator, pending: Array = [], n
 		var w := float(md.get("weight", 0.0))
 		if w <= 0.0 or id in taken:
 			continue
+		if _excluded(id, md, taken):
+			continue
 		if no_proc and GunData.perk_has_tag(id, "proc"):
 			continue
 		if no_boom and GunData.perk_has_tag(id, "explosive"):
@@ -470,6 +489,17 @@ static func _roll_mod(g: Gun, rng: RandomNumberGenerator, pending: Array = [], n
 	if cands.is_empty():
 		return ""
 	return cands[U.weighted(weights, rng)]
+
+
+## Перк id несовместим с уже взятыми (или отложенными): поле "excludes" — id перков, с которыми он не сочетается (с любой из сторон).
+static func _excluded(id: String, md: Dictionary, taken: Array) -> bool:
+	for ex in md.get("excludes", []):
+		if str(ex) in taken:
+			return true
+	for t in taken:
+		if id in GunData.perk(str(t)).get("excludes", []):
+			return true
+	return false
 
 
 ## Шанс удержать мод-эффект = PROC_BULLETS / (скорострельность × пуль за выстрел), макс. 100%.
@@ -535,7 +565,7 @@ static func _finalize(g: Gun, rng: RandomNumberGenerator, leg: Dictionary) -> vo
 	# (двуствольная снайперка Бога силы: x6 -> 6, 12...; очередь по 3 с x2 -> 6, 12...)
 	var unit := g.ammo_per_shot * g.burst
 	g.mag_size = maxi(unit, ceili(float(g.mag_size) / float(unit)) * unit)
-	g.reload_time = clampf(g.reload_time, 0.35, 6.0)
+	g.reload_time = clampf(g.reload_time, 0.35, 40.0 if g.rhythm else 6.0)   # арбалет перезаряжается 15 с (и сокращает её по тактам)
 	g.crit_chance = clampf(g.crit_chance, 0.0, 0.75)
 	g.elem_chance = clampf(g.elem_chance, 0.0, 1.0)
 	g.proj_speed = clampf(g.proj_speed, 120.0, 3200.0)
@@ -609,6 +639,8 @@ static func _build_vis(g: Gun, rng: RandomNumberGenerator) -> void:
 	v["orb"] = g.proj_kind == GunData.K_ORB
 	v["cyl"] = bool(a.get("cylinder", false))
 	v["mortar"] = bool(a.get("mortar", false)) or bool(b.get("mortar", false))
+	v["bow"] = bool(a.get("bow", false))
+	v["cannon"] = bool(a.get("cannon", false))
 	v["fins"] = rng.randi_range(0, 2)
 	var x0 := -10.0 - stock
 	var x1 := -10.0 + body + barrel

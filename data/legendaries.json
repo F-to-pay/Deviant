@@ -113,5 +113,6 @@
 		"arch2": "launcher",
 		"perks": ["seeder"],
 		"special": ""
-	}
+	},
+	{"id": "flashlight", "name": "Flashlight", "flavor": "Light is a weapon. Mostly.", "arch": "ar", "perks": ["scatter", "precise", "burst", "laser"], "min_accuracy": 80, "ops": [["set", "burst", 3]], "special": ""}
 ]

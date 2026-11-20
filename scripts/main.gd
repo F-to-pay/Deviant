@@ -283,6 +283,8 @@ func load_zone(level: int) -> void:
 			_spawn_chest(zone.cell_center(c), rng.randf() < 0.12 + float(level) * 0.004)
 		_spawn_portal(zone.cell_center(data["portal"]), level + 1)
 		_mark_bounty()
+		_spawn_zone_stall(level)
+	director.finish_zone()   # зона расставлена: судья подгоняет награду под 1,5 уровня
 	zone.explore(player.position, 11)
 	_update_wake()
 	music.on_zone(boss != null)
@@ -291,6 +293,42 @@ func load_zone(level: int) -> void:
 	elif level > 1:
 		Sfx.ui("world/zone", -8.0)
 	hud.zone_banner(level, U.t(str(data["biome"]["name"])), boss_title)
+
+
+## Случайная лавка на карте обычной зоны (не босса): Оружейная или Мастерская; если нет задания Гильдии — в половине случаев Гильдия.
+## Товар — тот же, что в городе (Shops.make_town), он лежит в town, пока идёшь по этой зоне. Лавка видна на миникарте.
+func _spawn_zone_stall(level: int) -> void:
+	var kind := "shop" if rng.randf() < 0.5 else "workshop"
+	if Quests.can_take() and rng.randf() < 0.5:
+		kind = "guild"
+	var pos := _stall_spot()
+	if pos == Vector2.INF:
+		return
+	town = Shops.make_town(level, rng)
+	var st := Stall.new()
+	st.kind = kind
+	st.position = pos
+	item_layer.add_child(st)
+	stalls.append(st)
+	Game.say(U.t("A trader on this map: %s — see the minimap") % st.title(), st.color())
+
+
+## Место для лавки: открытая площадка (стены не рядом, лавка рисуется выше точки), подальше от входа и портала. INF — не нашли.
+func _stall_spot() -> Vector2:
+	var far := 700.0
+	for attempt in 60:
+		var c := Vector2i(rng.randi_range(3, zone.w - 4), rng.randi_range(3, zone.h - 4))
+		if zone.get_cell(c.x, c.y) != Zone.FLOOR:
+			continue
+		var p := zone.open_spot_near(zone.cell_center(c), 70.0, 120.0)
+		if zone.circle_blocked(p, 70.0) or zone.circle_blocked(p + Vector2(0, -50.0), 55.0):
+			continue
+		if p.distance_to(player.position) < far * (1.0 - float(attempt) / 90.0):
+			continue
+		if portal != null and is_instance_valid(portal) and p.distance_to(portal.position) < 250.0:
+			continue
+		return p
+	return Vector2.INF
 
 
 ## Город перед зоной next_level: лавки, портал дальше, врагов нет.
@@ -324,10 +362,22 @@ func load_town(next_level: int) -> void:
 	hud.town_banner(Game.town_name, next_level, U.t(str(Biomes.for_level(next_level)["name"])))
 
 
+## Белые пушки в руках и рюкзаке подгоняются под уровень новой зоны (города — следующей зоны), см. `Gun.sync_level`.
+func sync_white_guns() -> void:
+	var lvl := Game.white_level()
+	for o in player.guns:
+		if o != null:
+			(o as Gun).sync_level(lvl)
+	for o in player.backpack:
+		(o as Gun).sync_level(lvl)
+
+
 ## Общее для зоны и города: карта, игрок на входе, границы камеры.
 func _enter(data: Dictionary) -> void:
 	zone.setup(data)
+	sync_white_guns()
 	player.position = zone.cell_center(data["spawn"])
+	player.kick = Vector2.ZERO
 	var ws := zone.world_size()
 	camera.limit_left = 0
 	camera.limit_top = 0
@@ -369,7 +419,7 @@ func skip_zone(n: int = 1, to_boss: bool = false) -> void:
 	var target := (base / 5 + 1) * 5 if to_boss else base + maxi(1, n)
 	var kills := 0
 	var xp := 0.0
-	var gold := 0
+	var gold := 0.0
 	if not Game.in_town:
 		var lvl: int = Game.zone_level
 		for o in enemies.duplicate():
@@ -378,7 +428,7 @@ func skip_zone(n: int = 1, to_boss: bool = false) -> void:
 				continue
 			if not e.summoned:
 				kills += 1
-				xp += Game.enemy_xp(e.level, e.elite)
+				xp += director.kill_xp(e.level, e.elite)
 				gold += _skip_coins(lvl, e.elite)
 				if e.elite == 3:
 					Game.bosses += 1
@@ -403,13 +453,13 @@ func skip_zone(n: int = 1, to_boss: bool = false) -> void:
 	Quests.progress("kills", kills)
 	var ups := Game.add_xp(xp)
 	Game.add_coins(gold)
-	Game.say("skip → zone %d: %d kills, +%.0f XP%s, +%d coins" % [target, kills, xp, (" (level up ×%d)" % ups) if ups > 0 else "", gold],
+	Game.say("skip → zone %d: %d kills, +%.0f XP%s, +%s coins" % [target, kills, xp, (" (level up ×%d)" % ups) if ups > 0 else "", U.money(gold)],
 		Color(0.7, 1.0, 0.7))
 	next_zone(target, Game.town_before(target))
 
 
 ## Монеты за одного убитого врага уровня lvl (elite 0..3) — как в on_enemy_killed / _boss_dead, но сразу числом.
-func _skip_coins(lvl: int, elite: int) -> int:
+func _skip_coins(lvl: int, elite: int) -> float:
 	match elite:
 		0:
 			return Game.kill_coins(lvl, 0.35, Game.rng)
@@ -447,7 +497,7 @@ func _end_transition() -> void:
 
 
 func _spawn_pack(level: int, center: Vector2) -> void:
-	var pk: Dictionary = EnemyData.roll_pack(level, rng)
+	var pk: Dictionary = EnemyData.roll_pack(level, rng, Director.ELITE_LOVE)
 	if bool(pk.get("boss", false)):
 		_spawn_wander_boss(level, center)
 		return
@@ -550,17 +600,17 @@ func drop_gun(g: Gun, pos: Vector2, pop: bool = true) -> void:
 
 
 ## total монет россыпью из pieces штук (не больше 8 — чтобы не плодить узлы). meta — древние.
-func drop_coins(pos: Vector2, total: int, pieces: int = 1, meta: bool = false) -> void:
-	if total <= 0:
+func drop_coins(pos: Vector2, total: float, pieces: int = 1, meta: bool = false) -> void:
+	if total <= 0.0:
 		return
 	if not meta:
-		total *= LevelTree.coin_mult()   # узел «Жадность»: шанс удвоить дроп
-	var n := clampi(pieces, 1, mini(8, total))
+		total = minf(total * float(LevelTree.coin_mult()), Game.MONEY_MAX)   # узел «Жадность»: шанс удвоить дроп
+	var n := clampi(pieces, 1, clampi(int(minf(total, 8.0)), 1, 8))   # не больше монеток, чем монет
 	var left := total
 	for i in n:
 		var c := Coin.new()
 		c.meta = meta
-		c.value = left / (n - i)
+		c.value = floorf(left / float(n - i)) if total < 1.0e15 else left / float(n - i)
 		left -= c.value
 		c.position = pos
 		c.vel = Vector2.from_angle(randf() * TAU) * randf_range(70.0, 170.0)
@@ -572,15 +622,15 @@ func drop_coins(pos: Vector2, total: int, pieces: int = 1, meta: bool = false) -
 func pick_coin(c: Coin) -> void:
 	coins.erase(c)
 	if c.meta:
-		Game.add_meta(c.value)
+		Game.add_meta(int(c.value))
 		Sfx.ui("pickup/relic", -6.0, 1.0, 0.05)
-		fx.text(c.position + Vector2(0, -20), "+%d %s" % [c.value, U.t("ancient")], Color(0.6, 1.0, 1.0), 14, 1.0)
+		fx.text(c.position + Vector2(0, -20), "+%d %s" % [int(c.value), U.t("ancient")], Color(0.6, 1.0, 1.0), 14, 1.0)
 	else:
 		var v := c.value
 		Game.add_coins(v)
 		Quests.progress("coins", v)
 		Sfx.at("pickup/coin", c.position, -12.0, 1.0, 0.06, 3, 0.03)
-		fx.text(c.position + Vector2(0, -16), "+%d" % v, Color(1.0, 0.85, 0.3), 14, 0.7)
+		fx.text(c.position + Vector2(0, -16), "+" + U.money(v), Color(1.0, 0.85, 0.3), 14, 0.7)
 	c.queue_free()
 
 
@@ -741,7 +791,7 @@ func on_enemy_killed(e: Enemy, by_player: bool = true) -> void:
 		Sfx.at("enemy/death", e.position, -9.0 if e.elite == 0 else -5.0, clampf(18.0 / e.radius, 0.7, 1.3), 0.08, 3, 0.04)
 	fx.death_burst(e.position, e.color, e.radius)
 	if by_player and not e.summoned:
-		Game.add_xp(Game.enemy_xp(e.level, e.elite))
+		Game.add_xp(director.kill_xp(e.level, e.elite))
 	if e.elite == 3:
 		_boss_dead(e)
 		return
@@ -771,7 +821,7 @@ func on_enemy_killed(e: Enemy, by_player: bool = true) -> void:
 		spawn_flask(e.position)
 	# монеты (на первом этапе): обычный — в среднем 0.35, чемпион — 2–4, вожак — 5–8 и иногда древняя.
 	# Game.kill_coins: ×1.2 за этап и делится на рост числа врагов в зоне
-	var coin_total := 0
+	var coin_total := 0.0
 	if e.elite == 0:
 		coin_total = Game.kill_coins(lvl, 0.35, rng)
 		drop_coins(e.position, coin_total)
@@ -798,8 +848,8 @@ func on_enemy_killed(e: Enemy, by_player: bool = true) -> void:
 
 
 ## Цель заказа Шерифа (узел «Охотник за головами») убита: добавка к монетам и гарантированная пушка.
-func _pay_bounty(e: Enemy, coin_total: int) -> void:
-	var extra := maxi(1, roundi(float(coin_total) * LevelTree.stat("bounty_coins")))
+func _pay_bounty(e: Enemy, coin_total: float) -> void:
+	var extra := maxf(1.0, Game.money(coin_total * LevelTree.stat("bounty_coins")))
 	drop_coins(e.position, extra, 4)
 	if LevelTree.stat("bounty_gun") > 0.0:
 		drop_gun(_loot(GunGen.generate(Game.zone_level, rng, 0.6)), e.position)

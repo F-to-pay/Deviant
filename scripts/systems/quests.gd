@@ -41,9 +41,9 @@ static func make_offers(level: int, rng: RandomNumberGenerator) -> Array:
 		var t: Dictionary = TYPES[k]
 		var need := rng.randi_range(int(t["min"]), int(t["max"]))
 		if k == "coins":
-			need = roundi(float(need) * Game.econ(level))
+			need = int(minf(Game.money(float(need) * Game.econ(level)), 1.0e15))
 		out.append({"type": str(k), "need": need, "have": 0, "reward": int(t["reward"]) + 2 * ((level - 1) / Game.TOWN_EVERY),
-			"coins": roundi(float(COINS_REWARD) * Game.econ(level))})
+			"coins": Game.money(float(COINS_REWARD) * Game.econ(level))})
 	return out
 
 
@@ -73,18 +73,18 @@ static func abandon(i: int) -> void:
 
 
 ## Что-то произошло: засчитать задания этого вида. Выполненное — награда сразу.
-static func progress(t: String, n: int = 1) -> void:
+static func progress(t: String, n: float = 1.0) -> void:
 	if active.is_empty() or n <= 0:
 		return
 	for q in active.duplicate():
 		if str(q["type"]) != t:
 			continue
-		q["have"] = mini(int(q["need"]), int(q["have"]) + n)
+		q["have"] = int(minf(float(q["need"]), float(q["have"]) + minf(n, 1.0e15)))
 		if int(q["have"]) >= int(q["need"]):
 			active.erase(q)
 			Game.add_meta(int(q["reward"]))
-			Game.add_coins(int(q.get("coins", 0)))
-			Game.say(U.t("Quest complete: %s — +%d ancient coins, +%d coins") % [text(q), int(q["reward"]), int(q.get("coins", 0))],
+			Game.add_coins(float(q.get("coins", 0.0)))
+			Game.say(U.tm("Quest complete: %s — +%d ancient coins, +%d coins", [text(q), str(int(q["reward"])), U.money(float(q.get("coins", 0.0)))]),
 				Color(0.6, 1.0, 1.0))
 			Sfx.ui("pickup/relic", -3.0)
 
@@ -92,7 +92,7 @@ static func progress(t: String, n: int = 1) -> void:
 static func text(q: Dictionary) -> String:
 	var t: Dictionary = TYPES.get(str(q["type"]), {})
 	var s := U.t(str(t.get("text", "?")))
-	return s % int(q["need"]) if s.contains("%d") else s
+	return s.replace("%d", U.money(float(q["need"]))) if s.contains("%d") else s
 
 
 ## Строка с прогрессом для HUD и Гильдии.

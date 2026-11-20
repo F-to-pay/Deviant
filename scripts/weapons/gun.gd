@@ -39,6 +39,9 @@ var elem_chance: float = 0.0
 var burst: int = 1
 var ammo_per_shot: int = 1
 var knock: float = 60.0
+var recoil: float = 0.0        # отдача: выстрел отбрасывает стрелка назад (импульс, px/с); у корабельной пушки — космическая
+var rhythm := false             # ритм-перезарядка (арбалет, перк «Ритмичный»): нажимай R в такт, см. Player._rhythm_update
+var rhythm_bonus := 0.0          # прибавка к урону текущей обоймы: RHYTHM_BONUS за каждое попадание в такт при её перезарядке
 var _fx_cache: Array = []       # effect_lines(): готовый текст и язык, на котором он собран
 var _fx_lang: String = ""
 var slug_n: int = 0           # у пулевого дробовика — сколько дробин было до слитка; толчок залпа считается по ним
@@ -75,6 +78,7 @@ var elem_mult: float = 1.0      # множитель шанса стихии («
 var move_mult: float = 1.0
 # --- Особенности основы (archetypes.json; у гибрида — от обеих основ)
 var light := false               # пистолет, ПП: стрельба не замедляет героя
+var beam := false                # перк «Лазерный»: скорость пули — мгновенная, остальное как у обычной (Projectiles._fire_beam)
 var no_falloff := false          # револьвер: урон не падает за эффективной дальностью
 var range_dmg: float = 0.0       # снайперка: урон растёт с пролётом — от этой доли до 100% на половине эффективной дальности
 var shake: float = 1.0
@@ -166,8 +170,18 @@ func type_name_lower() -> String:
 
 ## Эффективная дальность (px). Дальше пуля летит, но урон резко падает.
 ## Эффективная дальность: дальше урон падает (кроме no_falloff). 0.7 — общий срез дальности всех пушек.
+const RHYTHM_CUT := 2.0      # попадание в такт сокращает перезарядку на столько секунд
+const RHYTHM_PERIOD := 1.0   # такт — раз в секунду
+const RHYTHM_WINDOW := 0.18  # окно попадания: ±столько долей такта (0.18 = ±0.18 с) от момента такта
+const RHYTHM_LOCK := 4.0     # промах: сокращать перезарядку нельзя столько секунд
+const RHYTHM_BONUS := 0.08   # каждое попадание в такт (то есть каждое сокращение перезарядки) — +8% урона следующей обоймы, и они складываются
 const RANGE_MULT := 0.7
 const NO_FALLOFF_RANGE := 40000.0  # пушка без спада урона (револьвер): дальность 1000 м (1 м = 40 px), больше любой карты; на карточке пишем «-»
+
+
+## На сколько метров отдача отбрасывает стрелка (торможение 1800 px/с², как у отбрасывания врагов).
+func recoil_m() -> float:
+	return recoil * recoil / (2.0 * 1800.0) / 40.0
 
 
 ## Независимая копия пушки (турель Инженера стреляет своей копией: свой магазин и свой счётчик ядерки).
@@ -197,6 +211,18 @@ func eff_range() -> float:
 func norm_damage() -> float:
 	var lvl_mult: float = Game.gun_dmg_mult(level)
 	return damage / lvl_mult
+
+
+## Белые пушки (Common) не устаревают: подгоняются под уровень зоны, где герой сейчас. Урон зашит в `damage` при
+## генерации (× gun_dmg_mult(level)), поэтому меняем его на отношение множителей нового и старого уровня.
+## Остальные редкости не трогаем — они обязаны стареть. true — уровень изменился.
+func sync_level(new_level: int) -> bool:
+	new_level = maxi(1, new_level)
+	if rarity != GunData.R_COMMON or new_level == level:
+		return false
+	damage *= Game.gun_dmg_mult(new_level) / Game.gun_dmg_mult(level)
+	level = new_level
+	return true
 
 
 ## Коэффициент срабатывания (как proc coefficient в Risk of Rain): все эффекты
@@ -332,6 +358,13 @@ func perk_lines() -> Array:
 		out.append([U.t("Pierces everything"), w])
 	elif pierce > 0:
 		out.append([U.t("Pierces enemies: %d (−40%% damage each)") % pierce, w])
+	if rhythm:
+		out.append([U.t("Rhythm reload: press [%s] or fire on the beat (once a second) to cut it by %d s; a miss locks it for %d s") % [Controls.label("reload"), roundi(RHYTHM_CUT), roundi(RHYTHM_LOCK)], good])
+		out.append([U.t("Every hit on the beat: +%d%% damage to the next magazine (stacks)") % roundi(RHYTHM_BONUS * 100.0), good])
+	if recoil > 0.0:
+		out.append([U.t("Recoil: throws you back %d m") % roundi(recoil_m()), bad])
+	if beam:
+		out.append([U.t("Laser: the bullet flies instantly"), w])
 	if bounces > 0 and proj_kind != GunData.K_GRENADE:
 		out.append([U.t("Ricochets off walls ×%d") % bounces, w])
 	if split_n > 0 and split_depth > 1:

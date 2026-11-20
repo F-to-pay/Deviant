@@ -15,7 +15,7 @@ extends RefCounted
 ## Условие: ["stat", "<", 12] — сравнение (==, !=, <, <=, >, >=); ["arch", "==", "shotgun"] — основа;
 ##   ["and", усл, усл...], ["or", усл, усл...], ["not", усл].
 ## stat — любое свойство Gun (см. weapons/gun.gd): damage, fire_rate, pellets, spread, proj_speed, lifetime,
-##   mag_size, reload_time, crit_chance, crit_mult, element, elem_chance, burst, ammo_per_shot, knock, knock_boost,
+##   mag_size, reload_time, crit_chance, crit_mult, element, elem_chance, burst, ammo_per_shot, knock, knock_boost, beam, rhythm,
 ##   proj_kind, proj_size, pierce, bounces, explode_r, explode_chance, explode_on_expire, homing, accel,
 ##   drag, sine, boomerang, split_n, split_depth, chain_n, cluster_n, leech, vortex, seeder, teleport,
 ##   armor, free_ammo, proc_mult, elem_mult, move_mult, shake.
@@ -291,6 +291,8 @@ const STAT_LABELS := {
 	"ammo_per_shot": "rounds per shot",
 	"knock": "knockback",
 	"knock_boost": "knockback boost for weak guns",
+	"beam": "instant flight",
+	"rhythm": "rhythm reload",
 	"proj_kind": "projectile kind",
 	"proj_size": "projectile size",
 	"pierce": "pierce",

@@ -1,0 +1,9 @@
+{
+	"name": "Norsk (bokmål)",
+	"author": "Deviant",
+	"version": "1.0",
+	"description": "Norsk oversettelse: strenger, oppslagsverk og modding-guide. Skilt ut fra selve spillet og oppdateres ikke lenger — nye strenger vises på engelsk.",
+	"enabled": true,
+	"replace_sfx": [],
+	"replace_music": []
+}

@@ -43,8 +43,8 @@ godot --headless --path . --quit          # загрузить проект: в�
 | Поиск пути | `world/zone.gd` `find_path()` — AStarGrid2D по классам размера тела (`size_class`) |
 | Карта | `world/zone_gen.gd` (генерация), `world/zone.gd` (сетка T=40, коллизии `move_circle`, лучи `ray_clear`, миникарта), `world/biomes.gd` |
 | Город между этапами | `world/town_gen.gd` (площадь, улицы, дома по `town_style` биома, имя), `world/stall.gd` (лавки: `KINDS` — вывеска, реплики, `menu` — экран меню; без него — окно-заглушка `HudDraw._draw_stall`) |
-| Торговля, Мистик, Мастерская | цены и товар — `systems/shops.gd` (`make_town` при входе в город → `Main.town`), перки Мистика — перки навыков `Heroes.PERKS` (что даёт — `Player.perk()`, `skill_dmg_mult`, `Skills`); пересборка пушки — `GunGen.rebuild` (подтягивать уровень нельзя — пушки должны устаревать); экраны — `Menu._build_shop/_mystic/_workshop` |
-| Опыт героя и «судья» | `Game.add_xp / xp_need / enemy_xp` (уровень = 5 очков дерева), `systems/director.gd` (запас XP в зоне, сложность по времени — наблюдает, F3), `Main.director` |
+| Торговля, Мистик, Мастерская | цены и товар — `systems/shops.gd` (`make_town` при входе в город → `Main.town`), перки Мистика — перки навыков `Heroes.PERKS` (что даёт — `Player.perk()`, `skill_dmg_mult`, `Skills`); пересборка пушки — `GunGen.rebuild` (подтягивать уровень нельзя — пушки должны устаревать; исключение — белые, `Gun.sync_level`: при входе в зону/город (`Main.sync_white_guns`) и при подборе (`Player.add_gun`) они получают уровень зоны, `Game.white_level()`); экраны — `Menu._build_shop/_mystic/_workshop` |
+| Опыт героя и «судья» | `Game.add_xp / xp_need / enemy_xp` (уровень = 5 очков дерева), `systems/director.gd` (судья: бюджет `LEVELS_PER_ZONE` = 1,5 уровня за зону, любит элиток `ELITE_LOVE`, после расстановки `finish_zone()` считает `xp_scale`; награда за убийство — `director.kill_xp`, не `Game.enemy_xp`; F3), `Main.director` |
 | Дерево навыков игрока | `systems/level_tree.gd` (`LevelTree`: очки, покупка, `stat(имя)`), данные — `data/skill_branches.json` + `data/skill_tree.json` (моды правят по id), состояние забега — `Game.tree`; экраны — `Menu._build_tree` (по экрану на ветку), клавиша `skill_tree`; читают эффекты `Player`, `Projectiles.fire_gun`, `Enemy.hurt`, `Skills.hit`, `Main.drop_coins` / `_mark_bounty`, `GunGen.roll_rarity` |
 | Задания Гильдии | `systems/quests.gd` (`TYPES`, `active`, `progress(тип)` — зовётся из `Main`); экран — `Menu._build_guild`, строки на HUD — `HudDraw._draw_zone_info` |
 | Фляги лечения | `Player.flasks` / `drink()` / `FLASK_MAX`, `FLASK_HEAL`; дроп — `Main.spawn_flask` (`world/flask_drop.gd`); Лекарь — `Shops.heal_price` / `flask_price`, экран `Menu._build_healer` |
@@ -56,7 +56,7 @@ godot --headless --path . --quit          # загрузить проект: в�
 | Меню | `ui/menu.gd` — все экраны (главное, пауза, настройки, управление, настраиваемый старт, моды, справочник) на Control-ах |
 | Размер интерфейса и отступы | `ui/ui_fit.gd` |
 | Звук / музыка | `systems/sfx.gd` (банки из `sfx/`), `systems/music.gd` (категории, фоновая подгрузка) |
-| Переводы | `core/i18n.gd`, `core/util.gd` (`U.t`), `lang/ru.json`, `lang/nb.json` |
+| Переводы | `core/i18n.gd`, `core/util.gd` (`U.t`), `lang/ru.json` (норвежский — отдельный замороженный мод `Mods/Norwegian/`) |
 | Моды | `core/mods.gd` (слои, скрипты, `validate`), `core/debug_log.gd`, `ui/debug_console.gd` |
 | Справочник и гайд | `systems/codex.gd`, `data/codex.json`, `data/guide.json` |
 | Прогрев | `systems/warmup.gd` |
@@ -65,7 +65,7 @@ godot --headless --path . --quit          # загрузить проект: в�
 
 - **Нет сцен и ассетов-картинок:** узлы создаются кодом, графика — `draw_*` в `_draw()`.
 - **Строки:** исходник — английский, всегда через `U.t("Text")`; форматирование после перевода: `U.t("Zone %d") % n`.
-  Каждую новую строку добавить в **`lang/ru.json` и `lang/nb.json`** (у существительных `{text, lower, g}`,
+  Каждую новую строку добавить в **`lang/ru.json`** (у существительных `{text, lower, g}`,
   у прилагательных `{m, f, n}`). Пропуски видно командой отладчика `missing ru`.
 - **Новая настройка:** ключ в `Game.DEFAULTS` + строка `_slider`/`_check` в `Menu` (`_build_settings` или
   `_build_controls`) + чтение `Game.setting("key")`; реакция на изменение — `Game.settings_changed`.
@@ -94,10 +94,10 @@ godot --headless --path . --quit          # загрузить проект: в�
 
 | Хочу | Куда |
 |---|---|
-| Баланс урона/здоровья по зонам | `Game.ENEMY_HP_GROWTH` / `GUN_DMG_GROWTH`, `enemy_dmg_mult` |
+| Баланс урона/здоровья по зонам | `Game.ENEMY_HP_GROWTH` / `GUN_DMG_GROWTH`, `enemy_dmg_mult`; после зоны `FLAT_FROM` (200) кривые врагов сшиты с силой «эталонной сборки» героя (`ref_*`, `FLAT_RISE`) |
 | Отложенные задачи | `TODO.md` |
 | Шансы редкостей, перков, гибридов | `data/rarities.json`, `GunGen.roll_rarity` |
-| Новый тип пушки / марка / перк / легендарка | `data/*.json` + `lang/ru.json` + `lang/nb.json` |
+| Новый тип пушки / марка / перк / легендарка | `data/*.json` + `lang/ru.json` |
 | Новый враг | `EnemyData.TYPES` + ветка в `Enemy._behave` + описание в `data/codex.json` (`enemies`) |
 | Свойство элитки | `EnemyData.AFFIXES` + `Enemy._tick_affixes` + `data/codex.json` (`affixes`) |
 | Атака босса | `Boss.PATTERNS` / `DURATION` + обработка в `boss.gd` |
@@ -105,7 +105,7 @@ godot --headless --path . --quit          # загрузить проект: в�
 | Лут и монеты с врагов/сундуков/боссов | `Main` (обработчики смерти врага/босса, `open_chest`) |
 | Новый перк навыка | `Heroes.PERKS` + эффект: попадание навыком — `systems/skills.gd` (`hit`, `explode`), применение — `Player._use_skill` / `_bless_proj` + строки и справочник (`heroes`) |
 | Новый вид задания | `Quests.TYPES` + вызов `Quests.progress("вид")` в нужном месте + строки |
-| Новый навык дерева | запись в `data/skill_tree.json` (эффекты — `stat` из `LevelTree.KNOWN_STATS`; нужен новый stat — добавить в `KNOWN_STATS` и прочитать там, где он действует) + строки `ru`/`nb` |
+| Новый навык дерева | запись в `data/skill_tree.json` (эффекты — `stat` из `LevelTree.KNOWN_STATS`; нужен новый stat — добавить в `KNOWN_STATS` и прочитать там, где он действует) + строки `ru` |
 | Новый герой / навык | `Heroes.LIST` + ветка в `Player._use_skill` (+ рисунок в `Player._draw`) + строки в `lang/*.json` + страница `heroes` в `data/codex.json` |
 | Лавка, открывающая экран меню | `Stall.KINDS[...]["menu"]` → `Menu.open_town(экран)`; «Назад» — `Menu._back()` |
 | Вид/имена городов | `Biomes.LIST` (`town`, `town_style`), `TownGen.SUFFIXES`; переводы ключей `"Dust-"`, `"-ville"` |

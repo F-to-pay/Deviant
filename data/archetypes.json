@@ -242,5 +242,7 @@
 		"explosive": true,
 		"icon": {"body": 34.0, "bh": 14.0, "barrel": 26.0, "bt": 12.0, "stock": 0.0, "mortar": true},
 		"sound": {"vol": -3.0, "pitch": 1.0, "reload": "reload/launcher", "reload_done": "reload/done"}
-	}
+	},
+	"cannon": {"name": "Ship Cannon", "weight": 3.0, "damage": 200.0, "fire_rate": 0.35, "pellets": 1, "spread": 1.5, "speed": 1100.0, "lifetime": 0.8, "mag": 4, "reload": 3.6, "crit": 0.05, "crit_mult": 2.0, "kind": "bullet", "size": 7.0, "knock": 260.0, "move": 0.7, "shake": 8.0, "recoil": 1400.0, "no_hybrid": true, "ammo_name": "cannonballs", "ammo_color": "#ffa94d", "icon": {"body": 30.0, "bh": 14.0, "barrel": 34.0, "bt": 11.0, "stock": 0.0, "cannon": true}, "sound": {"bank": "guns/mortar", "vol": -1.0, "pitch": 0.65, "reload": "reload/launcher", "reload_done": "reload/done"}},
+	"crossbow": {"name": "Crossbow", "weight": 5.0, "damage": 18.45, "fire_rate": 1.8, "pellets": 1, "spread": 1.5, "speed": 1400.0, "lifetime": 0.75, "mag": 20, "reload": 15.0, "crit": 0.1, "crit_mult": 2.2, "kind": "bullet", "size": 3.0, "knock": 100.0, "move": 1.0, "shake": 1.2, "free_ammo": true, "rhythm": true,  "no_hybrid": true, "no_makers": ["synergis"], "ammo_name": "bolts", "ammo_color": "#d9c28f", "icon": {"body": 26.0, "bh": 8.0, "barrel": 8.0, "bt": 3.0, "stock": 14.0, "bow": true}, "sound": {"bank": "guns/pistol", "vol": -7.0, "pitch": 1.9, "reload": "reload/rifle", "reload_done": "reload/done"}}
 }

@@ -11,7 +11,8 @@ extends RefCounted
 ## Цена пушки по редкости (обычная ... абсурдная) при стоимости монетки 1.
 const RARITY_PRICE := [15, 30, 60, 120, 300, 500]
 const SELL_SHARE := 0.25        # продажа — четверть цены
-const STOCK := 8                # пушек в Оружейной
+const STOCK := 11               # пушек в Оружейной
+const DEAL_SHARE := 0.5         # «Товар дня»: самая редкая пушка ассортимента стоит вполцены
 const REROLL_STOCK_BASE := 10   # обновить ассортимент; каждое следующее обновление в этом городе — +50%
 const AMMO_MARKUP := 1.5        # патроны дороже, чем их «стоимость» при разборе (см. ammo_price)
 const HEAL_FULL := 40           # Лекарь: вылечить с нуля до полного (меньше — пропорционально)
@@ -26,25 +27,25 @@ static func cv(level: int) -> float:
 	return Game.econ(level)
 
 
-static func price_of(rarity: int, level: int) -> int:
-	return roundi(float(RARITY_PRICE[clampi(rarity, 0, RARITY_PRICE.size() - 1)]) * cv(level))
+static func price_of(rarity: int, level: int) -> float:
+	return Game.money(float(RARITY_PRICE[clampi(rarity, 0, RARITY_PRICE.size() - 1)]) * cv(level))
 
 
-static func gun_price(g: Gun) -> int:
+static func gun_price(g: Gun) -> float:
 	return price_of(g.rarity, g.level)
 
 
-static func sell_price(g: Gun) -> int:
-	return maxi(1, roundi(float(gun_price(g)) * SELL_SHARE))
+static func sell_price(g: Gun) -> float:
+	return maxf(1.0, Game.money(float(gun_price(g)) * SELL_SHARE))
 
 
-static func reroll_price(g: Gun) -> int:
-	return maxi(1, roundi(float(gun_price(g)) * REROLL_SHARE))
+static func reroll_price(g: Gun) -> float:
+	return maxf(1.0, Game.money(float(gun_price(g)) * REROLL_SHARE))
 
 
 ## Цена объединения пушек в гибрид (обе пушки пропадают, появляется одна).
-static func combine_price(a: Gun, b: Gun) -> int:
-	return maxi(1, roundi(float(price_of(maxi(a.rarity, b.rarity), maxi(a.level, b.level))) * COMBINE_SHARE))
+static func combine_price(a: Gun, b: Gun) -> float:
+	return maxf(1.0, Game.money(float(price_of(maxi(a.rarity, b.rarity), maxi(a.level, b.level))) * COMBINE_SHARE))
 
 
 ## Поднять редкость можно до эпической и не у легендарок/абсурдных.
@@ -52,12 +53,12 @@ static func can_rarity_up(g: Gun) -> bool:
 	return g.legendary == "" and g.rarity < GunData.R_EPIC
 
 
-static func rarity_up_price(g: Gun) -> int:
-	return maxi(1, roundi(float(price_of(g.rarity + 1, g.level)) * RARITY_UP_SHARE))
+static func rarity_up_price(g: Gun) -> float:
+	return maxf(1.0, Game.money(float(price_of(g.rarity + 1, g.level)) * RARITY_UP_SHARE))
 
 
-static func stock_reroll_price(level: int, done: int) -> int:
-	return roundi(float(REROLL_STOCK_BASE) * cv(level) * (1.0 + 0.5 * float(done)))
+static func stock_reroll_price(level: int, done: int) -> float:
+	return Game.money(float(REROLL_STOCK_BASE) * cv(level) * (1.0 + 0.5 * float(done)))
 
 
 ## Сколько патронов даёт разбор пушки сам по себе (без патронов в магазине) — как в Player.scrap.
@@ -67,39 +68,65 @@ static func scrap_rounds(g: Gun) -> int:
 
 ## Один магазин патронов к пушке: цена патрона = цена продажи / патроны с разбора × AMMO_MARKUP.
 ## Так разобрать пушку на патроны всегда выгоднее, чем купить их, но не в разы.
-static func ammo_price(g: Gun, rounds: int) -> int:
+static func ammo_price(g: Gun, rounds: int) -> float:
 	var per := float(sell_price(g)) / float(maxi(1, scrap_rounds(g)))
-	return maxi(1, ceili(per * float(rounds) * AMMO_MARKUP))
+	return maxf(1.0, Game.money(ceilf(per * float(rounds) * AMMO_MARKUP)))
 
 
 ## Вылечить до полного: цена пропорциональна недостающему здоровью.
-static func heal_price(level: int, missing_frac: float) -> int:
+static func heal_price(level: int, missing_frac: float) -> float:
 	if missing_frac <= 0.0:
 		return 0
-	return maxi(1, ceili(float(HEAL_FULL) * cv(level) * missing_frac))
+	return maxf(1.0, Game.money(ceilf(float(HEAL_FULL) * cv(level) * missing_frac)))
 
 
-static func flask_price(level: int) -> int:
-	return roundi(float(FLASK_PRICE) * cv(level))
+static func flask_price(level: int) -> float:
+	return Game.money(float(FLASK_PRICE) * cv(level))
 
 
-static func mystic_price(level: int, bought: int) -> int:
-	return roundi(float(MYSTIC_BASE) * cv(level) * (1.0 + 0.5 * float(bought)))
+static func mystic_price(level: int, bought: int) -> float:
+	return Game.money(float(MYSTIC_BASE) * cv(level) * (1.0 + 0.5 * float(bought)))
 
 
 ## Товар города перед зоной level: пушки Оружейной, перки Мистика, задания Гильдии.
 ## Перки Мистика подбираются под героя при первом заходе к нему (Menu._refresh_mystic) —
 ## в стартовом городе героя ещё могут сменить.
 static func make_town(level: int, rng: RandomNumberGenerator) -> Dictionary:
-	return {"level": level, "stock": make_stock(level, rng), "rerolls": 0,
+	var stock := make_stock(level, rng)
+	return {"level": level, "stock": stock, "deal": stock[0] if not stock.is_empty() else null, "rerolls": 0,
 		"mystic": [], "mystic_for": "", "mystic_done": false, "guild": Quests.make_offers(level, rng)}
 
 
 ## Ассортимент Оружейной: STOCK пушек, одна — не хуже редкой, остальные с «магик файндом» как у чемпиона.
+## «Товар дня» — одна из самых редких (при равенстве случайная): стоит первой в списке, цена — DEAL_SHARE (см. buy_price).
 static func make_stock(level: int, rng: RandomNumberGenerator) -> Array:
 	var stock: Array = []
 	for i in STOCK:
 		var g := GunGen.generate(level, rng, 2.0 if i == 0 else 1.0, GunData.R_RARE if i == 0 else 0)
+		# в первом (стартовом) городе легендарок и абсурдных нет: с 120 монетами и «Товаром дня» их там не стоит выкладывать
+		var guard := 0
+		while level <= 1 and g.rarity >= GunData.R_LEGENDARY and guard < 30:
+			g = GunGen.generate(level, rng, 2.0 if i == 0 else 1.0, GunData.R_RARE if i == 0 else 0)
+			guard += 1
+		if level <= 1 and g.rarity >= GunData.R_LEGENDARY:
+			g = GunGen.generate(level, rng, 1.0, 0, GunData.R_EPIC)   # не повезло 30 раз подряд (хаос): берём эпическую
 		g.ammo = g.mag_size
 		stock.append(g)
+	var best := -1
+	for g in stock:
+		best = maxi(best, (g as Gun).rarity)
+	var top: Array = []
+	for g in stock:
+		if (g as Gun).rarity == best:
+			top.append(g)
+	var deal: Gun = top[rng.randi() % top.size()]
+	stock.erase(deal)
+	stock.push_front(deal)
 	return stock
+
+
+## Сколько стоит пушка из ассортимента: «Товар дня» (town["deal"]) — со скидкой, остальные по полной цене.
+static func buy_price(g: Gun, town: Dictionary) -> float:
+	if g == town.get("deal"):
+		return maxf(1.0, Game.money(float(gun_price(g)) * DEAL_SHARE))
+	return gun_price(g)

@@ -35,7 +35,7 @@
 		"group": "",
 		"tags": [],
 		"fits": [["mag_size", "<", 80]],
-		"ops": [["mul", "mag_size", 1.9], ["add", "mag_size", 1], ["mul", "reload_time", 1.15]]
+		"ops": [["add", "mag_size", 2], ["mul", "mag_size", 2.3], ["mul", "reload_time", 1.6]]
 	},
 	{
 		"id": "quick",
@@ -116,6 +116,27 @@
 		"group": "",
 		"tags": [],
 		"ops": [["add", "armor", 0.15], ["min", "armor", 0.5]]
+	},
+	{
+		"id": "laser",
+		"name": "Laser",
+		"weight": 1.5,
+		"min_rarity": 3,
+		"group": "kind",
+		"tags": ["no_shell"],
+		"fits": [["or", ["proj_kind", "==", "bullet"], ["proj_kind", "==", "pellet"]]],
+		"excludes": ["homing"],
+		"ops": [["set", "beam", true]]
+	},
+	{
+		"id": "rhythm",
+		"name": "Rhythmic",
+		"weight": 2.0,
+		"min_rarity": 2,
+		"group": "",
+		"tags": [],
+		"fits": [["rhythm", "==", false]],
+		"ops": [["set", "rhythm", true]]
 	},
 	{
 		"id": "shove",
@@ -293,6 +314,7 @@
 		"group": "",
 		"tags": ["proc", "no_shell"],
 		"fits": [["homing", "<", 2.0]],
+		"excludes": ["laser"],
 		"ops": [["add", "homing", 4.0], ["mul", "proj_speed", 0.9]]
 	},
 	{

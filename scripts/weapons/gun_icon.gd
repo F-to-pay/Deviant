@@ -86,6 +86,19 @@ static func draw_gun(ci: CanvasItem, g: Gun, at: Vector2, sc: float, rot: float 
 		ci.draw_rect(Rect2(x_end - 4.0, -bh - 4.0, barrel + 6.0, bt + 4.0), body_c.darkened(0.15))
 		ci.draw_rect(Rect2(x_end + barrel - 2.0, -bh - 6.0, 5.0, bt + 8.0), dark_c)
 		ci.draw_rect(Rect2(-14.0, 10.0, 22.0, 4.0), dark_c)
+	# Арбалет: дуга-лук на конце ложа, тетива и болт на ложе
+	if bool(v.get("bow", false)):
+		var bx := x_end + 2.0
+		var tip := bh * 1.4 + 6.0
+		ci.draw_line(Vector2(bx, -bh * 0.5), Vector2(bx - 5.0, -bh * 0.5 - tip), metal, 2.5)
+		ci.draw_line(Vector2(bx, -bh * 0.5), Vector2(bx - 5.0, -bh * 0.5 + tip), metal, 2.5)
+		ci.draw_line(Vector2(bx - 5.0, -bh * 0.5 - tip), Vector2(bx - 5.0, -bh * 0.5 + tip), acc, 1.0)
+		ci.draw_line(Vector2(-6.0, -bh - 2.0), Vector2(bx + barrel * 0.4, -bh - 2.0), Color(0.85, 0.75, 0.5), 1.5)
+	# Корабельная пушка: утолщение у дула и колесо лафета
+	if bool(v.get("cannon", false)):
+		ci.draw_circle(Vector2(x_end + barrel, by + bt * 0.5), bt * 0.75, dark_c)
+		ci.draw_circle(Vector2(-10.0 + blen * 0.3, 9.0), 8.0, dark_c)
+		ci.draw_arc(Vector2(-10.0 + blen * 0.3, 9.0), 8.0, 0.0, TAU, 14, acc, 1.5)
 	# Стихийные катушки
 	if g.element >= 0:
 		var ec := U.el_color(g.element)

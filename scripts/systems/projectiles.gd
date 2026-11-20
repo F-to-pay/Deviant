@@ -13,6 +13,8 @@ const TELE_MIN := 50.0
 const MAX_LIFE := 5.0      # «бесконечная» дальность: летим до стены или 5 с
 const FAR := 1.0e9
 const RICOCHET_MULT := 0.7   # каждый рикошет пули срезает 30% урона (гранаты — нет)
+const BEAM_SPEED := 24000.0   # «мгновенно»: пуля лазера летит так быстро, что пролетает всю дистанцию за один кадр
+const BEAM_STEP := 20.0       # px за один шаг прогона (меньше диаметра самого мелкого врага — не проскочит)
 const PIERCE_MULT := 0.6     # каждое пробитие врага срезает 40% урона снаряда
 
 const K_BULLET := 0
@@ -183,7 +185,7 @@ func fire_gun(g: Gun, pos: Vector2, dir: Vector2, team: int, dmg_mult: float = 1
 	p.kind = g.proj_kind
 	p.dmg = g.damage * dmg_mult
 	if team == 0:
-		p.dmg *= (1.0 + LevelTree.stat("weapon_dmg")) * g.pellet_dmg_mult()   # дерево навыков: урон пуль героя и турели; +1% за дробину
+		p.dmg *= (1.0 + LevelTree.stat("weapon_dmg")) * g.pellet_dmg_mult() * (1.0 + g.rhythm_bonus)   # ритм-перезарядка: бонус к урону обоймы   # дерево навыков: урон пуль героя и турели; +1% за дробину
 	p.proc = clampf(g.proc_coef() * dmg_mult, 0.08, 1.0)
 	# секунда стрельбы = +10% кислоты/холода, независимо от скорострельности
 	p.st = 0.1 * g.elem_mult / maxf(0.25, g.fire_rate * float(g.pellets))
@@ -233,15 +235,38 @@ func fire_gun(g: Gun, pos: Vector2, dir: Vector2, team: int, dmg_mult: float = 1
 	p.chaos = g.special == "chaos"
 	p.no_falloff = g.no_falloff
 	p.range_dmg = g.range_dmg if p.kind != K_SHELL else 0.0
+	if g.beam and team == 0 and p.kind != K_SHELL:
+		p.homing = 0.0   # мгновенная пуля не успевает поворачивать (и перки не сочетаются, но у абсурдных можно всё)
+		_fire_beam(p, g)   # перк «Лазерный»: пуля не летит — луч бьёт по всей линии сразу
+		return p
 	_add(p)
 	return p
 
 
+## Лазер (перк «Лазерный», поле Gun.beam): обычная пуля, у которой меняется только скорость полёта — она мгновенная.
+## Пуля прогоняется по своему пути сразу, теми же шагами _step, что и в полёте: попадание, пробитие, рикошеты, спад урона
+## за эффективной дальностью, стены — всё как у обычной пули. Сам снаряд в список не попадает; рисуется линия до точки, где он кончился.
+func _fire_beam(p: Proj, g: Gun) -> void:
+	var main: Main = Game.main
+	var start := p.pos
+	var real := p.vel.length()
+	p.vel = p.vel.normalized() * BEAM_SPEED
+	p.life = p.life * real / BEAM_SPEED   # тот же путь в пикселях, что пролетела бы обычная пуля за свою жизнь
+	p.max_life = p.life
+	var dt := BEAM_STEP / BEAM_SPEED
+	var guard := 0
+	while not p.dead and guard < 700:
+		_step(p, dt, main.zone, main.player, main)
+		guard += 1
+	main.fx.beam(start, p.pos, g.proj_color)
+	p.dead = true
+
+
 ## Каждый 10-й выстрел «Последнего Слова».
-func fire_nuke(g: Gun, pos: Vector2, dir: Vector2, dmg_mult: float = 1.0) -> void:
+func fire_nuke(g: Gun, pos: Vector2, dir: Vector2, dmg_mult: float = 1.0) -> Proj:
 	var p := fire_gun(g, pos, dir, 0)
 	if p == null:
-		return
+		return null
 	p.kind = K_ROCKET
 	p.size = 7.0
 	p.radius = 10.0
@@ -259,6 +284,7 @@ func fire_nuke(g: Gun, pos: Vector2, dir: Vector2, dmg_mult: float = 1.0) -> voi
 	p.split_n = 0
 	p.nuke = true
 	p.color = Color(1.0, 0.9, 0.3)
+	return p
 
 
 func enemy_shot(pos: Vector2, dir: Vector2, speed: float, dmg: float, size: float = 6.0,

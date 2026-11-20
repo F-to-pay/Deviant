@@ -239,8 +239,8 @@ func _on_submit(text: String) -> void:
 			else:
 				_give("random", "random", GunData.R_LEGENDARY, "", args[0])
 		"coins":
-			Game.add_coins(int(args[0]) if not args.is_empty() else 100)
-			_say("coins: %d" % Game.coins)
+			Game.add_coins(float(args[0]) if not args.is_empty() else 100.0)
+			_say("coins: %s" % U.money(Game.coins))
 		"ancient":
 			Game.add_meta(int(args[0]) if not args.is_empty() else 10)
 			_say("ancient coins: %d" % Game.meta_coins)

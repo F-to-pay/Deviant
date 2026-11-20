@@ -86,6 +86,23 @@ static func fmt(x: float) -> String:
 	return ("-" if x < 0.0 else "") + s + str(SUFFIXES[tier])
 
 
+const ULTRA := 1.0e17   # 1 ультамонета = 10^17 монет (рядом с пределом int64, где раньше цены уходили в минус)
+
+
+## Сумма монет для показа: до миллиона — точным числом, до ультамонеты — с суффиксом (K, M, … Qi), дальше — в ультамонетах.
+static func money(x: float) -> String:
+	if x < 1.0e6:
+		return str(roundi(x))
+	if x < ULTRA:
+		return fmt(x)
+	return U.t("%s UC") % fmt(x / ULTRA)
+
+
+## Перевод с подстановкой: каждое «%d» заменяется на «%s» (суммы монет приходят строками из money, а число монет бывает огромным).
+static func tm(key: String, args: Array) -> String:
+	return U.t(key).replace("%d", "%s") % args
+
+
 static func fmt_time(sec: float) -> String:
 	var s := int(sec)
 	return "%d:%02d" % [s / 60, s % 60]
