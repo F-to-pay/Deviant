@@ -9,7 +9,8 @@ GDScript со статической типизацией. Пользовате�
 ```
 godot --headless --path . --quit          # загрузить проект: все ошибки разбора/компиляции скриптов вылезут в консоль
 godot --headless --path . --import        # после нового class_name (иначе «Identifier not declared»: кэш классов в .godot)
-powershell -ExecutionPolicy Bypass -File testsun_all.ps1     # все 13 тестов за ~минуту (Godot: -Godot <путь> или переменная GODOT_BIN)
+powershell -ExecutionPolicy Bypass -File tests
+un_all.ps1     # все 13 тестов за ~минуту (Godot: -Godot <путь> или переменная GODOT_BIN)
 ```
 Раннер подменяет `user://deviant.cfg` каноническим (язык en, отладчик модов включён) и возвращает ваш на место. Два вида тестов:
 - **assert** (`unit_core`, `skip_zone`, `zone_source`, `mod_data`) — сами печатают `SMOKE RESULT fails=0`;
