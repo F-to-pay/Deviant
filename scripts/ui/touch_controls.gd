@@ -8,7 +8,7 @@ extends CanvasLayer
 ##  «Стрельба по тапу» (touch_tap_fire): вместо правого стика — палец справа = огонь в точку под ним.
 ##  Автоогонь (auto_fire) — в Controls: сам стреляет по видимым врагам.
 ##  Кнопка навыка у героя с прицельным навыком (Heroes «aimed», граната): держишь и тянешь — появляется свой
-##  стик прицела с превью (Player._draw_skill_preview), отпустил — бросок; тап без протяжки — бросок как обычно.
+##  стик прицела с превью (HeroSkill.draw_preview), отпустил — бросок; тап без протяжки — бросок как обычно.
 ##  У остальных навык срабатывает сразу при нажатии.
 ##  Тап по слоту оружия внизу экрана выбирает это оружие (слот рисует HudDraw, его прямоугольник — weapon_rect_vp).
 ##  Кнопки: рывок, перезарядка, смена пушки, рюкзак, пауза; у пушки на земле — «Взять / Заменить /
@@ -575,8 +575,8 @@ func _draw_button(c: CanvasItem, b: Array, on: bool, fb: Font, _s: float) -> voi
 			U.draw_text_c(c, fb, ctr + Vector2(r * 0.55, r * 0.75), str(main.player.flasks), 16, Color.WHITE, 3)
 	elif act == "skill" and not _editing:
 		var hc := Heroes.color(main.player.hero)
-		if main.player.skill_charges <= 0:
-			var k := clampf(main.player.skill_cd / main.player.skill_max_cd(), 0.0, 1.0)
+		if main.player.skill.charges <= 0:
+			var k := clampf(main.player.skill.cd / main.player.skill.max_cd(), 0.0, 1.0)
 			c.draw_arc(ctr, r - 5.0, -PI * 0.5, -PI * 0.5 + TAU * k, 32, Color(hc, 0.9), 5.0)
 		else:
 			c.draw_arc(ctr, r - 4.0, 0.0, TAU, 32, Color(hc, 0.6), 3.0)

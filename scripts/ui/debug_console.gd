@@ -353,8 +353,8 @@ func _cmd_skillperk(args: PackedStringArray) -> void:
 	elif main2 == null or main2.player == null:
 		_say("start a run first")
 	else:
-		main2.player.add_run_perk(pid, int(args[1]) if args.size() > 1 else 0)
-		_say("skill perk %s ×%d%s" % [pid, int(main2.player.run_perks[pid]),
+		main2.player.skill.add_run_perk(pid, int(args[1]) if args.size() > 1 else 0)
+		_say("skill perk %s ×%d%s" % [pid, int(main2.player.skill.run_perks[pid]),
 			"" if Heroes.perk_fits(pid, main2.player.hero) else " (not for this hero — no effect)"])
 
 

@@ -31,10 +31,10 @@ const LIST := {
 }
 
 
-## Перки навыков — берутся у Мистика за монеты, на один забег (Player.run_perks).
+## Перки навыков — берутся у Мистика за монеты, на один забег (Player.skill.run_perks).
 ##  heroes — у кого перк бывает ([] — у всех), max — сколько раз можно взять (0 — сколько угодно).
 ##  desc — первое взятие, more — каждое следующее. name_<навык> — своё имя для навыка (Ядовитый разрез).
-## Как работают — Player (_use_skill, skill_dmg_mult, ...) и Skills (попадание навыком).
+## Как работают — HeroSkill (use, dmg_mult, ...) и Skills (попадание навыком).
 const PERKS := {
 	"split": {"name": "Split", "heroes": ["pioneer", "sheriff"], "max": 0,
 		"desc": "The skill fires ×3 projectiles and deals +20% total damage, split evenly between them.",

@@ -33,8 +33,8 @@ func refresh(_sname: String = "") -> void:
 	# перки — под текущего героя (в стартовом городе героя могли сменить)
 	if str(town.get("mystic_for", "")) != p.hero:
 		town["mystic_for"] = p.hero
-		town["mystic"] = Heroes.perk_offer(p.hero, p.run_perks, Game.main.rng, Shops.MYSTIC_OFFER)
-	var price := Shops.mystic_price(int(town.get("level", 1)), p.run_perk_count())
+		town["mystic"] = Heroes.perk_offer(p.hero, p.skill.run_perks, Game.main.rng, Shops.MYSTIC_OFFER)
+	var price := Shops.mystic_price(int(town.get("level", 1)), p.skill.run_perk_count())
 	var done := bool(town.get("mystic_done", false))
 	if _mystic_element:
 		# выбор стихии для перка «Стихия»
@@ -51,7 +51,7 @@ func refresh(_sname: String = "") -> void:
 		_mystic_box.add_child(MenuKit.label(U.t("The spirits have nothing more for this hero."), 18, DIM))
 	for o in offer:
 		var id := str(o)
-		var have := int(p.run_perks.get(id, 0))
+		var have := int(p.skill.run_perks.get(id, 0))
 		var t := "%s%s — %s   ·   %s" % [Heroes.perk_name(id, p.hero), (" ×%d" % (have + 1)) if have > 0 else "",
 			Heroes.perk_desc(id, have), U.money(price)]
 		var b := MenuKit.small_button(t, _buy_mystic.bind(id, -1), 1100.0)
@@ -62,10 +62,10 @@ func refresh(_sname: String = "") -> void:
 	if done:
 		_mystic_box.add_child(MenuKit.label(U.t("The spirits are tired. Come back in the next town."), 18, DIM))
 	var owned := PackedStringArray()
-	for id in p.run_perks:
-		var nm := Heroes.perk_name(str(id), p.hero) + " ×%d" % int(p.run_perks[id])
-		if str(id) == "element" and p.skill_element >= 0:
-			nm += " (%s)" % U.t(str(U.EL_NAMES[p.skill_element]))
+	for id in p.skill.run_perks:
+		var nm := Heroes.perk_name(str(id), p.hero) + " ×%d" % int(p.skill.run_perks[id])
+		if str(id) == "element" and p.skill.element >= 0:
+			nm += " (%s)" % U.t(str(U.EL_NAMES[p.skill.element]))
 		if not Heroes.perk_fits(str(id), p.hero):
 			nm += " " + U.t("(not for this hero)")
 		owned.append(nm)
@@ -82,7 +82,7 @@ func _mystic_cancel() -> void:
 func _buy_mystic(id: String, element: int) -> void:
 	var town: Dictionary = Game.main.town
 	var p: Player = Game.main.player
-	var price := Shops.mystic_price(int(town.get("level", 1)), p.run_perk_count())
+	var price := Shops.mystic_price(int(town.get("level", 1)), p.skill.run_perk_count())
 	if bool(town.get("mystic_done", false)) or Game.state.coins < price:
 		Sfx.ui("ui/error", -6.0)
 		return
@@ -92,7 +92,7 @@ func _buy_mystic(id: String, element: int) -> void:
 		return
 	_mystic_element = false
 	Game.state.add_coins(-price)
-	p.add_run_perk(id, element)
+	p.skill.add_run_perk(id, element)
 	town["mystic_done"] = true
 	Sfx.ui("pickup/legendary", -6.0)
 	Game.say(U.t("Gift: %s") % Heroes.perk_name(id, p.hero), Color(0.78, 0.45, 1.0))

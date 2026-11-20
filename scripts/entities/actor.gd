@@ -155,7 +155,7 @@ func _tick_delayed(delta: float) -> void:
 	if land > 0.0 and not dead:
 		on_dot(land, el)
 		if dead and Game.main != null:
-			Game.main.player.on_skill_kill(self)
+			Game.main.player.skill.on_kill(self)
 
 
 ## Враг (или его снаряд) бьёт эту цель. Переопределяют герой и турель; true — урон прошёл.

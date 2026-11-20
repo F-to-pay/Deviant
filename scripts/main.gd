@@ -176,7 +176,7 @@ func spawn_turret(spec: Dictionary, pos: Vector2) -> void:
 		if is_instance_valid(o) and not (o as Turret).dead:
 			alive.append(o)
 	turrets = alive
-	while turrets.size() >= maxi(1, player.max_charges()):
+	while turrets.size() >= maxi(1, player.skill.max_charges()):
 		(turrets[0] as Turret).dismantle()
 	var t := Turret.new()
 	t.position = pos

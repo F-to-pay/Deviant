@@ -2,7 +2,7 @@ class_name Skills
 extends RefCounted
 ## Попадание навыком героя и все перки, которые на него влияют (Heroes.PERKS):
 ## стихия, опасные раны, яд (отложенный урон), оглушение тяжёлого снаряда, отбрасывание вандализма,
-## трофеи (через Player.on_skill_kill), готовность (Player.on_skill_damage).
+## трофеи (через Player.skill.on_kill), готовность (Player.skill.on_damage).
 ## Сюда приходят: удар Ассасина, граната и дым Первопроходца, пули благословлённого выстрела Шерифа.
 
 const WOUND_STEP := 0.1
@@ -25,7 +25,7 @@ const SKILL_ELEM_CHANCE := 0.35
 
 ## Сколько стихии даёт одно попадание навыком: 0.1 × перезарядка навыка (с «Тяжёлым снарядом» — с учётом его +1 с).
 static func skill_st(p: Player) -> float:
-	return 0.1 * p.skill_max_cd()
+	return 0.1 * p.skill.max_cd()
 
 
 ## Ударить врага навыком. stun — можно ли оглушить (у дыма — только на первом тике).
@@ -37,13 +37,13 @@ static func hit(e: Enemy, dmg: float, kb: Vector2, stun: bool = true, st: float 
 	var p: Player = Game.main.player
 	if st < 0.0:
 		st = skill_st(p)
-	var el := p.skill_element
+	var el := p.skill.element
 	# шанс стихии как у пушек; тики дыма — без броска (там шанс уже учтён в накоплении, а огонь за 3 с и так держится)
 	if el >= 0 and not tick and randf() >= SKILL_ELEM_CHANCE:
 		el = -1
-	if p.perk("vandal") > 0:
+	if p.skill.perk("vandal") > 0:
 		kb *= VANDAL_KNOCK
-	var poison := p.perk("poison")
+	var poison := p.skill.perk("poison")
 	if poison > 0:
 		# урон ляжет позже; сейчас — только отбрасывание, стихия и агр
 		e.delay_damage(dmg, POISON_DELAY + POISON_DELAY_MORE * float(poison - 1), el)
@@ -66,18 +66,18 @@ static func hit(e: Enemy, dmg: float, kb: Vector2, stun: bool = true, st: float 
 	var th := LevelTree.stat("skill_temp_hp")
 	if th > 0.0:
 		p.add_temp_hp(dmg * th)
-	var w := p.perk("wounds")
+	var w := p.skill.perk("wounds")
 	if w > 0 and not e.dead:
 		# элиткам нужно вдвое больше ударов на ступень, боссам — втрое
 		var k := 1.0 if e.elite == 0 else (2.0 if e.elite < 3 else 3.0)
 		e.wound = minf(WOUND_MAX, e.wound + WOUND_STEP / k)
-	var hv := p.perk("heavy")
+	var hv := p.skill.perk("heavy")
 	if hv > 0 and stun and not e.dead:
 		e.stun_time = maxf(e.stun_time, (STUN + STUN_MORE * float(hv - 1)) / e.status_resist)
 		e.shock_time = maxf(e.shock_time, 0.15)
-	p.on_skill_damage()
+	p.skill.on_damage()
 	if e.dead:
-		p.on_skill_kill(e)
+		p.skill.on_kill(e)
 
 
 ## Взрыв навыка (граната Первопроходца, ракета благословлённого выстрела). У гранаты урон по всему радиусу
@@ -86,7 +86,7 @@ static func hit(e: Enemy, dmg: float, kb: Vector2, stun: bool = true, st: float 
 static func explode(pos: Vector2, r: float, dmg: float, col: Color) -> void:
 	var main: Main = Game.main
 	var p: Player = main.player
-	var sm := p.perk("smoke")
+	var sm := p.skill.perk("smoke")
 	if sm > 0:
 		main.projectiles.add_smoke(pos, SMOKE_R, dmg * SMOKE_TICK / SMOKE_RATE, SMOKE_TIME + float(sm - 1),
 			1.0 / SMOKE_RATE, skill_st(p) * SKILL_ELEM_CHANCE / SMOKE_RATE)
@@ -94,7 +94,7 @@ static func explode(pos: Vector2, r: float, dmg: float, col: Color) -> void:
 		Sfx.at("player/dodge", pos, -4.0, 0.5, 0.06, 2, 0.1)
 		return
 	var flat := str(Heroes.get_hero(p.hero).get("skill", "")) == "grenade"
-	var ecol := U.el_color(p.skill_element) if p.skill_element >= 0 else col
+	var ecol := U.el_color(p.skill.element) if p.skill.element >= 0 else col
 	main.fx.explosion(pos, r, ecol)
 	main.sfx.explosion(pos, r, false)
 	main.fx.shake(minf(2.0 + r / 30.0, 9.0))

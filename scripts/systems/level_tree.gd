@@ -26,7 +26,7 @@ const POINTS_PER_LEVEL := 5
 const KNOWN_STATS := {
 	"weapon_dmg": "+% к урону пуль героя и турели (Projectiles.fire_gun)",
 	"max_hp": "+HP героя (Player.base_max_hp)",
-	"skill_dmg": "+% к урону навыка (Player.skill_dmg_mult)",
+	"skill_dmg": "+% к урону навыка (Player.skill.dmg_mult)",
 	"coin_double": "шанс удвоить монеты с дропа; выше 100% — шанс утроить и т. д. (Loot.drop_coins)",
 	"exec_dmg": "до +% урона по цели в зависимости от потерянного ею здоровья (Enemy.hurt)",
 	"free_shot": "шанс не потратить патрон на выстреле, герой и турель (Player._fire, Turret._fire)",

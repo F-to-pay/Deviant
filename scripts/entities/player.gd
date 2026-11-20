@@ -18,26 +18,12 @@ const FLASK_HEAL := 0.2         # фляга лечит 20% максимума �
 var guns: Array = [null, null, null, null]
 var backpack: Array = []
 var reserve: Dictionary = {}    # тип патронов -> запас
-var _dry_cd: float = 0.0
 var active: int = 0
 var last_active: int = 0
 var aim: Vector2 = Vector2.RIGHT
-var fire_cd: float = 0.0
-var reload_t: float = 0.0
-var rhythm_phase := 0.0         # ритм-перезарядка: фаза такта 0..1 (такт — когда фаза переходит через 1)
-var rhythm_lock := 0.0          # после промаха сокращать перезарядку нельзя ещё столько секунд
-var rhythm_hit_beat := false    # в этом такте уже попал
-var rhythm_hits := 0            # попаданий и промахов в текущей перезарядке — по ним решается, удачная ли она
-var rhythm_fails := 0
-var _touch_fire_prev := false    # ритм-перезарядка засчитывает и нажатие кнопки огня: фронт экранной кнопки
-var rhythm_flash := 0.0         # вспышка кольца после нажатия
-var rhythm_flash_col := Color.WHITE
 var kick := Vector2.ZERO        # отдача выстрела: скорость, которой пушка отбрасывает героя назад (гаснет, Gun.recoil)
 const KICK_DECEL := 1800.0
 const KICK_MAX := 2200.0
-var burst_left: int = 0
-var burst_t: float = 0.0
-var bloom: float = 0.0
 var dodge_t: float = 0.0
 var dodge_cd: float = 0.0
 var dodge_dir: Vector2 = Vector2.RIGHT
@@ -46,20 +32,9 @@ var perfect_dodge: bool = false
 var leech_budget: float = LEECH_CAP
 var hazard_tick: float = 0.0
 var anim: float = 0.0
-var muzzle: float = 0.0
 var hero := Heroes.DEFAULT
-var skill_cd: float = 0.0       # перезарядка следующего заряда навыка
-var skill_charges: int = 1      # готовых зарядов навыка («Дополнительная рука» даёт больше)
-var skill_gap: float = 0.0      # пауза между применениями, чтобы зажатая кнопка не тратила все заряды разом
-var skill_element: int = -1     # стихия навыка (перк «Стихия»), -1 — нет
-var trophy_bonus: float = 0.0   # «Трофеи»: прибавка к урону навыка за убийства навыком
-var parry_cd: float = 0.0       # «Парирование»: до готовности
-var _ready_pending := false     # «Готовность»: этот навык ещё не снимал КД рывка
-var blessed := false            # Шериф: следующий выстрел усилен (навык)
-var slash_t: float = 0.0        # Ассасин: идёт удар (замедление, дуга на экране)
-var slash_dir := Vector2.RIGHT
-var run_perks: Dictionary = {}  # перки навыка (Мистик) на этот забег: id -> сколько раз взят (Heroes.PERKS)
-var reload_total: float = 1.0   # полная длительность текущей перезарядки (с перками)
+var shooting := Shooting.new(self)   # стрельба и перезарядка (entities/shooting.gd)
+var skill := HeroSkill.new(self)   # активный навык героя и его перки (entities/hero_skill.gd)
 var hurt_this_zone := false     # получал ли урон в этой зоне (задание «без урона»)
 var flasks: int = FLASK_MAX     # фляги лечения (выпить — действие flask)
 var flask_cd: float = 0.0
@@ -94,24 +69,22 @@ func reset() -> void:
 	active = 0
 	last_active = 0
 	radius = 14.0
-	run_perks = {}
+	skill.reset()
 	flasks = 0 if bool(Game.run.get("no_heal", false)) else FLASK_MAX
 	flask_cd = 0.0
 	temp_hp = 0.0
 	temp_t = 0.0
 	haste_t = 0.0
-	skill_element = -1
-	trophy_bonus = 0.0
 	LevelTree.recompute()
 	max_hp = base_max_hp()
 	hp = max_hp
 	dead = false
 	visible = true
 	invuln = 1.0
-	reload_t = 0.0
+	shooting.reload_t = 0.0
 	kick = Vector2.ZERO
-	burst_left = 0
-	fire_cd = 0.0
+	shooting.burst_left = 0
+	shooting.fire_cd = 0.0
 	dodge_t = 0.0
 	burn_time = 0.0
 	acid = 0.0
@@ -124,74 +97,12 @@ func reset() -> void:
 func set_hero(id: String) -> void:
 	hero = id if Heroes.LIST.has(id) else Heroes.DEFAULT
 	LevelTree.recompute()   # личные узлы дерева — у своего героя
-	skill_cd = 0.0
-	skill_charges = max_charges()
-	parry_cd = 0.0
-	blessed = false
-	slash_t = 0.0
+	skill.on_hero_set()
 	queue_redraw()
-
-
-func skill_max_cd() -> float:
-	return float(Heroes.get_hero(hero)["cd"]) + float(perk("heavy"))   # «Тяжёлый снаряд»: +1 с за взятие
 
 
 func dodge_max_cd() -> float:
 	return DODGE_CD
-
-
-func max_charges() -> int:
-	return 1 + perk("hand")
-
-
-## Сколько раз взят перк навыка (0 — нет; у чужого героя перк не работает).
-func perk(id: String) -> int:
-	if not Heroes.perk_fits(id, hero):
-		return 0
-	return int(run_perks.get(id, 0))
-
-
-## Множитель урона навыка от перков: разделение, тяжёлый, яд, точный, трофеи, вандализм и дерево навыков (skill_dmg).
-func skill_dmg_mult() -> float:
-	var k := (1.0 + 0.2 * perk("split")) * (1.0 + 0.2 * perk("heavy")) * (1.0 + 0.5 * perk("poison")) \
-		* (1.0 + 0.1 * perk("precise")) * (1.0 + trophy_bonus) * (1.0 + LevelTree.stat("skill_dmg"))
-	if perk("vandal") > 0:
-		k *= 0.5
-	return k
-
-
-## Взять перк навыка у Мистика. element — для перка «Стихия».
-func add_run_perk(id: String, element: int = -1) -> void:
-	run_perks[id] = int(run_perks.get(id, 0)) + 1
-	if id == "element":
-		skill_element = element
-	if id == "hand":
-		skill_charges += 1
-
-
-## Навык нанёс урон: «Готовность» — минус секунда КД рывка (один раз за применение).
-func on_skill_damage() -> void:
-	if _ready_pending and perk("ready") > 0:
-		_ready_pending = false
-		dodge_cd = maxf(0.0, dodge_cd - 1.0)
-
-
-## Убийство навыком: «Трофеи» — монета и прибавка к урону навыка.
-func on_skill_kill(e: Node2D) -> void:
-	var tr := perk("trophies")
-	if tr <= 0:
-		return
-	trophy_bonus += 0.002 + 0.0005 * float(tr - 1)
-	Game.state.add_coins(1)
-	Quests.progress("coins", 1)
-	Game.main.fx.text(e.position + Vector2(0, -30), "+1", Color(1.0, 0.85, 0.3), 14, 0.7)
-
-
-func run_perk_count() -> int:
-	var n := 0
-	for id in run_perks:
-		n += int(run_perks[id])
-	return n
 
 
 func gun() -> Gun:
@@ -204,17 +115,6 @@ func gun_count() -> int:
 		if g != null:
 			n += 1
 	return n
-
-
-func is_reloading() -> bool:
-	return reload_t > 0.0
-
-
-func reload_progress() -> float:
-	var g := gun()
-	if g == null or reload_t <= 0.0:
-		return 0.0
-	return 1.0 - reload_t / maxf(0.01, reload_total)
 
 
 # --- Инвентарь -------------------------------------------------------------------
@@ -240,9 +140,9 @@ func switch_to(i: int) -> void:
 		return
 	last_active = active
 	active = i
-	reload_t = 0.0
-	burst_left = 0
-	fire_cd = maxf(fire_cd, 0.18)
+	shooting.reload_t = 0.0
+	shooting.burst_left = 0
+	shooting.fire_cd = maxf(shooting.fire_cd, 0.18)
 	on_gun_changed()
 	Sfx.ui("ui/switch", -9.0)
 
@@ -262,10 +162,10 @@ func on_gun_changed() -> void:
 			if guns[i] != null:
 				active = i
 				break
-	if reload_t > 0.0:
+	if shooting.reload_t > 0.0:
 		Game.main.sfx.reload_cancel()
-	reload_t = 0.0
-	burst_left = 0
+	shooting.reload_t = 0.0
+	shooting.burst_left = 0
 	max_hp = base_max_hp()
 	hp = minf(hp, max_hp)
 
@@ -378,10 +278,10 @@ func drink() -> void:
 	if dead or flask_cd > 0.0:
 		return
 	if flasks <= 0:
-		_dry(U.t("NO FLASKS"))
+		shooting.dry(U.t("NO FLASKS"))
 		return
 	if hp >= max_hp:
-		_dry(U.t("Health is full"))
+		shooting.dry(U.t("Health is full"))
 		return
 	flasks -= 1
 	flask_cd = 0.5
@@ -393,8 +293,8 @@ func drink() -> void:
 ## Подобрали флягу с земли: узел «Второе дыхание» снимает долю перезарядки навыка.
 func on_flask_pickup() -> void:
 	var f := LevelTree.stat("flask_skill_refund")
-	if f > 0.0 and skill_charges < max_charges():
-		skill_cd -= f * skill_max_cd()
+	if f > 0.0 and skill.charges < skill.max_charges():
+		skill.cd -= f * skill.max_cd()
 
 
 ## +n фляг. В зоне их может быть сколько угодно — лишние сгорают при переходе (trim_flasks).
@@ -436,8 +336,7 @@ func _physics_process(delta: float) -> void:
 		dodge_cd -= delta
 	if chill > 0.0:
 		chill -= delta
-	if muzzle > 0.0:
-		muzzle -= delta
+	shooting.tick(delta)
 	if flask_cd > 0.0:
 		flask_cd -= delta
 	if haste_t > 0.0:
@@ -446,17 +345,7 @@ func _physics_process(delta: float) -> void:
 		temp_t -= delta
 		if temp_t <= 0.0:
 			temp_hp = 0.0
-	if skill_charges < max_charges():
-		skill_cd -= delta
-		if skill_cd <= 0.0:
-			skill_charges += 1
-			skill_cd = skill_max_cd() if skill_charges < max_charges() else 0.0
-	if skill_gap > 0.0:
-		skill_gap -= delta
-	if parry_cd > 0.0:
-		parry_cd -= delta
-	if slash_t > 0.0:
-		slash_t -= delta
+	skill.tick(delta)
 
 	var mp := Game.controls.aim_world(position)
 	if mp.distance_squared_to(position) > 16.0:
@@ -467,13 +356,13 @@ func _physics_process(delta: float) -> void:
 	var spd := SPEED
 	if g != null:
 		spd *= g.move_mult
-		if not g.light and (fire_cd > 0.0 or burst_left > 0) and reload_t <= 0.0:
+		if not g.light and (shooting.fire_cd > 0.0 or shooting.burst_left > 0) and shooting.reload_t <= 0.0:
 			spd *= FIRE_SLOW
 	if chill > 0.0:
 		spd *= 0.65
 	if haste_t > 0.0:
 		spd *= 1.0 + LevelTree.stat("flask_haste")
-	if slash_t > 0.0:
+	if skill.slash_t > 0.0:
 		spd *= 1.0 - float(Heroes.get_hero(hero).get("slow", 0.0))
 	if main.transitioning:
 		input = Vector2.ZERO
@@ -513,169 +402,15 @@ func _physics_process(delta: float) -> void:
 
 	var skill_cast: Variant = Game.controls.take_skill()   # навык, прицеленный отдельным стиком на сенсоре
 	if not main.transitioning:
-		if skill_cast != null and skill_charges > 0 and skill_gap <= 0.0 and not blessed:
-			_use_skill(skill_cast)
-		elif Input.is_action_pressed("skill") and skill_charges > 0 and skill_gap <= 0.0 and not blessed:
-			_use_skill()
-		_update_gun(delta)
+		if skill_cast != null and skill.charges > 0 and skill.gap <= 0.0 and not skill.blessed:
+			skill.use(skill_cast)
+		elif Input.is_action_pressed("skill") and skill.charges > 0 and skill.gap <= 0.0 and not skill.blessed:
+			skill.use()
+		shooting.update(delta)
 	queue_redraw()
 
 
 # --- Навык героя -------------------------------------------------------------------
-
-## cast — отдельный стик навыка на сенсоре: {"dir", "len"}; null или dir = ZERO — целимся, как обычно.
-func _use_skill(cast: Variant = null) -> void:
-	var main: Main = Game.main
-	var h := Heroes.get_hero(hero)
-	var col: Color = h["color"] if skill_element < 0 else U.el_color(skill_element)
-	# турель: сначала проверки (лимит, патроны) — заряд тратится, только если бросок состоится
-	var turret_spec: Dictionary = {}
-	if str(h["skill"]) == "turret":
-		turret_spec = _make_turret_spec()
-		if turret_spec.is_empty():
-			return
-	if skill_charges >= max_charges():
-		skill_cd = skill_max_cd()   # заряд пошёл в дело — начинаем копить следующий
-	skill_charges -= 1
-	skill_gap = 0.3
-	_ready_pending = true
-	var sdmg := float(h["dmg"]) * skill_dmg_mult()
-	match str(h["skill"]):
-		"grenade":
-			# в точку прицела, но не дальше range. «Разделение» — 3×N гранат, урон поровну;
-			# ложатся пятном вокруг точки прицела, как мины миномёта (чем дальше бросок, тем шире пятно)
-			var cdir := aim
-			var dist: float
-			if cast is Dictionary and (cast["dir"] as Vector2) != Vector2.ZERO:
-				# своим стиком: направление — куда потянули, дальность — насколько сильно
-				cdir = (cast["dir"] as Vector2).normalized()
-				dist = lerpf(60.0, float(h["range"]), clampf(float(cast["len"]), 0.0, 1.0))
-			else:
-				var to := Game.controls.aim_world(position) - position
-				dist = clampf(to.length(), 40.0, float(h["range"]))
-			var target := position + cdir * dist
-			var n := 3 * perk("split") if perk("split") > 0 else 1
-			var dev := (20.0 + dist * 0.14) * sqrt(float(n) / 3.0)
-			for i in n:
-				var off := Vector2.ZERO
-				if n > 1:
-					off = Vector2.from_angle(randf() * TAU) * dev * sqrt(randf())
-				main.projectiles.throw_grenade(position + cdir * (radius + 6.0), target + off, sdmg / float(n), float(h["r"]), col)
-			Sfx.at("player/dodge", position, -6.0, 1.4, 0.06, 1, 0.1)
-		"turret":
-			var tdir := aim
-			var tdist: float
-			if cast is Dictionary and (cast["dir"] as Vector2) != Vector2.ZERO:
-				tdir = (cast["dir"] as Vector2).normalized()
-				tdist = lerpf(60.0, float(h["range"]), clampf(float(cast["len"]), 0.0, 1.0))
-			else:
-				tdist = clampf((Game.controls.aim_world(position) - position).length(), 40.0, float(h["range"]))
-			var tpos := position + tdir * tdist
-			# в скале или пропасти турель не встанет — ищем свободное место рядом
-			if main.zone.circle_blocked(tpos, 18.0):
-				tpos = main.zone.random_free_near(tpos, 0.0, 90.0)
-				if main.zone.circle_blocked(tpos, 18.0):
-					tpos = position
-			turret_spec["el"] = skill_element
-			main.projectiles.throw_turret(position + tdir * (radius + 6.0), tpos, turret_spec, col)
-			Sfx.at("player/dodge", position, -6.0, 0.8, 0.06, 1, 0.1)
-		"bless":
-			blessed = true
-			main.fx.ring(position, 34.0, Color(1.0, 0.8, 0.3), 0.4)
-			Sfx.at("player/perfect", position, -6.0, 0.7, 0.04, 1, 0.1)
-		"slash":
-			slash_t = float(h["time"])
-			var sdir := aim
-			if cast is Dictionary and (cast["dir"] as Vector2) != Vector2.ZERO:
-				sdir = (cast["dir"] as Vector2).normalized()   # своим стиком на сенсоре
-			slash_dir = sdir
-			var r := float(h["r"])
-			var half := deg_to_rad(float(h["arc"])) * 0.5
-			var hits := 0
-			for o in main.grid_hash.query(position, r + 60.0):
-				var e: Enemy = o
-				if e.dead:
-					continue
-				var to_e := e.position - position
-				if to_e.length() > r + e.radius:
-					continue
-				# совсем вплотную — бьём в любом случае, иначе только в дуге
-				if to_e.length() > e.radius + radius and absf(sdir.angle_to(to_e)) > half:
-					continue
-				Skills.hit(e, sdmg, to_e.normalized() * 160.0)
-				hits += 1
-			# «Парирование»: раз в 4 с удар разворачивает вражеские снаряды
-			var pr := perk("parry")
-			if pr > 0 and parry_cd <= 0.0:
-				var refl := main.projectiles.reflect(position, sdir, r + 20.0, half, 1.0 + 0.3 * float(pr - 1))
-				if refl > 0:
-					parry_cd = 4.0
-					main.fx.ring(position, r, Color(0.85, 0.7, 1.0), 0.3)
-					Sfx.at("player/perfect", position, -5.0, 1.3, 0.04, 1, 0.1)
-			Sfx.at("player/dodge", position, -5.0, 1.6, 0.08, 2, 0.05)
-			if hits > 0:
-				Sfx.at("hit/body", position, -6.0, 1.2, 0.08, 2, 0.05)
-				main.fx.shake(2.0)
-
-
-## Что унесёт турель Инженера: {gun, ammo}. Пустой словарь — бросать нельзя (сообщение уже показано).
-## Обычная турель — копия активной пушки и ВСЕ патроны из её текущей обоймы; пушка остаётся пустой, герой перезаряжается
-## (из запаса, как обычно; у Синергиса перезарядка бесплатная).
-## Обойма у турели всегда конечная — расстреляла и сломалась; «Экономия» даёт сверху +40% за взятие.
-## «Безумный Учёный» — случайная пушка Синергис на редкость выше: у героя ничего не берётся, обойма — её полная.
-func _make_turret_spec() -> Dictionary:
-	var main: Main = Game.main
-	# лимит здесь не проверяем: сверх лимита самая старая турель убирается при посадке новой (Main.spawn_turret)
-	var g := gun()
-	if g == null:
-		return {}
-	var tg: Gun
-	var n: int
-	var take := 0
-	if perk("scientist") > 0:
-		# легендарка может быть привязана к другой марке — тогда free_ammo выставляем сами, а перки с повышенным расходом
-		# патронов (Двуствольный) для безлимитной пушки недопустимы: перебрасываем, пока не пропадут
-		for attempt in 30:
-			tg = GunGen.generate(Game.state.zone_level, main.rng, 0.0, 0, mini(g.rarity + 1, GunData.R_LEGENDARY), "", "synergis")
-			var costly := tg.ammo_per_shot > 1
-			for m in tg.mods:
-				if GunData.perk_costs_ammo(GunData.perk(str(m))):
-					costly = true
-			if not costly:
-				break
-		tg.free_ammo = true
-		n = tg.mag_size
-	else:
-		tg = g.copy()
-		if reload_t > 0.0:
-			_dry(U.t("RELOADING"))   # обойма в процессе — брать нечего
-			return {}
-		take = g.ammo
-		if take <= 0:
-			_dry(U.t("NO AMMO"))
-			return {}
-		n = take
-	n = maxi(1, roundi(float(n) * (1.0 + 0.4 * float(perk("economy")))))
-	tg.ammo = n
-	if take > 0:
-		g.ammo = 0
-		burst_left = 0
-		start_reload()   # без запаса сообщит «NO AMMO» — турель всё равно получила патроны
-	return {"gun": tg, "ammo": n}
-
-
-## Благословлённый выстрел Шерифа: снаряды помечены как навык (Skills), к урону — бонус навыка
-## (делится между дробинами/минами). «Разделение» — 3×N копий каждого снаряда веером, урон поровну;
-## «Точный выстрел» — самонаведение и дальность.
-func _bless_proj(p: Projectiles.Proj, n: int, copies: int) -> void:
-	p.skill = true
-	p.dmg = (p.dmg + float(Heroes.get_hero(hero)["dmg"]) * skill_dmg_mult() / float(maxi(1, n))) / float(copies)
-	if skill_element >= 0:
-		p.color = U.el_color(skill_element)
-	var pc := perk("precise")
-	if pc > 0:
-		p.homing = maxf(p.homing, 5.0)
-		p.eff_range *= 1.0 + 0.2 * float(pc)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -731,254 +466,7 @@ func scrap(g: Gun) -> int:
 	return got
 
 
-func _dry(msg: String) -> void:
-	if _dry_cd > 0.0:
-		return
-	_dry_cd = 1.2
-	Game.main.sfx.empty_click()
-	Game.main.fx.text(position + Vector2(0, -34), msg, Color(1.0, 0.5, 0.4), 15, 0.8)
-
-
-## Ритм-перезарядка: такт — раз в секунду (RHYTHM_PERIOD), окно попадания ±RHYTHM_WINDOW около него. Нажатие R в окне сокращает
-## перезарядку на RHYTHM_CUT с (один раз за такт). Нажатие мимо окна или лишнее — промах: сокращать нельзя RHYTHM_LOCK секунд.
-func _rhythm_update(g: Gun, delta: float) -> void:
-	rhythm_phase += delta / Gun.RHYTHM_PERIOD
-	if rhythm_phase >= 1.0:
-		rhythm_phase -= 1.0
-	rhythm_lock = maxf(0.0, rhythm_lock - delta)
-	rhythm_flash = maxf(0.0, rhythm_flash - delta)
-	var in_window := _rhythm_in_window()
-	if not in_window:
-		rhythm_hit_beat = false
-	# в такт можно жать и R, и огонь (ЛКМ / курок / экранная кнопка): стрелять во время перезарядки всё равно нельзя
-	var tf := Game.controls.touch_fire
-	var pressed := Input.is_action_just_pressed("reload") or Input.is_action_just_pressed("shoot") or (tf and not _touch_fire_prev)
-	_touch_fire_prev = tf
-	if not pressed:
-		return
-	var main: Main = Game.main
-	if rhythm_lock > 0.0:
-		Sfx.ui("ui/error", -14.0)
-		return
-	if in_window and not rhythm_hit_beat:
-		rhythm_hit_beat = true
-		rhythm_hits += 1
-		reload_t -= Gun.RHYTHM_CUT
-		rhythm_flash = 0.25
-		rhythm_flash_col = Color(0.5, 1.0, 0.6)
-		main.fx.text(position + Vector2(0, -34), "−%d s" % roundi(Gun.RHYTHM_CUT), Color(0.6, 1.0, 0.7), 15, 0.6)
-		Sfx.ui("ui/click", -6.0, 1.5)
-	else:
-		rhythm_fails += 1
-		rhythm_lock = Gun.RHYTHM_LOCK
-		rhythm_flash = 0.35
-		rhythm_flash_col = Color(1.0, 0.35, 0.3)
-		main.fx.text(position + Vector2(0, -34), U.t("MISS"), Color(1.0, 0.45, 0.4), 15, 0.8)
-		Sfx.ui("ui/error", -6.0)
-
-
-func g_rhythm_active() -> bool:
-	var g := gun()
-	return g != null and g.rhythm and reload_t > 0.0
-
-
-func _rhythm_in_window() -> bool:
-	return rhythm_phase >= 1.0 - Gun.RHYTHM_WINDOW or rhythm_phase <= Gun.RHYTHM_WINDOW
-
-
-## Перезарядка кончилась: каждое попадание в такт дало +RHYTHM_BONUS к урону новой обоймы (бонусы складываются; промахи их не отнимают).
-func _rhythm_finish(g: Gun) -> void:
-	g.rhythm_bonus = float(rhythm_hits) * Gun.RHYTHM_BONUS
-	if rhythm_hits > 0:
-		Game.main.fx.text(position + Vector2(0, -52), U.t("On the beat ×%d: +%d%% damage") % [rhythm_hits, roundi(g.rhythm_bonus * 100.0)], Color(0.6, 1.0, 0.7), 15, 1.2)
-
-
-func start_reload(manual: bool = false) -> void:
-	var g := gun()
-	if g == null or reload_t > 0.0 or g.ammo >= g.mag_size:
-		return
-	if reserve_of(g.ammo_type()) <= 0 and not g.free_ammo:
-		if manual or g.ammo <= 0:
-			_dry(U.t("NO AMMO"))
-		return
-	reload_t = g.reload_time
-	reload_total = reload_t
-	_touch_fire_prev = Game.controls.touch_fire   # огонь, зажатый до перезарядки, нажатием не считается
-	rhythm_phase = 0.2   # первый такт — примерно через 0.8 с после старта
-	rhythm_lock = 0.0
-	rhythm_hit_beat = false
-	rhythm_hits = 0
-	rhythm_fails = 0
-	burst_left = 0
-	Game.main.sfx.reload_start(g)
-
-
-func _update_gun(delta: float) -> void:
-	var g := gun()
-	bloom = maxf(0.0, bloom - delta * 25.0)
-	if fire_cd > 0.0:
-		fire_cd -= delta
-	if g == null:
-		return
-	if reload_t > 0.0:
-		if g.rhythm:
-			_rhythm_update(g, delta)
-		reload_t -= delta
-		if reload_t <= 0.0:
-			reload_t = 0.0
-			if g.rhythm:
-				_rhythm_finish(g)
-			if g.free_ammo:
-				g.ammo = g.mag_size
-			else:
-				var t := g.ammo_type()
-				var take := mini(g.mag_size - g.ammo, reserve_of(t))
-				g.ammo += take
-				reserve[t] = reserve_of(t) - take
-			Game.main.sfx.reload_done(g)
-		return
-	if burst_left > 0:
-		burst_t -= delta
-		if burst_t <= 0.0:
-			if g.ammo >= 1:
-				_fire(g)
-				burst_left -= 1
-				burst_t = 0.065
-			else:
-				burst_left = 0
-		return
-	if _dry_cd > 0.0:
-		_dry_cd -= delta
-	if Input.is_action_just_pressed("reload"):
-		start_reload(true)
-		return
-	# «Стрельба по отпусканию» (сенсор): один выстрел, когда отпустили правый стик
-	if Game.controls.take_shot(fire_cd <= 0.0):
-		if g.ammo <= 0:
-			start_reload()
-			return
-		fire_cd = maxf(fire_cd, 0.0)
-		_pull_trigger(g)
-		return
-	if not Game.controls.firing():
-		if g.ammo <= 0 and (g.free_ammo or reserve_of(g.ammo_type()) > 0):
-			start_reload()
-		return
-	var guard := 0
-	while fire_cd <= 0.0 and guard < 4:
-		if g.ammo <= 0:
-			start_reload()
-			return
-		guard += 1
-		if _pull_trigger(g):
-			return
-
-
-## Одно нажатие на спуск: выстрел (или первая пуля очереди) и пауза до следующего. true — началась очередь.
-func _pull_trigger(g: Gun) -> bool:
-	_fire(g)
-	if g.burst > 1:
-		burst_left = g.burst - 1
-		burst_t = 0.065
-		fire_cd += float(g.burst) / g.fire_rate
-		return true
-	fire_cd += 1.0 / g.fire_rate
-	return false
-
-
-## Миномёт: точка падения = курсор (не дальше дальности), разброс сдвигает её
-## пропорционально дистанции. Несколько мин (дробь) ложатся пятном.
-func _fire_shells(g: Gun, mpos: Vector2, spr: float, n: int) -> void:
-	var main: Main = Game.main
-	var to := Game.controls.aim_world(position) - position
-	var dist := clampf(to.length(), 60.0, g.eff_range())
-	var aim_pt := position + aim * dist
-	var dev := dist * tan(clampf(spr * 0.5, 0.0, 1.2))
-	for i in n:
-		var off := Vector2.from_angle(randf() * TAU) * dev * sqrt(randf())
-		var p := main.projectiles.fire_shell(g, mpos, aim_pt + off)
-		if p != null and blessed:
-			_bless_proj(p, n, 1)
-
-
-func _fire(g: Gun) -> void:
-	var main: Main = Game.main
-	if randf() >= LevelTree.free_shot_chance():   # узел «Экономный стрелок»: выстрел без траты патрона
-		g.ammo = maxi(0, g.ammo - g.ammo_per_shot)
-	g.shot_count += 1
-	var base := aim.angle()
-	var spr := deg_to_rad((g.spread + bloom) * LevelTree.spread_mult())
-	var mpos := position + aim * (radius + 16.0)
-	var n := g.pellets
-	if g.proj_kind == GunData.K_SHELL:
-		_fire_shells(g, mpos, spr, n)
-	else:
-		for i in n:
-			var a := base
-			if n > 1:
-				a += lerpf(-spr * 0.5, spr * 0.5, (float(i) + 0.5) / float(n)) + randf_range(-0.08, 0.08) * spr
-			else:
-				a += randf_range(-spr * 0.5, spr * 0.5)
-			var copies := 3 * perk("split") if blessed and perk("split") > 0 else 1
-			for c in copies:
-				var ca := a + (float(c) - float(copies - 1) * 0.5) * 0.07
-				var p := main.projectiles.fire_gun(g, mpos, Vector2.from_angle(ca), 0)
-				if p != null and blessed:
-					_bless_proj(p, n, copies)
-	if blessed:
-		blessed = false
-		_ready_pending = true
-		main.fx.ring(mpos, 24.0, Color(1.0, 0.8, 0.3), 0.3)
-	if g.special == "ring" and randf() < GunGen.proc_keep_chance(g):
-		for k in 8:
-			var dir := Vector2.from_angle(base + TAU * float(k) / 8.0)
-			main.projectiles.fire_gun(g, position + dir * 18.0, dir, 0, 1.0)
-	if g.special == "nuke10":
-		# заряд копится от «веса» выстрела, а не от их количества
-		g.nuke_charge += g.norm_damage() * float(n) / Gun.NUKE_COST
-		if g.nuke_charge >= 1.0:
-			g.nuke_charge -= 1.0
-			main.projectiles.fire_nuke(g, mpos, aim)
-			Game.say(U.t("NUKE!"), Color(1.0, 0.85, 0.3))
-	bloom = minf(bloom + g.spread * 0.12 + 0.4, 18.0)
-	muzzle = 0.06
-	main.fx.muzzle_flash(mpos, aim, g.proj_color)
-	main.sfx.gun_shot(g, mpos)
-	main.fx.shake(minf(g.shake, 8.0))
-	if g.recoil > 0.0:
-		kick = (kick - aim * g.recoil).limit_length(KICK_MAX)   # отдача корабельной пушки бросает героя назад
-		main.fx.dust(position)
-
-
 # --- Отрисовка ----------------------------------------------------------------
-
-## Превью броска, пока тянешь стик навыка: линия, круг взрыва в точке падения и кольцо максимальной дальности.
-func _draw_skill_preview() -> void:
-	var hd := Heroes.get_hero(hero)
-	if not bool(hd.get("aimed", false)):
-		return
-	var col: Color = hd["color"] if skill_element < 0 else U.el_color(skill_element)
-	var sd := Game.controls.skill_aim
-	var dir := sd.normalized()
-	var ready := skill_charges > 0
-	var a := 1.0 if ready else 0.4
-	if str(hd["skill"]) == "slash":
-		# сектор удара: куда и насколько широко ударим
-		var sr := float(hd["r"])
-		var half := deg_to_rad(float(hd["arc"])) * 0.5
-		var pts := PackedVector2Array([Vector2.ZERO])
-		for k in 13:
-			pts.append(Vector2.from_angle(dir.angle() - half + half * 2.0 * float(k) / 12.0) * sr)
-		draw_colored_polygon(pts, Color(col, 0.16 * a))
-		draw_arc(Vector2.ZERO, sr, dir.angle() - half, dir.angle() + half, 20, Color(col, 0.85 * a), 2.0)
-		draw_line(Vector2.ZERO, Vector2.from_angle(dir.angle() - half) * sr, Color(col, 0.5 * a), 2.0)
-		draw_line(Vector2.ZERO, Vector2.from_angle(dir.angle() + half) * sr, Color(col, 0.5 * a), 2.0)
-		return
-	var d := lerpf(60.0, float(hd["range"]), clampf(sd.length(), 0.0, 1.0))
-	draw_arc(Vector2.ZERO, float(hd["range"]), 0.0, TAU, 48, Color(col, 0.12 * a), 2.0)
-	draw_line(dir * (radius + 6.0), dir * d, Color(col, 0.4 * a), 2.0)
-	draw_circle(dir * d, float(hd["r"]), Color(col, 0.14 * a))
-	draw_arc(dir * d, float(hd["r"]), 0.0, TAU, 32, Color(col, 0.85 * a), 2.0)
 
 
 func _draw() -> void:
@@ -996,22 +484,7 @@ func _draw() -> void:
 			draw_circle(-dodge_dir * float(i + 1) * 10.0, radius * (0.9 - 0.2 * float(i)), Color(0.35, 0.85, 1.0, 0.25 - 0.07 * float(i)))
 	if chill > 0.0:
 		draw_circle(Vector2.ZERO, radius + 5.0, Color(0.7, 0.95, 1.0, 0.25))
-	if blessed:
-		var pulse := 1.0 + sin(anim * 8.0) * 0.15
-		draw_circle(Vector2.ZERO, (radius + 7.0) * pulse, Color(1.0, 0.8, 0.3, 0.22))
-		draw_arc(Vector2.ZERO, (radius + 7.0) * pulse, 0.0, TAU, 24, Color(1.0, 0.85, 0.4, 0.8), 2.0)
-	if Game.controls.skill_aim != Vector2.ZERO:
-		_draw_skill_preview()
-	if slash_t > 0.0:
-		# дуга удара: метёт от одного края к другому
-		var hs := Heroes.get_hero(hero)
-		var half := deg_to_rad(float(hs["arc"])) * 0.5
-		var k := 1.0 - clampf(slash_t / float(hs["time"]), 0.0, 1.0)
-		var a0 := slash_dir.angle() - half
-		var a1 := a0 + half * 2.0 * minf(1.0, k * 1.6)
-		var sc: Color = hs["color"]
-		draw_arc(Vector2.ZERO, float(hs["r"]) * 0.8, a0, a1, 20, Color(sc.lightened(0.4), 0.9 * (1.0 - k * 0.6)), 10.0)
-		draw_arc(Vector2.ZERO, float(hs["r"]) * 0.8 + 8.0, a0, a1, 20, Color(1, 1, 1, 0.5 * (1.0 - k)), 3.0)
+	skill.draw_effects(self)
 	var bob := sin(anim * 14.0) * 1.5 if vel.length() > 10.0 else 0.0
 	draw_circle(Vector2(0, bob), radius, body.darkened(0.2))
 	draw_arc(Vector2(0, bob), radius, 0.0, TAU, 24, body.lightened(0.4), 2.5)
@@ -1023,16 +496,6 @@ func _draw() -> void:
 		var flip := aim.x < 0.0
 		var hand := aim * 12.0 + Vector2(0, bob + 2.0)
 		GunIcon.draw_gun(self, g, hand, 0.38, aim.angle(), flip, false)
-		if muzzle > 0.0:
+		if shooting.muzzle > 0.0:
 			draw_circle(aim * (radius + 18.0), 7.0, Color(g.proj_color, 0.8))
-	if reload_t > 0.0:
-		draw_arc(Vector2(0, bob), radius + 8.0, -PI * 0.5, -PI * 0.5 + TAU * reload_progress(), 24, Color(1, 1, 1, 0.8), 3.0)
-		if g_rhythm_active():
-			var ring_r := radius + 14.0
-			var col := Color(0.55, 0.55, 0.6, 0.7) if rhythm_lock > 0.0 else (Color(0.5, 1.0, 0.6, 0.95) if _rhythm_in_window() else Color(1, 1, 1, 0.55))
-			if rhythm_flash > 0.0:
-				col = Color(rhythm_flash_col, 0.95)
-			draw_arc(Vector2(0, bob), ring_r, 0.0, TAU, 28, Color(col, 0.5), 2.0)   # цель
-			draw_arc(Vector2(0, bob), ring_r + (1.0 - rhythm_phase) * 36.0, 0.0, TAU, 32, col, 3.0)   # сжимающееся кольцо: жми, когда оно сошлось с целью
-			if rhythm_lock > 0.0:
-				draw_arc(Vector2(0, bob), ring_r + 8.0, -PI * 0.5, -PI * 0.5 + TAU * rhythm_lock / Gun.RHYTHM_LOCK, 20, Color(1.0, 0.4, 0.35, 0.9), 2.0)
+	shooting.draw_reload(self, bob)

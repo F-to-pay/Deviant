@@ -18,8 +18,8 @@ func _draw() -> void:
 		var p := main.player
 		var g := p.gun()
 		if g != null and not get_tree().paused:
-			gap = 6.0 + (g.spread + p.bloom) * 0.6
-		reload = p.reload_progress()
+			gap = 6.0 + (g.spread + p.shooting.bloom) * 0.6
+		reload = p.shooting.reload_progress()
 	var col := Color(1, 1, 1, 0.95)
 	var sh := Color(0, 0, 0, 0.7)
 	for d in [Vector2.RIGHT, Vector2.LEFT, Vector2.UP, Vector2.DOWN]:

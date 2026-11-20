@@ -33,7 +33,7 @@ var _scan_t: float = 0.0
 var _col: Color = Color(0.95, 0.8, 0.25)
 
 
-## spec: {gun: Gun, ammo: int, el: int} — собирает Player._make_turret_spec.
+## spec: {gun: Gun, ammo: int, el: int} — собирает HeroSkill.make_turret_spec.
 func setup(spec: Dictionary) -> void:
 	gun = spec["gun"]
 	ammo = int(spec["ammo"])

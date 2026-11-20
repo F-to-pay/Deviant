@@ -148,7 +148,7 @@ func throw_grenade(pos: Vector2, target: Vector2, dmg: float, r: float, col: Col
 	_add(p)
 
 
-## Турель Инженера: летит дугой, как мина, и встаёт на месте падения (Main.spawn_turret). spec — см. Player._make_turret_spec.
+## Турель Инженера: летит дугой, как мина, и встаёт на месте падения (Main.spawn_turret). spec — см. HeroSkill.make_turret_spec.
 func throw_turret(pos: Vector2, target: Vector2, spec: Dictionary, col: Color) -> void:
 	if count() >= MAX_PROJ:
 		return

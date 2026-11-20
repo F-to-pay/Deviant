@@ -114,18 +114,18 @@ func _draw_hp(p: Player, f: Font, fb: Font) -> void:
 	U.draw_text(self, f, Vector2(150, 59), dl, 12, Color(0.7, 0.85, 1.0, 0.9 if dodge_ready else 0.6), 2)
 	# Навык героя
 	var hc := Heroes.color(p.hero)
-	if p.skill_element >= 0:
-		hc = U.el_color(p.skill_element)
-	var sk_ready := p.skill_charges > 0
-	var full := p.skill_charges >= p.max_charges()
-	var sk := 1.0 if full else 1.0 - clampf(p.skill_cd / p.skill_max_cd(), 0.0, 1.0)
+	if p.skill.element >= 0:
+		hc = U.el_color(p.skill.element)
+	var sk_ready := p.skill.charges > 0
+	var full := p.skill.charges >= p.skill.max_charges()
+	var sk := 1.0 if full else 1.0 - clampf(p.skill.cd / p.skill.max_cd(), 0.0, 1.0)
 	_bar(Rect2(24, 66, 120, 6), sk, hc if sk_ready else hc.darkened(0.4))
 	var sname := U.t(str(Heroes.get_hero(p.hero)["skill_name"]))
-	if p.max_charges() > 1:
-		sname += " ×%d" % p.skill_charges
-	var sl := sname + (" !" if p.blessed else "")
+	if p.skill.max_charges() > 1:
+		sname += " ×%d" % p.skill.charges
+	var sl := sname + (" !" if p.skill.blessed else "")
 	if not full:
-		sl += " · " + U.t("%.1f s") % p.skill_cd
+		sl += " · " + U.t("%.1f s") % p.skill.cd
 	U.draw_text(self, f, Vector2(150, 73), sl, 12, Color(hc.lightened(0.4), 0.9 if sk_ready else 0.6), 2)
 
 
@@ -237,7 +237,7 @@ func _draw_weapons(p: Player, vp: Vector2, f: Font, fb: Font) -> void:
 		if ag.free_ammo:
 			res = 1
 			ammo_s = U.t("%d / %d   ·   reserve ∞") % [ag.ammo, ag.mag_size]
-		if p.is_reloading():
+		if p.shooting.is_reloading():
 			ammo_s = U.t("RELOADING") + ("  ·  " + U.t("on the beat: [%s] or fire") % Game.controls.label("reload") if ag.rhythm else "")
 		elif ag.ammo <= 0:
 			if res > 0:
@@ -245,13 +245,13 @@ func _draw_weapons(p: Player, vp: Vector2, f: Font, fb: Font) -> void:
 			else:
 				ammo_s = U.t("NO AMMO: %s") % ag.ammo_name()
 		var rb := ag.rhythm_bonus
-		if ag.rhythm and p.is_reloading():
-			rb = float(p.rhythm_hits) * Gun.RHYTHM_BONUS   # во время перезарядки — сколько набрано попаданиями в такт
+		if ag.rhythm and p.shooting.is_reloading():
+			rb = float(p.shooting.rhythm_hits) * Gun.RHYTHM_BONUS   # во время перезарядки — сколько набрано попаданиями в такт
 		if rb > 0.0:
 			ammo_s += "  ·  " + U.t("+%d%% damage") % roundi(rb * 100.0)
 		U.draw_text_c(self, fb, Vector2(vp.x * 0.5, cy), ammo_s, 16, Color(1.0, 0.9, 0.6), 3)
-		if p.is_reloading():
-			_bar(Rect2(vp.x * 0.5 - 90, cy + 6, 180, 5), p.reload_progress(), Color(1, 1, 1))
+		if p.shooting.is_reloading():
+			_bar(Rect2(vp.x * 0.5 - 90, cy + 6, 180, 5), p.shooting.reload_progress(), Color(1, 1, 1))
 	U.draw_text_r(self, f, Vector2(x0 - 12, vp.y - 30), U.t("backpack %d/%d") % [p.backpack.size(), Player.BACKPACK_SIZE], 13, Color(0.75, 0.75, 0.8), 2)
 
 
