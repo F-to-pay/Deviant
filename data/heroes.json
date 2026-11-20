@@ -1,0 +1,54 @@
+{
+	"_comment": "Герои (по id, порядок = порядок в меню). skill — навык из кода: grenade, bless, slash, turret.",
+	"pioneer": {
+		"name": "Pioneer",
+		"price": 0,
+		"color": [0.35, 0.85, 1.0],
+		"skill": "grenade",
+		"skill_name": "Hand grenade",
+		"cd": 6.0,
+		"dmg": 30.0,
+		"r": 60.0,
+		"range": 420.0,
+		"aimed": true,
+		"desc": "Throws a grenade at the aim point: %d damage in radius %d. Cooldown %s s."
+	},
+	"sheriff": {
+		"name": "Sheriff",
+		"price": 25,
+		"color": [1.0, 0.45, 0.3],
+		"skill": "bless",
+		"skill_name": "Blessing",
+		"cd": 6.0,
+		"dmg": 40.0,
+		"desc": "Blesses the next shot: +%d damage. Cooldown %s s."
+	},
+	"assassin": {
+		"name": "Assassin",
+		"price": 30,
+		"color": [0.72, 0.5, 1.0],
+		"skill": "slash",
+		"skill_name": "Slash",
+		"cd": 0.7,
+		"dmg": 15.0,
+		"r": 95.0,
+		"arc": 130.0,
+		"time": 0.25,
+		"slow": 0.5,
+		"aimed": true,
+		"desc": "A cleaving melee strike in front of you: %d damage. Cooldown %s s, you are slowed by %d%% while striking."
+	},
+	"engineer": {
+		"name": "Engineer",
+		"price": 35,
+		"color": [0.95, 0.8, 0.25],
+		"skill": "turret",
+		"skill_name": "Turret",
+		"cd": 10.0,
+		"dmg": 0.0,
+		"r": 22.0,
+		"range": 420.0,
+		"aimed": true,
+		"desc": "Lobs a turret to the aim point (up to %d): it takes the rounds from your magazine and shoots enemies. Cooldown %s s."
+	}
+}

@@ -2,26 +2,13 @@ class_name EnemyData
 extends RefCounted
 ## Типы врагов, аффиксы элиток, генерация паков и имён.
 
-## res — врождённое сопротивление стихии (U.EL_*): эффект этой стихии на нём слабее на INNATE_RESIST.
-## sides: 0 — круг, иначе число сторон. lvl — с какой зоны появляется.
-const TYPES := {
-	"runner": {"n": "Runner", "hp": 16.0, "dmg": 12.0, "speed": 185.0, "r": 13.0, "col": Color(0.92, 0.32, 0.3),
-		"lvl": 1, "sides": 3, "star": false, "w": 10.0, "res": U.EL_ACID},
-	"gunner": {"n": "Gunner", "hp": 19.0, "dmg": 10.0, "speed": 120.0, "r": 14.0, "col": Color(0.95, 0.75, 0.25),
-		"lvl": 1, "sides": 4, "star": false, "w": 7.0, "res": U.EL_SHOCK},
-	"brute": {"n": "Brute", "hp": 75.0, "dmg": 28.0, "speed": 95.0, "r": 22.0, "col": Color(0.62, 0.36, 0.82),
-		"lvl": 2, "sides": 6, "star": false, "w": 4.0, "res": U.EL_CRYO},
-	"bomber": {"n": "Kamikaze", "hp": 11.0, "dmg": 38.0, "speed": 220.0, "r": 12.0, "col": Color(1.0, 0.52, 0.12),
-		"lvl": 2, "sides": 0, "star": false, "w": 5.0, "res": U.EL_FIRE},
-	"spreader": {"n": "Spreader", "hp": 30.0, "dmg": 9.0, "speed": 105.0, "r": 16.0, "col": Color(0.3, 0.82, 0.5),
-		"lvl": 3, "sides": 5, "star": false, "w": 5.0, "res": U.EL_SHOCK},
-	"charger": {"n": "Charger", "hp": 47.5, "dmg": 30.0, "speed": 125.0, "r": 18.0, "col": Color(0.88, 0.22, 0.56),
-		"lvl": 4, "sides": 4, "star": true, "w": 4.0, "res": U.EL_ACID},
-	"mortar": {"n": "Mortarman", "hp": 25.0, "dmg": 32.0, "speed": 90.0, "r": 15.0, "col": Color(0.5, 0.62, 0.95),
-		"lvl": 6, "sides": 8, "star": false, "w": 3.0, "res": U.EL_SHOCK},
-	"summoner": {"n": "Shaman", "hp": 37.5, "dmg": 8.0, "speed": 110.0, "r": 15.0, "col": Color(0.4, 0.95, 0.9),
-		"lvl": 8, "sides": 5, "star": true, "w": 2.0, "res": U.EL_CURSE},
-}
+## Типы врагов — data/enemies.json (слои игры и модов, по id): name, hp, dmg, speed, r, color, lvl (с какой зоны), sides (0 — круг),
+## star, w (вес выпадения), res (врождённое сопротивление стихии: "fire", "shock", "acid", "cryo", "curse" или ""), ai (поведение из кода,
+## по умолчанию — id типа). Здоровье и урон — на 1-й зоне, дальше растут (Balance.enemy_hp_mult / enemy_dmg_mult).
+static var TYPES: Dictionary = {}
+
+## Поведения, реализованные в коде (`Enemy._behave`): их можно указать в поле "ai" своего типа врага.
+const AI_IDS := ["runner", "gunner", "brute", "bomber", "spreader", "charger", "mortar", "summoner"]
 
 ## Насколько врождённое сопротивление режет стихию: накопление кислоты/холода/проклятия, силу поджога,
 ## длину оглушения шока, удар проклятия. Элитки и боссы с их status_resist — поверх этого.
@@ -49,6 +36,7 @@ static var BOSS_NAMES: Array = ["General Eggplant"]
 
 
 static func load_data() -> void:
+	_load_types()
 	var n := GunData.merge_names()
 	for pair in [["elite_prefixes", "ELITE_PREFIX"], ["rare_first_names", "RARE_FIRST"], ["rare_last_names", "RARE_LAST"],
 			["boss_titles", "BOSS_TITLES"], ["boss_names", "BOSS_NAMES"]]:
@@ -60,6 +48,22 @@ static func load_data() -> void:
 				"RARE_LAST": RARE_LAST = v
 				"BOSS_TITLES": BOSS_TITLES = v
 				"BOSS_NAMES": BOSS_NAMES = v
+
+
+## Таблица типов из data/enemies.json: числа, цвет и стихия -> то, что ждёт код (недостающие поля — по умолчанию).
+static func _load_types() -> void:
+	TYPES = GunData.merge_dict("data/enemies.json")
+	var defaults := {"hp": 10.0, "dmg": 5.0, "speed": 100.0, "r": 14.0, "w": 1.0}
+	for k in TYPES.keys():
+		var d: Dictionary = TYPES[k]
+		d["name"] = str(d.get("name", str(k).capitalize()))
+		d["color"] = GunData.to_color(d.get("color", [1.0, 1.0, 1.0]))
+		for f in defaults:
+			d[f] = float(d.get(f, defaults[f]))
+		d["lvl"] = int(d.get("lvl", 1))
+		d["sides"] = int(d.get("sides", 0))
+		d["star"] = bool(d.get("star", false))
+		d["res"] = U.el_id(d.get("res", ""))
 
 
 static func pick_type(level: int, rng: RandomNumberGenerator, exclude: Array = []) -> String:
@@ -126,7 +130,7 @@ static func roll_affixes(n: int, rng: RandomNumberGenerator) -> Array:
 
 
 static func elite_title(etype: String, elite: int, affixes: Array, rng: RandomNumberGenerator) -> String:
-	var tn := str(TYPES[etype]["n"])
+	var tn := str(TYPES[etype]["name"])
 	var base := U.t(tn)
 	var head := ""
 	if elite == 1:

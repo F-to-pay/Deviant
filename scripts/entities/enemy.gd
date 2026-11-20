@@ -7,7 +7,8 @@ const S_WINDUP := 1
 const S_ACTION := 2
 const S_RECOVER := 3
 
-var etype: String = "runner"
+var etype: String = "runner"   # id типа (data/enemies.json)
+var ai: String = "runner"      # поведение из кода (поле "ai" типа, по умолчанию — id)
 var def: Dictionary = {}
 var level: int = 1
 var dmg: float = 10.0
@@ -54,12 +55,13 @@ var _shield_msg_cd: float = 0.0
 func setup(t: String, lvl: int, el: int, affs: Array) -> void:
 	etype = t
 	def = EnemyData.TYPES[t]
+	ai = str(def.get("ai", t))
 	level = lvl
 	elite = el
 	affixes = affs
 	radius = def["r"]
 	elem_res = int(def.get("res", -1))
-	color = def["col"]
+	color = def["color"]
 	speed = float(def["speed"]) * randf_range(0.92, 1.08)
 	var hpm: float = Balance.enemy_hp_mult(lvl, float(Game.run["hp"]))
 	var dmgm: float = Balance.enemy_dmg_mult(lvl, float(Game.run["dmg"]))
@@ -89,7 +91,7 @@ func setup(t: String, lvl: int, el: int, affs: Array) -> void:
 	if elite == 1 or elite == 2:
 		title = EnemyData.elite_title(etype, elite, affixes, Game.rng)
 	else:
-		title = U.t(str(def["n"]))
+		title = U.t(str(def["name"]))
 
 
 func has_affix(a: String) -> bool:
@@ -221,14 +223,14 @@ func _physics_process(delta: float) -> void:
 		return
 	# Контактный урон
 	if dist < radius + player.radius + 2.0 and contact_cd <= 0.0:
-		var k := 1.0 if etype == "runner" else 0.5
+		var k := 1.0 if ai == "runner" else 0.5
 		player.take_damage(dmg * k)
 		contact_cd = 0.8
 	queue_redraw()
 
 
 func _behave(delta: float, player: Actor, to_p: Vector2, dist: float) -> void:
-	match etype:
+	match ai:
 		"runner":
 			_chase(delta, player, speed)
 		"brute":
@@ -440,7 +442,7 @@ func _tick_affixes(delta: float, player: Actor, dist: float) -> void:
 			var op := position + Vector2.from_angle(orbit_ang + TAU * float(i) / 3.0) * (radius + 34.0)
 			if op.distance_to(player.position) < 9.0 + player.radius:
 				player.take_damage(dmg * 0.6)
-	if has_affix("multishot") and etype in ["runner", "brute", "bomber", "charger"]:
+	if has_affix("multishot") and ai in ["runner", "brute", "bomber", "charger"]:
 		ring_cd -= delta
 		if ring_cd <= 0.0 and has_los:
 			ring_cd = 3.2
@@ -520,7 +522,7 @@ func _draw() -> void:
 		_draw_tele_warn()
 	# Телеграфы атак
 	if state == S_WINDUP:
-		match etype:
+		match ai:
 			"brute":
 				var k := 1.0 - st / 0.55
 				draw_circle(Vector2.ZERO, 100.0, Color(1, 0.2, 0.15, 0.1))
@@ -543,7 +545,7 @@ func _draw() -> void:
 		draw_circle(Vector2.ZERO, 170.0, Color(0.6, 0.9, 1.0, 0.06))
 	# Тело
 	var sides: int = def["sides"]
-	var rot := anim * 0.8 if etype in ["summoner", "charger"] else look.angle()
+	var rot := anim * 0.8 if ai in ["summoner", "charger"] else look.angle()
 	if sides <= 0:
 		draw_circle(Vector2.ZERO, radius, col.darkened(0.15))
 		draw_arc(Vector2.ZERO, radius, 0.0, TAU, 24, col.lightened(0.3), 2.0)

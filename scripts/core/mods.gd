@@ -223,9 +223,9 @@ static func validate() -> void:
 			("v" + str(info["version"])) if info.has("version") else ""], str(m["id"]))
 		if not FileAccess.file_exists(str(m["path"]).path_join("mod.json")):
 			Game.debug_log.info("no mod.json (optional)", str(m["id"]))
-	Game.debug_log.info("loaded: %d archetypes, %d makers, %d perks, %d legendaries, %d nicknames; languages: %s" % [
+	Game.debug_log.info("loaded: %d archetypes, %d makers, %d perks, %d legendaries, %d nicknames, %d enemy types, %d heroes, %d hero perks; languages: %s" % [
 		GunData.ARCH.size(), GunData.MAKERS.size(), GunData.MODS.size(), GunData.LEGENDARIES.size(),
-		GunData.NICKNAMES.size(), ", ".join(PackedStringArray(I18n.available()))], "mods")
+		GunData.NICKNAMES.size(), EnemyData.TYPES.size(), Heroes.LIST.size(), Heroes.PERKS.size(), ", ".join(PackedStringArray(I18n.available()))], "mods")
 	var banks: Dictionary = {}
 	if Game.main != null and Game.main.sfx != null:
 		banks = Game.main.sfx.banks
@@ -276,6 +276,33 @@ static func validate() -> void:
 		if sp != "" and not GunData.SPECIALS.has(sp):
 			Game.debug_log.warn("legendary '%s': unknown special '%s' (known: %s)" % [id, sp,
 				", ".join(PackedStringArray(GunData.SPECIALS.keys()))], src)
+	if EnemyData.TYPES.is_empty():
+		Game.debug_log.error("no enemy types: data/enemies.json is empty — the game cannot spawn enemies", "enemies")
+	for ek in EnemyData.TYPES:
+		var ed: Dictionary = EnemyData.TYPES[ek]
+		var esrc := _src(ed)
+		if not (str(ed.get("ai", ek)) in EnemyData.AI_IDS):
+			Game.debug_log.warn("enemy '%s': unknown ai '%s' (known: %s)" % [ek, str(ed.get("ai", ek)),
+				", ".join(PackedStringArray(EnemyData.AI_IDS))], esrc)
+		if float(ed["hp"]) <= 0.0 or float(ed["speed"]) <= 0.0 or float(ed["r"]) <= 0.0:
+			Game.debug_log.warn("enemy '%s': hp, speed and r must be positive" % ek, esrc)
+		if float(ed["w"]) <= 0.0:
+			Game.debug_log.warn("enemy '%s': w (spawn weight) must be positive — it will never appear" % ek, esrc)
+	if not Heroes.LIST.has(Heroes.DEFAULT):
+		Game.debug_log.error("hero '%s' (the default) is missing from data/heroes.json" % Heroes.DEFAULT, "heroes")
+	for hk in Heroes.LIST:
+		var hd: Dictionary = Heroes.LIST[hk]
+		var hsrc := _src(hd)
+		if not (str(hd["skill"]) in Heroes.SKILLS):
+			Game.debug_log.warn("hero '%s': unknown skill '%s' (known: %s)" % [hk, str(hd["skill"]),
+				", ".join(PackedStringArray(Heroes.SKILLS))], hsrc)
+		if float(hd["cd"]) <= 0.0:
+			Game.debug_log.warn("hero '%s': cd must be positive" % hk, hsrc)
+	for pk in Heroes.PERKS:
+		var hp: Dictionary = Heroes.PERKS[pk]
+		for who in hp["heroes"]:
+			if not Heroes.LIST.has(str(who)):
+				Game.debug_log.warn("hero perk '%s': unknown hero '%s'" % [pk, str(who)], _src(hp))
 	for p in Codex.pages:
 		var pid := str(p.get("id", "?"))
 		var auto := str(p.get("auto", ""))

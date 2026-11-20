@@ -187,6 +187,16 @@ static func _color(v: Variant) -> Color:
 	return Color.html(str(v)) if Color.html_is_valid(str(v)) else Color.WHITE
 
 
+## Словари по id для чужих таблиц (враги, герои): слои игры и модов, поля правятся по id, {"_remove": [id]} убирает записи.
+static func merge_dict(rel: String) -> Dictionary:
+	return _merge_dict(rel)
+
+
+## Цвет из JSON: [r, g, b] (0..1) или "#rrggbb".
+static func to_color(v: Variant) -> Color:
+	return _color(v)
+
+
 ## Словари по id. Запоминаем корень слоя (_root) — от него ищется "script".
 static func _merge_dict(rel: String) -> Dictionary:
 	var out := {}

@@ -13,64 +13,48 @@ extends RefCounted
 ##                 time — сколько длится удар, slow — замедление героя на это время).
 
 const DEFAULT := "pioneer"
-const ORDER := ["pioneer", "sheriff", "assassin", "engineer"]
-const LIST := {
-	"pioneer": {"name": "Pioneer", "price": 0, "color": Color(0.35, 0.85, 1.0),
-		"skill": "grenade", "skill_name": "Hand grenade", "cd": 6.0, "dmg": 30.0, "r": 60.0, "range": 420.0, "aimed": true,
-		"desc": "Throws a grenade at the aim point: %d damage in radius %d. Cooldown %s s."},
-	"sheriff": {"name": "Sheriff", "price": 25, "color": Color(1.0, 0.45, 0.3),
-		"skill": "bless", "skill_name": "Blessing", "cd": 6.0, "dmg": 40.0,
-		"desc": "Blesses the next shot: +%d damage. Cooldown %s s."},
-	"assassin": {"name": "Assassin", "price": 30, "color": Color(0.72, 0.5, 1.0),
-		"skill": "slash", "skill_name": "Slash", "cd": 0.7, "dmg": 15.0, "r": 95.0, "arc": 130.0,
-		"time": 0.25, "slow": 0.5, "aimed": true,
-		"desc": "A cleaving melee strike in front of you: %d damage. Cooldown %s s, you are slowed by %d%% while striking."},
-	"engineer": {"name": "Engineer", "price": 35, "color": Color(0.95, 0.8, 0.25),
-		"skill": "turret", "skill_name": "Turret", "cd": 10.0, "dmg": 0.0, "r": 22.0, "range": 420.0, "aimed": true,
-		"desc": "Lobs a turret to the aim point (up to %d): it takes the rounds from your magazine and shoots enemies. Cooldown %s s."},
-}
-
+## Навыки, реализованные в коде (`HeroSkill.use`): их можно указать в поле "skill" своего героя в data/heroes.json.
+const SKILLS := ["grenade", "bless", "slash", "turret"]
+## Герои — data/heroes.json (слои игры и модов, по id): name, price (древние монеты), color, skill, skill_name, cd, dmg и числа навыка,
+## desc (с %d / %s, см. describe). Порядок записей = порядок в меню Вербовщика.
+static var LIST: Dictionary = {}
+static var ORDER: Array = []   # id героев в порядке LIST
 
 ## Перки навыков — берутся у Мистика за монеты, на один забег (Player.skill.run_perks).
 ##  heroes — у кого перк бывает ([] — у всех), max — сколько раз можно взять (0 — сколько угодно).
 ##  desc — первое взятие, more — каждое следующее. name_<навык> — своё имя для навыка (Ядовитый разрез).
 ## Как работают — HeroSkill (use, dmg_mult, ...) и Skills (попадание навыком).
-const PERKS := {
-	"split": {"name": "Split", "heroes": ["pioneer", "sheriff"], "max": 0,
-		"desc": "The skill fires ×3 projectiles and deals +20% total damage, split evenly between them.",
-		"more": "+3 projectiles, +20% damage."},
-	"wounds": {"name": "Grievous Wounds", "heroes": ["pioneer", "sheriff", "assassin"], "max": 1,
-		"desc": "Skill hits slow the target by 10% for good, up to 30%. Elites need 2 hits for each step, bosses 3."},
-	"poison": {"name": "Poison Shell", "name_slash": "Poison Cut", "heroes": ["pioneer", "sheriff", "assassin"], "max": 0,
-		"desc": "Skill damage lands 5 s later, but is 50% higher.", "more": "+2 s delay, +50% damage."},
-	"heavy": {"name": "Heavy Shell", "heroes": ["pioneer", "sheriff"], "max": 0,
-		"desc": "+1 s skill cooldown, +20% damage, the hit stuns for 0.7 s.", "more": "+1 s cooldown, +20% damage, +0.4 s stun."},
-	"parry": {"name": "Parry", "heroes": ["assassin"], "max": 0,
-		"desc": "Every 4 s your next strike reflects enemy projectiles back.", "more": "Reflected projectiles deal +30% damage."},
-	"hand": {"name": "Extra Hand", "heroes": [], "max": 0,
-		"desc": "+1 skill charge.", "more": "+1 skill charge."},
-	"vandal": {"name": "Vandalism", "heroes": ["assassin"], "max": 1,
-		"desc": "The strike knocks enemies far away, but deals 50% less damage."},
-	"element": {"name": "Element", "heroes": [], "max": 1,
-		"desc": "The skill gets an element of your choice."},
-	"trophies": {"name": "Trophies", "heroes": ["assassin"], "max": 0,
-		"desc": "A kill with the skill gives 1 coin and +0.2% skill damage until the end of the run.",
-		"more": "+0.05% skill damage per kill."},
-	"smoke": {"name": "Smoke Grenade", "heroes": ["pioneer"], "max": 0,
-		"desc": "The grenade turns into smoke of radius 300: 25% of its damage every second for 4 s.",
-		"more": "The smoke lasts 1 s longer."},
-	"precise": {"name": "Precise Shot", "heroes": ["sheriff"], "max": 0,
-		"desc": "The blessed shot homes in, flies 20% farther and deals 10% more damage.",
-		"more": "+20% range, +10% damage."},
-	"economy": {"name": "Economy", "heroes": ["engineer"], "max": 0,
-		"desc": "The turret gets 40% more rounds than it takes from you.", "more": "+40% rounds."},
-	"scientist": {"name": "Mad Scientist", "heroes": ["engineer"], "max": 1,
-		"desc": "The turret gets a random Synergis gun one rarity above yours. Nothing is taken from your reserve."},
-	"ready": {"name": "Readiness", "heroes": ["assassin", "sheriff"], "max": 1,
-		"desc": "Dealing damage with the skill takes 1 s off the dodge cooldown."},
-}
+## Данные — data/hero_perks.json (слои игры и модов, по id).
+static var PERKS: Dictionary = {}
 ## Стихии, которые даёт перк «Стихия» (U.EL_*).
 const ELEMENTS := [0, 1, 2, 3, 4]
+
+
+## Загрузить героев и перки навыков из data/ (игра и включённые моды). Зовёт `Game.load_content`.
+static func load_data() -> void:
+	LIST = GunData.merge_dict("data/heroes.json")
+	ORDER = []
+	for id in LIST.keys():
+		ORDER.append(str(id))
+		var h: Dictionary = LIST[id]
+		h["name"] = str(h.get("name", str(id).capitalize()))
+		h["color"] = GunData.to_color(h.get("color", [1.0, 1.0, 1.0]))
+		h["price"] = int(h.get("price", 0))
+		h["skill"] = str(h.get("skill", ""))
+		h["skill_name"] = str(h.get("skill_name", h["name"]))
+		h["cd"] = float(h.get("cd", 6.0))
+		h["dmg"] = float(h.get("dmg", 0.0))
+		h["desc"] = str(h.get("desc", ""))
+		if h.has("aimed"):
+			h["aimed"] = bool(h["aimed"])
+	PERKS = GunData.merge_dict("data/hero_perks.json")
+	for id in PERKS.keys():
+		var p: Dictionary = PERKS[id]
+		p["name"] = str(p.get("name", str(id).capitalize()))
+		p["max"] = int(p.get("max", 0))
+		p["desc"] = str(p.get("desc", ""))
+		if not (p.get("heroes") is Array):
+			p["heroes"] = []
 
 
 static func perk_fits(id: String, hero: String) -> bool:
@@ -107,7 +91,7 @@ static func perk_offer(hero: String, owned: Dictionary, rng: RandomNumberGenerat
 
 
 static func get_hero(id: String) -> Dictionary:
-	return LIST.get(id, LIST[DEFAULT])
+	return LIST.get(id, LIST.get(DEFAULT, {}))
 
 
 static func hero_name(id: String) -> String:

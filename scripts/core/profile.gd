@@ -15,6 +15,12 @@ var best_rating: int = 0
 var custom: Dictionary = RunConfig.DEFAULTS.duplicate()   # последний «настраиваемый старт» (правится меню прямо в словаре)
 
 
+## Выбранный герой должен существовать и быть открытым, иначе — герой по умолчанию (зовётся после загрузки данных и модов).
+func validate_heroes() -> void:
+	if not Heroes.LIST.has(hero) or not hero_unlocked(hero):
+		hero = Heroes.DEFAULT
+
+
 ## Герой открыт (бесплатный — всегда).
 func hero_unlocked(id: String) -> bool:
 	return id in heroes_open or int(Heroes.get_hero(id).get("price", 0)) <= 0
@@ -70,13 +76,11 @@ func read(cf: ConfigFile) -> void:
 	best_rating = int(cf.get_value("records", "best_rating", 0))
 	meta_coins = int(cf.get_value("meta", "coins", 0))
 	hero = str(cf.get_value("meta", "hero", Heroes.DEFAULT)).replace("cultist", "sheriff")   # старое имя героя
-	if not Heroes.LIST.has(hero):
-		hero = Heroes.DEFAULT
+	# герои читаются до загрузки данных (моды ещё не просканированы): открытые id храним как есть, даже героев выключенного мода;
+	# выбранного героя проверяет validate_heroes() после загрузки контента
 	for h in str(cf.get_value("meta", "heroes", "")).replace("cultist", "sheriff").split(",", false):
-		if Heroes.LIST.has(h) and not (h in heroes_open):
+		if not (h in heroes_open):
 			heroes_open.append(h)
-	if not hero_unlocked(hero):
-		hero = Heroes.DEFAULT
 	for k in RunConfig.DEFAULTS:
 		custom[k] = U.typed(RunConfig.DEFAULTS[k], cf.get_value("custom", str(k), RunConfig.DEFAULTS[k]))
 

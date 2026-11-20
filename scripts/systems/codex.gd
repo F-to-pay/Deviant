@@ -330,7 +330,7 @@ static func _auto_enemies() -> String:
 	for k in EnemyData.TYPES:
 		var e: Dictionary = EnemyData.TYPES[k]
 		t += "[cell]%s  [/cell][cell]%d[/cell][cell]%d[/cell][cell]%d[/cell][cell]%d[/cell]" % [
-			_c(e["col"], "[b]%s[/b]" % _esc(U.t(str(e["n"])))), roundi(float(e["hp"])), roundi(float(e["dmg"])),
+			_c(e["color"], "[b]%s[/b]" % _esc(U.t(str(e["name"])))), roundi(float(e["hp"])), roundi(float(e["dmg"])),
 			roundi(float(e["speed"])), int(e["lvl"])]
 		var rs := int(e.get("res", -1))
 		t += "[cell]%s[/cell]" % (_c(U.el_color(rs), U.el_name(rs)) if rs >= 0 else "—")
@@ -338,7 +338,7 @@ static func _auto_enemies() -> String:
 	for k in EnemyData.TYPES:
 		var desc := describe("enemies", str(k))
 		if desc != "":
-			t += "\n" + _c(EnemyData.TYPES[k]["col"], "[b]%s[/b]" % _esc(U.t(str(EnemyData.TYPES[k]["n"])))) + " — " + desc
+			t += "\n" + _c(EnemyData.TYPES[k]["color"], "[b]%s[/b]" % _esc(U.t(str(EnemyData.TYPES[k]["name"])))) + " — " + desc
 	return t
 
 

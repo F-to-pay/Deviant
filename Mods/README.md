@@ -11,6 +11,9 @@ Mods/MyMod/
   data/makers.json      марки
   data/perks.json       перки (моды пушек)
   data/legendaries.json легендарки
+  data/enemies.json     типы врагов
+  data/heroes.json      герои
+  data/hero_perks.json  перки навыков героев
   data/rarities.json    редкости (правка по индексу, их всегда 6)
   data/names.json       прозвища, флейвор, имена элиток и боссов
   data/codex.json       страницы и описания для справочника
@@ -82,7 +85,7 @@ Mods/MyMod/
 
 Сначала читается игра, потом включённые моды по алфавиту. Поздний слой правит ранний.
 
-- **Словари по id** (`archetypes.json`, `makers.json`). Запись с тем же id дополняется: указанные поля заменяются, остальные остаются. Новый id — новая запись. `"_remove": ["noname"]` — удалить запись.
+- **Словари по id** (`archetypes.json`, `makers.json`, `enemies.json`, `heroes.json`, `hero_perks.json`). Запись с тем же id дополняется: указанные поля заменяются, остальные остаются. Новый id — новая запись. `"_remove": ["noname"]` — удалить запись.
 - **Списки по id** (`perks.json`, `legendaries.json`, `skill_tree.json`, `skill_branches.json`). Так же по полю `id`. Элемент `{"remove": "vamp"}` удаляет запись.
 - **`rarities.json`** — правка по индексу: 0 обычная … 5 абсурдная.
 - **`names.json`** — списки дописываются. `"replace": true` в файле заменяет их целиком.
@@ -174,6 +177,52 @@ Mods/MyMod/
   - `no_shell` — бессмыслен для мин.
 - `fits` — условия, при которых перк может выпасть (все должны выполняться).
 - `excludes` — (необязательно) id перков, с которыми этот не сочетается, например `["homing"]` у «Лазерного» (работает в обе стороны; у абсурдных пушек не действует).
+
+## Враги (enemies.json)
+
+Словарь по id (порядок записей влияет на выбор врага по сиду). Враг из данных — это статы и вид; **поведение берётся из кода** по полю `ai`.
+
+```json
+{
+	"fat_runner": {
+		"name": "Fat Runner", "ai": "runner",
+		"hp": 40, "dmg": 14, "speed": 150, "r": 16, "color": [0.9, 0.5, 0.3],
+		"lvl": 3, "sides": 6, "star": false, "w": 4, "res": "fire"
+	}
+}
+```
+
+| Поле | Значение |
+|---|---|
+| `name` | название (ключ перевода), `color` — `[r, g, b]` (0..1) или `"#rrggbb"` |
+| `hp`, `dmg`, `speed`, `r` | здоровье и урон на 1-й зоне (дальше растут), скорость, радиус тела |
+| `lvl` | с какой зоны появляется; `w` — вес выпадения |
+| `sides` | число сторон фигуры (0 — круг), `star` — звездой |
+| `res` | врождённое сопротивление стихии: `"fire"`, `"shock"`, `"acid"`, `"cryo"`, `"curse"` или `""` |
+| `ai` | поведение из кода: `runner`, `gunner`, `brute`, `bomber`, `spreader`, `charger`, `mortar`, `summoner` (по умолчанию — id) |
+
+Совсем новое поведение (новая атака) требует кода: ветка в `Enemy._behave` и значение в `EnemyData.AI_IDS`. Описание в справочнике — `data/codex.json`, раздел `enemies`.
+
+## Герои и перки навыков (heroes.json, hero_perks.json)
+
+`heroes.json` — словарь по id, порядок записей = порядок в меню Вербовщика. Навык героя берётся из кода по полю `skill`:
+`grenade` (граната в точку прицела), `bless` (усиленный следующий выстрел), `slash` (удар перед собой), `turret` (турель).
+
+```json
+{
+	"demolitionist": {
+		"name": "Demolitionist", "price": 20, "color": [1.0, 0.6, 0.2],
+		"skill": "grenade", "skill_name": "Big grenade", "cd": 8, "dmg": 60, "r": 90, "range": 380, "aimed": true,
+		"desc": "Throws a big grenade at the aim point: %d damage in radius %d. Cooldown %s s."
+	}
+}
+```
+
+Числа навыка зависят от `skill`: `grenade` — `dmg`, `r`, `range`; `bless` — `dmg`; `slash` — `dmg`, `r`, `arc`, `time`, `slow`; `turret` — `range`, `r`.
+`desc` — шаблон с `%d`/`%s`, подставляются числа в порядке, который читает `Heroes.describe`. `price` — в древних монетах.
+`hero_perks.json` — перки Мистика: `heroes` — у кого бывает (`[]` — у всех), `max` — сколько раз можно взять (0 — без ограничения), `desc`/`more` — первое и следующие взятия.
+Эффект перка зашит в код (`HeroSkill`, `Skills`): новый перк с новым эффектом — это код, а `data` лишь добавляет запись и описание.
+Проверка — команда отладчика `validate` (неизвестный `ai`, `skill`, герой в перке).
 
 ## Дерево навыков (skill_branches.json, skill_tree.json)
 

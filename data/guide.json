@@ -631,7 +631,17 @@
 		"A new language (German):",
 		"  lang\\de.json           {\"meta\": {\"code\": \"de\", \"name\": \"Deutsch\"}, \"templates\": {...},",
 		"                          \"strings\": {\"New game\": \"Neues Spiel\", ...}}",
-		"  Take the keys from the game's lang\\ru.json — it has every string."
+		"  Take the keys from the game's lang\\ru.json — it has every string.",
+		"",
+		"ENEMIES, HEROES AND HERO PERKS",
+		"  data\\enemies.json      {\"fat_runner\": {\"name\": \"Fat Runner\", \"ai\": \"runner\", \"hp\": 40, \"dmg\": 14, \"speed\": 150, \"r\": 16,",
+		"                          \"color\": [0.9, 0.5, 0.3], \"lvl\": 3, \"sides\": 6, \"star\": false, \"w\": 4, \"res\": \"fire\"}}",
+		"  ai is a behaviour from the code: runner, gunner, brute, bomber, spreader, charger, mortar, summoner (default: the id).",
+		"  A brand new attack needs code (Enemy._behave); stats, colour, shape, weight and resistance are data.",
+		"  data\\heroes.json       a hero by id; skill is one from the code: grenade, bless, slash, turret. Numbers depend on the skill",
+		"                          (grenade: dmg, r, range; bless: dmg; slash: dmg, r, arc, time, slow; turret: range, r).",
+		"  data\\hero_perks.json   perks the Mystic offers: heroes (who can get it, [] = all), max, desc, more. The effect is in the code.",
+		"  The debugger command validate reports an unknown ai, skill or hero in a perk."
 	],
 	"ru": [
 		"DEVIANT — ГАЙД ПО МОДДИНГУ",
@@ -1264,6 +1274,16 @@
 		"Новый язык (немецкий):",
 		"  lang\\de.json           {\"meta\": {\"code\": \"de\", \"name\": \"Deutsch\"}, \"templates\": {...},",
 		"                          \"strings\": {\"New game\": \"Neues Spiel\", ...}}",
-		"  Ключи бери из lang\\ru.json игры — там есть все строки."
+		"  Ключи бери из lang\\ru.json игры — там есть все строки.",
+		"",
+		"ВРАГИ, ГЕРОИ И ПЕРКИ НАВЫКОВ",
+		"  data\\enemies.json      {\"fat_runner\": {\"name\": \"Fat Runner\", \"ai\": \"runner\", \"hp\": 40, \"dmg\": 14, \"speed\": 150, \"r\": 16,",
+		"                          \"color\": [0.9, 0.5, 0.3], \"lvl\": 3, \"sides\": 6, \"star\": false, \"w\": 4, \"res\": \"fire\"}}",
+		"  ai — поведение из кода: runner, gunner, brute, bomber, spreader, charger, mortar, summoner (по умолчанию — id).",
+		"  Совсем новая атака требует кода (Enemy._behave); статы, цвет, форма, вес и сопротивление — данные.",
+		"  data\\heroes.json       герой по id; skill — навык из кода: grenade, bless, slash, turret. Числа зависят от навыка",
+		"                          (grenade: dmg, r, range; bless: dmg; slash: dmg, r, arc, time, slow; turret: range, r).",
+		"  data\\hero_perks.json   перки Мистика: heroes (у кого бывает, [] — у всех), max, desc, more. Эффект зашит в код.",
+		"  Команда отладчика validate сообщит о неизвестных ai, skill и о герое в перке."
 	]
 }

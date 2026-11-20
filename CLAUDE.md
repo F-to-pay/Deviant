@@ -15,6 +15,8 @@ godot --headless --path . -s res://tests/controls_state.gd   # режимы вв
 godot --headless --path . -s res://tests/gen_fingerprint.gd  # отпечаток ZoneGen / TownGen по многим сидам: любая правка генераторов обязана оставить его прежним (порядок бросков rng — часть результата)
 godot --headless --path . -s res://tests/proj_fingerprint.gd # пушки разных типов стреляют по спящим врагам и в героя: отпечаток для правок Projectiles
 godot --headless --path . -s res://tests/player_state.gd      # навыки всех героев с каждым перком и стрельба разными пушками (отпечаток для правок Player)
+godot --headless --path . -s res://tests/data_tables.gd      # таблицы врагов, героев и перков: все поля и типы, порядок, выбор по rng
+godot --headless --path . -s res://tests/mod_data.gd         # слои мода: добавить / править / удалить врага, героя, перк; validate
 godot --headless --path . -s res://tests/zone_source.gd      # ZoneLoader берёт карты из подставляемого ZoneSource
 godot --headless --path . -s res://tests/skip_zone.gd        # пропуск зон платит бюджет судьи
 godot --headless --path . -s res://tests/console_commands.gd # команды консоли отладчика (пишет в deviant.cfg: сделай копию!)
@@ -62,7 +64,7 @@ godot --headless --path . -s res://tests/ui_actions.gd  # Esc-навигация
 | Пушка (все статы) | `weapons/gun.gd`; рисунок — `weapons/gun_icon.gd`; карточка — `ui/gun_card.gd` |
 | Снаряды — **данные, не узлы** | `systems/projectiles.gd` (`Proj`, `fire_gun`, `_step`, взрывы, деление, кассеты, вихри) |
 | Урон, цепи, взрывы | `systems/combat.gd`; статусы (огонь/кислота/холод/шок/проклятие) — `entities/actor.gd` |
-| Враги | `entities/enemy_data.gd` (TYPES, AFFIXES, стаи — **в коде**), `entities/enemy.gd` (`_behave` — `match etype`), `entities/boss.gd` |
+| Враги | `data/enemies.json` (типы: статы, цвет, форма, вес, сопротивление, поле `ai`; грузит `EnemyData`), `entities/enemy_data.gd` (AFFIXES и стаи — в коде), `entities/enemy.gd` (`_behave` — `match ai`), `entities/boss.gd` |
 | Поиск пути | `world/zone.gd` `find_path()` — AStarGrid2D по классам размера тела (`size_class`) |
 | Карта | `world/zone_gen.gd` (генерация), `world/zone.gd` (сетка T=40, коллизии `move_circle`, лучи `ray_clear`, миникарта), `world/biomes.gd` |
 | Город между этапами | `world/town_gen.gd` (площадь, улицы, дома по `town_style` биома, имя), `world/stall.gd` (лавки: `KINDS` — вывеска, реплики, `menu` — экран меню; без него — окно-заглушка `HudDraw._draw_stall`) |
@@ -121,15 +123,15 @@ godot --headless --path . -s res://tests/ui_actions.gd  # Esc-навигация
 | Отложенные задачи | `TODO.md` |
 | Шансы редкостей, перков, гибридов | `data/rarities.json`, `GunGen.roll_rarity` |
 | Новый тип пушки / марка / перк / легендарка | `data/*.json` + `lang/ru.json` |
-| Новый враг | `EnemyData.TYPES` + ветка в `Enemy._behave` + описание в `data/codex.json` (`enemies`) |
+| Новый враг | запись в `data/enemies.json` (с поведением, которое уже есть: `ai` из `EnemyData.AI_IDS`); новое поведение — ветка в `Enemy._behave` + значение в `AI_IDS`; описание в `data/codex.json` (`enemies`) + строки |
 | Свойство элитки | `EnemyData.AFFIXES` + `Enemy._tick_affixes` + `data/codex.json` (`affixes`) |
 | Атака босса | `Boss.PATTERNS` / `DURATION` + обработка в `boss.gd` |
 | Новый биом | `Biomes.LIST` |
 | Лут и монеты с врагов/сундуков/боссов | `Rewards` (`systems/rewards.gd`: смерть врага/босса), `Loot` (`systems/loot.gd`: дроп, сундуки) |
-| Новый перк навыка | `Heroes.PERKS` + эффект: попадание навыком — `systems/skills.gd` (`hit`, `explode`), применение — `HeroSkill.use` / `bless_proj` + строки и справочник (`heroes`) |
+| Новый перк навыка | запись в `data/hero_perks.json` + эффект: попадание навыком — `systems/skills.gd` (`hit`, `explode`), применение — `HeroSkill.use` / `bless_proj` + строки и справочник (`heroes`) |
 | Новый вид задания | `Quests.TYPES` + вызов `Quests.progress("вид")` в нужном месте + строки |
 | Новый навык дерева | запись в `data/skill_tree.json` (эффекты — `stat` из `LevelTree.KNOWN_STATS`; нужен новый stat — добавить в `KNOWN_STATS` и прочитать там, где он действует) + строки `ru` |
-| Новый герой / навык | `Heroes.LIST` + ветка в `HeroSkill.use` (+ рисунок в `Player._draw`, эффекты навыка — `HeroSkill.draw_effects`) + строки в `lang/*.json` + страница `heroes` в `data/codex.json` |
+| Новый герой / навык | запись в `data/heroes.json` (навык из `Heroes.SKILLS`); новый навык — ветка в `HeroSkill.use` + `Heroes.SKILLS` (+ рисунок в `Player._draw`, эффекты навыка — `HeroSkill.draw_effects`) + строки в `lang/*.json` + страница `heroes` в `data/codex.json` |
 | Новый экран меню | класс-наследник `MenuScreen` в `ui/screens/` (`build(root)` через `_screen(root, "id")`, `refresh()`), создать в `Menu._make_screens()` (порядок = порядок построения), открыть `Menu.show_screen("id")` / `open_town("id")`; виджеты — `MenuKit`; строки — `U.t`, `ru` |
 | Новый источник карт (редактор, мир «Диаблоида») | наследник `ZoneSource` (`world/zone_source.gd`: `zone(level, rng)` и `town(next_level, rng)` возвращают словарь для `Zone.setup`), подставить в `Main.loader.source` (по умолчанию `ProceduralZoneSource`) |
 | Лавка, открывающая экран меню | `Stall.KINDS[...]["menu"]` → `Menu.open_town(экран)`; «Назад» — `Menu.back()` |

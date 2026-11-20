@@ -64,10 +64,12 @@ func load_content() -> void:
 	Mods.clear_cache()
 	GunData.load_data()
 	EnemyData.load_data()
+	Heroes.load_data()
 	LevelTree.load_data()
 	Codex.load_data()
 	I18n.load_all()
 	I18n.apply(str(settings.get_value("language")))
+	profile.validate_heroes()   # выбранный герой мог принадлежать выключенному моду
 
 
 ## Перечитать всё после включения/выключения модов: данные, переводы, звуки, музыку —

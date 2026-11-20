@@ -61,6 +61,18 @@ static func el_color(el: int) -> Color:
 	return EL_COLORS[el]
 
 
+## Стихия по имени ("fire", "shock", "acid", "cryo", "curse") или по номеру; пусто и неизвестное — EL_NONE.
+static func el_id(v: Variant) -> int:
+	if v is int or v is float:
+		var n := int(v)
+		return n if n >= 0 and n < EL_NAMES.size() else EL_NONE
+	var s := str(v).to_lower()
+	for i in EL_NAMES.size():
+		if str(EL_NAMES[i]).to_lower() == s:
+			return i
+	return EL_NONE
+
+
 static func el_name(el: int) -> String:
 	if el < 0 or el >= EL_NAMES.size():
 		return ""

@@ -1,0 +1,97 @@
+{
+	"_comment": "Перки навыков героев (Мистик). heroes — у кого бывает ([] — у всех), max — сколько раз можно взять (0 — сколько угодно).",
+	"split": {
+		"name": "Split",
+		"heroes": ["pioneer", "sheriff"],
+		"max": 0,
+		"desc": "The skill fires ×3 projectiles and deals +20% total damage, split evenly between them.",
+		"more": "+3 projectiles, +20% damage."
+	},
+	"wounds": {
+		"name": "Grievous Wounds",
+		"heroes": ["pioneer", "sheriff", "assassin"],
+		"max": 1,
+		"desc": "Skill hits slow the target by 10% for good, up to 30%. Elites need 2 hits for each step, bosses 3."
+	},
+	"poison": {
+		"name": "Poison Shell",
+		"name_slash": "Poison Cut",
+		"heroes": ["pioneer", "sheriff", "assassin"],
+		"max": 0,
+		"desc": "Skill damage lands 5 s later, but is 50% higher.",
+		"more": "+2 s delay, +50% damage."
+	},
+	"heavy": {
+		"name": "Heavy Shell",
+		"heroes": ["pioneer", "sheriff"],
+		"max": 0,
+		"desc": "+1 s skill cooldown, +20% damage, the hit stuns for 0.7 s.",
+		"more": "+1 s cooldown, +20% damage, +0.4 s stun."
+	},
+	"parry": {
+		"name": "Parry",
+		"heroes": ["assassin"],
+		"max": 0,
+		"desc": "Every 4 s your next strike reflects enemy projectiles back.",
+		"more": "Reflected projectiles deal +30% damage."
+	},
+	"hand": {
+		"name": "Extra Hand",
+		"heroes": [],
+		"max": 0,
+		"desc": "+1 skill charge.",
+		"more": "+1 skill charge."
+	},
+	"vandal": {
+		"name": "Vandalism",
+		"heroes": ["assassin"],
+		"max": 1,
+		"desc": "The strike knocks enemies far away, but deals 50% less damage."
+	},
+	"element": {
+		"name": "Element",
+		"heroes": [],
+		"max": 1,
+		"desc": "The skill gets an element of your choice."
+	},
+	"trophies": {
+		"name": "Trophies",
+		"heroes": ["assassin"],
+		"max": 0,
+		"desc": "A kill with the skill gives 1 coin and +0.2% skill damage until the end of the run.",
+		"more": "+0.05% skill damage per kill."
+	},
+	"smoke": {
+		"name": "Smoke Grenade",
+		"heroes": ["pioneer"],
+		"max": 0,
+		"desc": "The grenade turns into smoke of radius 300: 25% of its damage every second for 4 s.",
+		"more": "The smoke lasts 1 s longer."
+	},
+	"precise": {
+		"name": "Precise Shot",
+		"heroes": ["sheriff"],
+		"max": 0,
+		"desc": "The blessed shot homes in, flies 20% farther and deals 10% more damage.",
+		"more": "+20% range, +10% damage."
+	},
+	"economy": {
+		"name": "Economy",
+		"heroes": ["engineer"],
+		"max": 0,
+		"desc": "The turret gets 40% more rounds than it takes from you.",
+		"more": "+40% rounds."
+	},
+	"scientist": {
+		"name": "Mad Scientist",
+		"heroes": ["engineer"],
+		"max": 1,
+		"desc": "The turret gets a random Synergis gun one rarity above yours. Nothing is taken from your reserve."
+	},
+	"ready": {
+		"name": "Readiness",
+		"heroes": ["assassin", "sheriff"],
+		"max": 1,
+		"desc": "Dealing damage with the skill takes 1 s off the dodge cooldown."
+	}
+}
