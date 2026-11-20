@@ -26,7 +26,7 @@ func _initialize() -> void:
 	for i in 5:
 		await process_frame
 	M.rng.seed = 555
-	M.load_zone(2)
+	M.loader.load_zone(2)
 	await process_frame
 	seed(2024)   # арена строится от глобального randf() (random_free_near): без сида цели каждый раз стоят по-разному
 	setup_arena()
@@ -65,7 +65,7 @@ func setup_arena() -> void:
 		while not M.zone.ray_clear(origin, pos) and tries < 12:
 			pos = origin + (pos - origin) * 0.8
 			tries += 1
-		var e: Object = M.spawn_enemy("brute", pos, 12, 0, [], -1, false)
+		var e: Object = M.loader.spawn_enemy("brute", pos, 12, 0, [], -1, false)
 		e.awake = true                 # в сетке попаданий...
 		e.set_physics_process(false)   # ...но неподвижна: результат не зависит от ИИ
 		e.max_hp = HP

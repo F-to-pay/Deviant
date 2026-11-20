@@ -18,7 +18,7 @@ extends RefCounted
 ##               бонус (first = step = базовый бонус) — так растут корни веток вместе с героем;
 ##               fmt — как писать в тексте: pct (доли → проценты), num, sec.
 ## Эффекты складываются по stat (stat(имя)); какие stat понимает игра — KNOWN_STATS, кто их читает — перечислено
-## у каждого (Player, Projectiles, Enemy.hurt, Main.drop_coins, GunGen.roll_rarity…).
+## у каждого (Player, Projectiles, Enemy.hurt, Loot.drop_coins, GunGen.roll_rarity…).
 
 const POINTS_PER_LEVEL := 5
 
@@ -27,7 +27,7 @@ const KNOWN_STATS := {
 	"weapon_dmg": "+% к урону пуль героя и турели (Projectiles.fire_gun)",
 	"max_hp": "+HP героя (Player.base_max_hp)",
 	"skill_dmg": "+% к урону навыка (Player.skill_dmg_mult)",
-	"coin_double": "шанс удвоить монеты с дропа; выше 100% — шанс утроить и т. д. (Main.drop_coins)",
+	"coin_double": "шанс удвоить монеты с дропа; выше 100% — шанс утроить и т. д. (Loot.drop_coins)",
 	"exec_dmg": "до +% урона по цели в зависимости от потерянного ею здоровья (Enemy.hurt)",
 	"free_shot": "шанс не потратить патрон на выстреле, герой и турель (Player._fire, Turret._fire)",
 	"rare_luck": "сдвиг шансов редкостей к редким (GunGen.roll_rarity)",
@@ -41,7 +41,7 @@ const KNOWN_STATS := {
 	"skill_temp_hp": "временное здоровье = % от урона навыка (Skills.hit)",
 	"temp_hp_time": "через сколько секунд временное здоровье пропадает",
 	"flask_skill_refund": "доля перезарядки навыка, снимаемая подбором фляги (FlaskDrop)",
-	"bounty_coins": "+% монет с цели заказа (Main.on_enemy_killed)",
+	"bounty_coins": "+% монет с цели заказа (Rewards.on_enemy_killed)",
 	"bounty_gun": "больше 0 — зона получает цель заказа, с неё падает пушка",
 }
 const KNOWN_FMT := ["pct", "num", "sec"]

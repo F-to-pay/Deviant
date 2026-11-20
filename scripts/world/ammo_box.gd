@@ -30,7 +30,7 @@ func _physics_process(delta: float) -> void:
 				GunData.ammo_color(ammo_type), 14, 0.8)
 		amount -= got
 		if amount <= 0:
-			main.remove_ammo(self)
+			main.loot.remove_ammo(self)
 
 
 func _process(_delta: float) -> void:

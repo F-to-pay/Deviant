@@ -160,7 +160,7 @@ func _buy_gun(g: Gun) -> void:
 	if p.add_gun(g):
 		_shop_status.text = U.t("Bought: %s") % g.gun_name
 	else:
-		Game.main.drop_gun(g, p.position + p.aim * 30.0, true)
+		Game.main.loot.drop_gun(g, p.position + p.aim * 30.0, true)
 		_shop_status.text = U.t("Backpack full — %s is on the ground") % g.gun_name
 	Game.state.note_gun(g)
 	Sfx.ui("pickup/gun", -4.0)

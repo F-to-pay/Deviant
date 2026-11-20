@@ -23,7 +23,7 @@ func _initialize() -> void:
 	for i in 5:
 		await process_frame
 	M.rng.seed = 1001
-	M.load_zone(1)
+	M.loader.load_zone(1)
 	await process_frame
 	var coins0: float = G.state.coins
 	ok(G.state.hero_level == 1, "start at level 1")

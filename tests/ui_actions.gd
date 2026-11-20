@@ -63,7 +63,7 @@ func _initialize() -> void:
 	for i in 5:
 		await process_frame
 	G.state.coins = 5000.0
-	M.load_town(6)
+	M.loader.load_town(6)
 	await process_frame
 	G.settings.set_value("language", "en")
 	for i in 4:

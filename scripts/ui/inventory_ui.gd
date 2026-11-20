@@ -342,7 +342,7 @@ func _throw_from(kind: String, idx: int) -> void:
 	var g := _take(kind, idx)
 	if g != null:
 		var p := _player()
-		Game.main.drop_gun(g, p.position + p.aim * 26.0, true)
+		Game.main.loot.drop_gun(g, p.position + p.aim * 26.0, true)
 
 
 func _scrap_from(kind: String, idx: int) -> void:

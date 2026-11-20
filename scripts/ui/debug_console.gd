@@ -427,7 +427,7 @@ func _give(arch: String, maker: String, rarity: int, perk: String, leg: String) 
 	GunGen.force_legendary = ""
 	if perk != "" and not (perk in g.mods):
 		GunGen._add_mod(g, perk, main.rng)
-	main.drop_gun(g, main.player.position + main.player.aim * 40.0, true)
+	main.loot.drop_gun(g, main.player.position + main.player.aim * 40.0, true)
 	_say("dropped: %s  [%s / %s, %s]" % [g.gun_name, g.archetype + ("+" + g.archetype2 if g.archetype2 != "" else ""),
 		g.maker, ", ".join(PackedStringArray(g.mods))])
 

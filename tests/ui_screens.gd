@@ -68,7 +68,7 @@ func _initialize() -> void:
 	G.state.coins = 5000.0
 	G.profile.meta_coins = max(G.profile.meta_coins, 50)
 	M.rng.seed = 77
-	M.load_town(6)
+	M.loader.load_town(6)
 	await process_frame
 	await process_frame
 	var ids: Array = menu.screens.keys()

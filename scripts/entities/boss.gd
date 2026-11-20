@@ -108,7 +108,7 @@ func _behave(delta: float, player: Actor, to_p: Vector2, dist: float) -> void:
 				for i in n:
 					var t := EnemyData.pick_type(level, Game.rng, ["summoner", "mortar"])
 					var p: Vector2 = Game.main.zone.random_free_near(position, 60.0, 140.0)
-					Game.main.spawn_enemy(t, p, level, 0, [], -1, true)
+					Game.main.loader.spawn_enemy(t, p, level, 0, [], -1, true)
 				Game.main.fx.ring(position, 120.0, color, 0.5)
 				_ring(12, 190.0, randf() * TAU)
 		"mortar":

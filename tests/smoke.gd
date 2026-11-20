@@ -40,7 +40,7 @@ func _initialize() -> void:
 		if bool(G.call("town_before", z)) if G.has_method("town_before") else false:
 			pass
 		M.rng.seed = 1000 + int(z)   # лут при убийствах тянет случайные числа — без пересева зоны плывут
-		M.load_zone(z)
+		M.loader.load_zone(z)
 		await process_frame
 		var hp_sum := 0.0
 		var first := 0.0
@@ -58,10 +58,10 @@ func _initialize() -> void:
 		for e in M.enemies.duplicate():
 			if is_instance_valid(e):
 				e.dead = true
-				M.on_enemy_killed(e, true)
+				M.rewards.on_enemy_killed(e, true)
 				killed += 1
 		print("SMOKE   killed=", killed, " hero_level ", lv0, "->", gv("hero_level"), " xp=", snappedf(float(gv("xp")), 0.01), " kills=", gv("kills"), " coins~", snappedf(float(gv("coins")), 1.0) >= 0.0)
-	M.load_town(6)
+	M.loader.load_town(6)
 	await process_frame
 	print("SMOKE town stock=", M.town.get("stock", []).size(), " in_town=", gv("in_town"), " zone.level=", M.zone.level)
 	print("SMOKE rating=", G.call("rating") if G.has_method("rating") else (G.state.rating(G.run) if G.get("state") != null else "n/a"))

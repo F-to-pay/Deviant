@@ -25,7 +25,7 @@ func _physics_process(delta: float) -> void:
 		p.on_flask_pickup()
 		Sfx.ui("pickup/heal", -7.0, 1.2)
 		main.fx.text(position + Vector2(0, -22), U.t("+1 flask"), Color(1.0, 0.45, 0.5), 14, 0.8)
-		main.remove_flask(self)
+		main.loot.remove_flask(self)
 
 
 func _process(_delta: float) -> void:

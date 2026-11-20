@@ -155,7 +155,7 @@ static func _round_rand(x: float, r: RandomNumberGenerator) -> float:
 
 ## Монеты за одного убитого врага зоны lvl (elite: 0 обычный, 1 чемпион, 2 вожак, 3 босс): в монетах первого этапа
 ## обычный — в среднем 0.35, чемпион 2–4, вожак 5–8, босс этапа 30, бродячий босс хаоса 15. Одна формула и для настоящих
-## убийств (`Main.on_enemy_killed`, `_boss_dead`), и для пропуска зон (`Main.skip_zone`).
+## убийств (`Rewards.on_enemy_killed`, `_boss_dead`), и для пропуска зон (`Main.skip_zone`).
 static func kill_coin_value(lvl: int, elite: int, r: RandomNumberGenerator) -> float:
 	match elite:
 		0:

@@ -265,11 +265,11 @@ func _draw_minimap(main: Main, vp: Vector2, f: Font) -> void:
 	draw_texture_rect(z.minimap_tex, r, false)
 	var ws := z.world_size()
 	var k := Vector2(r.size.x / ws.x, r.size.y / ws.y)
-	for o in main.chests:
+	for o in main.loot.chests:
 		var c: Chest = o
 		if not c.opened and z.is_explored(c.position):
 			draw_rect(Rect2(r.position + c.position * k - Vector2(2.5, 2.5), Vector2(5, 5)), Color(1.0, 0.8, 0.3))
-	for o in main.items:
+	for o in main.loot.items:
 		var it: GroundItem = o
 		if it.gun.rarity >= GunData.R_EPIC:
 			draw_circle(r.position + it.position * k, 2.5, it.gun.rarity_color())

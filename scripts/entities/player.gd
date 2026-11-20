@@ -417,7 +417,7 @@ func _die() -> void:
 	main.fx.explosion(position, 60.0, Color(0.4, 0.9, 1.0))
 	visible = false
 	Sfx.ui("player/death", -2.0)
-	main.on_player_died()
+	main.rewards.on_player_died()
 
 
 # --- Обновление ----------------------------------------------------------------
@@ -695,11 +695,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		if not Game.main.transitioning:
 			drink()
 	elif event.is_action_pressed("interact"):
-		Game.main.player_interact(false)
+		Game.main.interact.use(false)
 	elif event.is_action_pressed("swap"):
-		Game.main.player_interact(true)
+		Game.main.interact.use(true)
 	elif event.is_action_pressed("scrap"):
-		Game.main.player_scrap_near()
+		Game.main.loot.scrap_near()
 
 
 # --- Патроны ---------------------------------------------------------------------

@@ -28,7 +28,7 @@ func _physics_process(delta: float) -> void:
 	if l < reach and t > 0.4:
 		position += d.normalized() * minf(l, (260.0 + (reach - l) * 6.0) * delta)
 	if l < p.radius + 8.0:
-		main.pick_coin(self)
+		main.loot.pick_coin(self)
 
 
 func _process(_delta: float) -> void:

@@ -163,7 +163,7 @@ func die() -> void:
 	if has_affix("explosive"):
 		main.projectiles.add_blast(position, 95.0, dmg * 1.2, 0.7, 1)
 		_ring(12, 210.0, 0.0)
-	main.on_enemy_killed(self)
+	main.rewards.on_enemy_killed(self)
 	queue_free()
 
 
@@ -344,7 +344,7 @@ func _bomber(delta: float, player: Actor, dist: float) -> void:
 		if st <= 0.0:
 			Combat.explode(position, 88.0, dmg, false, -1, 1, 0.0)
 			dead = true
-			Game.main.on_enemy_killed(self, false)
+			Game.main.rewards.on_enemy_killed(self, false)
 			queue_free()
 
 
@@ -395,7 +395,7 @@ func _summoner(_player: Actor) -> void:
 		if summons.size() < 6:
 			for i in 2:
 				var p: Vector2 = Game.main.zone.random_free_near(position, 30.0, 70.0)
-				var e: Enemy = Game.main.spawn_enemy("runner", p, level, 0, [], pack, true)
+				var e: Enemy = Game.main.loader.spawn_enemy("runner", p, level, 0, [], pack, true)
 				summons.append(e)
 			Game.main.fx.ring(position, 60.0, color)
 			Sfx.at("enemy/summon", position, -6.0)
