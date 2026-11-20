@@ -9,20 +9,17 @@ GDScript со статической типизацией. Пользовате�
 ```
 godot --headless --path . --quit          # загрузить проект: все ошибки разбора/компиляции скриптов вылезут в консоль
 godot --headless --path . --import        # после нового class_name (иначе «Identifier not declared»: кэш классов в .godot)
-godot --headless --path . -s res://tests/unit_core.gd   # формулы, профиль, настройки, сохранение; в конце «fails=0»
-godot --headless --path . -s res://tests/smoke.gd       # настоящий забег: зоны 1..400, убийства, город (отпечаток для сравнения)
-godot --headless --path . -s res://tests/controls_state.gd   # режимы ввода, подписи, прицел, очередь навыка/выстрела
-godot --headless --path . -s res://tests/gen_fingerprint.gd  # отпечаток ZoneGen / TownGen по многим сидам: любая правка генераторов обязана оставить его прежним (порядок бросков rng — часть результата)
-godot --headless --path . -s res://tests/proj_fingerprint.gd # пушки разных типов стреляют по спящим врагам и в героя: отпечаток для правок Projectiles
-godot --headless --path . -s res://tests/player_state.gd      # навыки всех героев с каждым перком и стрельба разными пушками (отпечаток для правок Player)
-godot --headless --path . -s res://tests/data_tables.gd      # таблицы врагов, героев и перков: все поля и типы, порядок, выбор по rng
-godot --headless --path . -s res://tests/mod_data.gd         # слои мода: добавить / править / удалить врага, героя, перк; validate
-godot --headless --path . -s res://tests/zone_source.gd      # ZoneLoader берёт карты из подставляемого ZoneSource
-godot --headless --path . -s res://tests/skip_zone.gd        # пропуск зон платит бюджет судьи
-godot --headless --path . -s res://tests/console_commands.gd # команды консоли отладчика (пишет в deviant.cfg: сделай копию!)
-godot --headless --path . -s res://tests/ui_screens.gd  # дерево узлов всех экранов (en/ru) + нажатия в лавках: отпечаток для сравнения при правках меню
-godot --headless --path . -s res://tests/ui_actions.gd  # Esc-навигация, настройки, привязка клавиш, справочник, язык (пишет в deviant.cfg: сделай копию!)
+powershell -ExecutionPolicy Bypass -File testsun_all.ps1     # все 13 тестов за ~минуту (Godot: -Godot <путь> или переменная GODOT_BIN)
 ```
+Раннер подменяет `user://deviant.cfg` каноническим (язык en, отладчик модов включён) и возвращает ваш на место. Два вида тестов:
+- **assert** (`unit_core`, `skip_zone`, `zone_source`, `mod_data`) — сами печатают `SMOKE RESULT fails=0`;
+- **golden** (`smoke`, `ui_screens`, `ui_actions`, `gen_fingerprint`, `proj_fingerprint`, `player_state`, `controls_state`,
+  `console_commands`, `data_tables`) — печатают «отпечаток» поведения, раннер сравнивает его с `tests/golden/<имя>.txt`.
+  **Рефакторинг без смены поведения обязан оставить эталоны как есть.** Если поведение изменилось намеренно — `run_all.ps1 -Update`
+  и смотреть `git diff tests/golden`: каждая изменившаяся строка должна объясняться правкой. Эталоны привязаны к версии Godot (4.7.2).
+Один тест: `... -Only smoke,unit_core`; вручную: `godot --headless --path . -s res://tests/<имя>.gd`. Тесты `-s` нельзя писать с типами проекта
+(`Gun`, `Enemy`...) напрямую — скрипт компилируется раньше автозагрузок: бери классы через `load()` и вызывай через `call` / `get`.
+Тест, который не скомпилировался, вместо «ошибки» запускает саму игру и висит: раннер убивает его по таймауту.
 Одна сломанная строка в любом скрипте каскадом ломает всё, что на него ссылается (ошибка может показать на
 `main.gd`, а виноват `inventory_ui.gd`). В игре: «Моды» → «Отладчик модов (F8)» → перезапуск, команда `validate`.
 

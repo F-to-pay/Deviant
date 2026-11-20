@@ -1,0 +1,80 @@
+SMOKE console ready: true
+SMOKE [help] -> | > help | help                           this list | clear                          clear the log | validate                       check all loaded data again | reload                         re-read data, translations, sounds, music of all mods | lang <code>                    switch language (en, ru, ...) | list arch|makers|perks|legendaries|langs|mods | give <arch|random> [maker|random] [rarity 0-5]    drop a gun next to you (in a run) | perk <perk_id> [arch]          drop a rare gun with this perk | legendary <id>                 drop this legendary | missing [lang]                 strings seen in game without translation | coins <n>                      add coins of this run (negative  take away) | ancient <n>                    add ancient coins (meta, saved) | town                           go to the town before the next zone (in a run) | skip [n] [--boss]              kill every enemy of the zone (XP, kills and coins are cred | unlock <hero|all>              unlock a hero for free (pioneer, sheriff, assassin, engine | hero <id>                      play as this hero (unlocks it if needed) | skillperk <id> [element 0-4]   take a skill perk for free (split, wounds, poison, heavy,
+SMOKE    coins=120.0 meta=0 hero=pioneer open=1 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [foo bar] -> | > foo bar | unknown command 'foo'  type help
+SMOKE    coins=120.0 meta=0 hero=pioneer open=1 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [Clear] ->
+SMOKE    coins=120.0 meta=0 hero=pioneer open=1 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [list] -> | > list | list arch|makers|perks|legendaries|langs|mods
+SMOKE    coins=120.0 meta=0 hero=pioneer open=1 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [list perks] -> | > list perks | perks: heavy, rapid, precise, drum, quick, mean, long, sawn, double, scatter, burst, armor
+SMOKE    coins=120.0 meta=0 hero=pioneer open=1 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [list legendaries] -> | > list legendaries | legendaries: babushka, diplomacy, swarm, expert, lastword, toaster, schrodinger, boomer, s
+SMOKE    coins=120.0 meta=0 hero=pioneer open=1 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [list arch] -> | > list arch | archetypes: pistol, smg, ar, shotgun, sniper, rocket, lmg, launcher, revolver, mortar, can
+SMOKE    coins=120.0 meta=0 hero=pioneer open=1 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [list makers] -> | > list makers | makers: synergis, hypernova, shabash, chaos, erosion, atlant, liven, dandy, noname, godfor
+SMOKE    coins=120.0 meta=0 hero=pioneer open=1 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [list langs] -> | > list langs | languages: en, nb, ru
+SMOKE    coins=120.0 meta=0 hero=pioneer open=1 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [list mods] -> | > list mods | [off] ExampleMod  (<ROOT>/Mods/ExampleMod) | [on]  Norwegian  (<ROOT>/Mods/Norwegian)
+SMOKE    coins=120.0 meta=0 hero=pioneer open=1 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [lang zz] -> | > lang zz | languages: en, nb, ru
+SMOKE    coins=120.0 meta=0 hero=pioneer open=1 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [lang] -> | > lang | languages: en, nb, ru
+SMOKE    coins=120.0 meta=0 hero=pioneer open=1 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [coins 77] -> | > coins 77 | coins: 197
+SMOKE    coins=197.0 meta=0 hero=pioneer open=1 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [coins] -> | > coins | coins: 297
+SMOKE    coins=297.0 meta=0 hero=pioneer open=1 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [ancient 3] -> | > ancient 3 | ancient coins: 3
+SMOKE    coins=297.0 meta=3 hero=pioneer open=1 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [ancient] -> | > ancient | ancient coins: 13
+SMOKE    coins=297.0 meta=13 hero=pioneer open=1 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [unlock engineer] -> | > unlock engineer | unlocked: engineer
+SMOKE    coins=297.0 meta=13 hero=pioneer open=2 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [unlock nobody] -> | > unlock nobody | unknown hero 'nobody'  heroes: pioneer, sheriff, assassin, engineer
+SMOKE    coins=297.0 meta=13 hero=pioneer open=2 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [hero engineer] -> | > hero engineer | hero: engineer
+SMOKE    coins=297.0 meta=13 hero=engineer open=2 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [hero] -> | > hero | heroes: pioneer, sheriff, assassin, engineer
+SMOKE    coins=297.0 meta=13 hero=engineer open=2 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [hero nobody] -> | > hero nobody | heroes: pioneer, sheriff, assassin, engineer
+SMOKE    coins=297.0 meta=13 hero=engineer open=2 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [skillperk] -> | > skillperk | skill perks: split, wounds, poison, heavy, parry, hand, vandal, element, trophies, smoke,
+SMOKE    coins=297.0 meta=13 hero=engineer open=2 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [skillperk nonexistent] -> | > skillperk nonexistent | skill perks: split, wounds, poison, heavy, parry, hand, vandal, element, trophies, smoke,
+SMOKE    coins=297.0 meta=13 hero=engineer open=2 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [missing] -> | > missing | [en] 0 strings without translation seen so far
+SMOKE    coins=297.0 meta=13 hero=engineer open=2 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [missing ru] -> | > missing ru | [ru] 0 strings without translation seen so far
+SMOKE    coins=297.0 meta=13 hero=engineer open=2 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [give] -> | > give | dropped: Godforce-20 Assault Rifle  [ar / godforce, ]
+SMOKE    coins=297.0 meta=13 hero=engineer open=2 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [give pistol] -> | > give pistol | dropped: Godforce-91 Pistol  [pistol / godforce, ]
+SMOKE    coins=297.0 meta=13 hero=engineer open=2 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [give random synergis 2] -> | > give random synergis 2 | dropped: Synergis-20 Long-Barreled SMG  [smg / synergis, mean, long]
+SMOKE    coins=297.0 meta=13 hero=engineer open=2 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [give nosuchtype] -> | > give nosuchtype | unknown archetype 'nosuchtype'  try: list arch
+SMOKE    coins=297.0 meta=13 hero=engineer open=2 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [perk] -> | > perk | unknown perk  try: list perks
+SMOKE    coins=297.0 meta=13 hero=engineer open=2 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [perk nonexistent] -> | > perk nonexistent | unknown perk  try: list perks
+SMOKE    coins=297.0 meta=13 hero=engineer open=2 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [legendary] -> | > legendary | which one?  try: list legendaries
+SMOKE    coins=297.0 meta=13 hero=engineer open=2 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [legendary nonexistent] -> | > legendary nonexistent | unknown legendary 'nonexistent'  try: list legendaries
+SMOKE    coins=297.0 meta=13 hero=engineer open=2 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [skip abc] -> | > skip abc | usage: skip [n] [--boss]   (got 'abc')
+SMOKE    coins=297.0 meta=13 hero=engineer open=2 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [skip 0] -> | > skip 0 | usage: skip [n] [--boss]   (got '0')
+SMOKE    coins=297.0 meta=13 hero=engineer open=2 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [skip --boss x] -> | > skip --boss x | usage: skip [n] [--boss]   (got 'x')
+SMOKE    coins=297.0 meta=13 hero=engineer open=2 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [validate] -> | > validate | --- validate: mods folder <ROOT>/Mods | [off] Example Mod v1.0 | [on]  Norsk (bokml) v1.0 | loaded: 12 archetypes, 11 makers, 40 perks, 13 legendaries, 32 nicknames, 8 enemy types, 4 | skill tree: 4 branches, 16 nodes | --- validate done: 0 warnings, 0 errors
+SMOKE    coins=297.0 meta=13 hero=engineer open=2 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=1
+SMOKE [skip 2] -> | > skip 2
+SMOKE    coins=334.0 meta=13 hero=engineer open=2 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=2
+SMOKE [town] -> | > town
+SMOKE    coins=334.0 meta=13 hero=engineer open=2 guns=["Synergis-53 Pi/0/", "-", "-", "-"] bag=0 level=2
+SMOKE DONE

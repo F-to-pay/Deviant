@@ -1,0 +1,39 @@
+SMOKE menu ready: true
+SMOKE start hero_level=1 coins=120.0 zone_level=1 in_town=true
+SMOKE guns: [[0, 1, 8.038], <null>, <null>, <null>]
+SMOKE zone 1 en=66 hp_sum=2244.0 first=16.0 | pool 132 XP 0.63  66 en/14 packs  ch 33 ld 0 bs 0  1.50 lvl
+SMOKE   player max_hp=100.0 guns=[[0, 1, 8.038], <null>, <null>, <null>]
+SMOKE   killed=66 hero_level 1->2 xp=42.87 kills=66 coins~true
+SMOKE zone 2 en=72 hp_sum=2830.32 first=71.28 | pool 152 XP 1.01  72 en/15 packs  ch 28 ld 2 bs 0  1.82 lvl
+SMOKE   player max_hp=100.0 guns=[[0, 2, 9.485], <null>, <null>, <null>]
+SMOKE   killed=72 hero_level 2->3 xp=109.84 kills=138 coins~true
+SMOKE zone 3 en=77 hp_sum=3636.0 first=69.12 | pool 134 XP 1.68  77 en/15 packs  ch 15 ld 1 bs 0  2.08 lvl
+SMOKE   player max_hp=100.0 guns=[[0, 3, 11.193], <null>, <null>, <null>]
+SMOKE   killed=77 hero_level 3->5 xp=17.94 kills=215 coins~true
+SMOKE zone 5 en=1 hp_sum=6635.52 first=6635.52 | pool 35 XP 10.81  1 en/0 packs  ch 0 ld 0 bs 1  1.56 lvl
+SMOKE   player max_hp=100.0 guns=[[0, 5, 15.585], <null>, <null>, <null>]
+SMOKE   killed=1 hero_level 5->6 xp=161.49 kills=216 coins~true
+SMOKE zone 6 en=102 hp_sum=13118.67 first=373.25 | pool 281 XP 1.63  102 en/17 packs  ch 35 ld 3 bs 0  1.97 lvl
+SMOKE   player max_hp=100.0 guns=[[0, 6, 18.39], <null>, <null>, <null>]
+SMOKE   killed=102 hero_level 6->7 xp=331.56 kills=318 coins~true
+SMOKE zone 10 en=1 hp_sum=16511.3 first=16511.3 | pool 48 XP 11.31  1 en/0 packs  ch 0 ld 0 bs 1  2.30 lvl
+SMOKE   player max_hp=100.0 guns=[[0, 10, 35.654], <null>, <null>, <null>]
+SMOKE   killed=1 hero_level 7->9 xp=134.58 kills=319 coins~true
+SMOKE zone 11 en=102 hp_sum=32311.58 first=340.55 | pool 444 XP 1.58  102 en/19 packs  ch 50 ld 4 bs 0  1.77 lvl
+SMOKE   player max_hp=100.0 guns=[[0, 11, 42.072], <null>, <null>, <null>]
+SMOKE   killed=102 hero_level 9->10 xp=386.37 kills=421 coins~true
+SMOKE zone 25 en=1 hp_sum=254389.91 first=254389.91 | pool 85 XP 9.21  1 en/0 packs  ch 0 ld 0 bs 1  2.17 lvl
+SMOKE   player max_hp=100.0 guns=[[0, 25, 426.913], <null>, <null>, <null>]
+SMOKE   killed=1 hero_level 10->12 xp=106.75 kills=422 coins~true
+SMOKE zone 100 en=1 hp_sum=15643395187.49 first=15643395187.49 | pool 273 XP 3.49  1 en/0 packs  ch 0 ld 0 bs 1  1.66 lvl
+SMOKE   player max_hp=100.0 guns=[[0, 100, 105072817.596], <null>, <null>, <null>]
+SMOKE   killed=1 hero_level 12->13 xp=442.77 kills=423 coins~true
+SMOKE zone 250 en=1 hp_sum=7595050025941022500000.0 first=7595050025941022500000.0 | pool 648 XP 1.60  1 en/0 packs  ch 0 ld 0 bs 1  2.10 lvl
+SMOKE   player max_hp=100.0 guns=[[0, 250, 6364898379832020992.0], <null>, <null>, <null>]
+SMOKE   killed=1 hero_level 13->15 xp=78.21 kills=424 coins~true
+SMOKE zone 400 en=1 hp_sum=15778826080730942000000000000000000.0 first=15778826080730942000000000000000000.0 | pool 1023 XP 1.18  1 en/0 packs  ch 0 ld 0 bs 1  1.59 lvl
+SMOKE   player max_hp=100.0 guns=[[0, 400, 385560531376603220000000000000.0], <null>, <null>, <null>]
+SMOKE   killed=1 hero_level 15->16 xp=500.45 kills=425 coins~true
+SMOKE town stock=11 in_town=true zone.level=6
+SMOKE rating=41825
+SMOKE DONE

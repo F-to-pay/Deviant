@@ -1,0 +1,113 @@
+SMOKE enemy order: ["runner", "gunner", "brute", "bomber", "spreader", "charger", "mortar", "summoner"]
+SMOKE enemy runner: color=Color(0.92, 0.32, 0.3, 1) dmg=12.0 hp=16.0 lvl=1 name="Runner" r=13.0 res=2 sides=3 speed=185.0 star=false w=10.0
+SMOKE enemy gunner: color=Color(0.95, 0.75, 0.25, 1) dmg=10.0 hp=19.0 lvl=1 name="Gunner" r=14.0 res=1 sides=4 speed=120.0 star=false w=7.0
+SMOKE enemy brute: color=Color(0.62, 0.36, 0.82, 1) dmg=28.0 hp=75.0 lvl=2 name="Brute" r=22.0 res=3 sides=6 speed=95.0 star=false w=4.0
+SMOKE enemy bomber: color=Color(1, 0.52, 0.12, 1) dmg=38.0 hp=11.0 lvl=2 name="Kamikaze" r=12.0 res=0 sides=0 speed=220.0 star=false w=5.0
+SMOKE enemy spreader: color=Color(0.3, 0.82, 0.5, 1) dmg=9.0 hp=30.0 lvl=3 name="Spreader" r=16.0 res=1 sides=5 speed=105.0 star=false w=5.0
+SMOKE enemy charger: color=Color(0.88, 0.22, 0.56, 1) dmg=30.0 hp=47.5 lvl=4 name="Charger" r=18.0 res=2 sides=4 speed=125.0 star=true w=4.0
+SMOKE enemy mortar: color=Color(0.5, 0.62, 0.95, 1) dmg=32.0 hp=25.0 lvl=6 name="Mortarman" r=15.0 res=1 sides=8 speed=90.0 star=false w=3.0
+SMOKE enemy summoner: color=Color(0.4, 0.95, 0.9, 1) dmg=8.0 hp=37.5 lvl=8 name="Shaman" r=15.0 res=4 sides=5 speed=110.0 star=true w=2.0
+SMOKE affixes: { "fast": "Fast", "tough": "Tough", "explosive": "Explosive", "teleport": "Teleporter", "multishot": "Multishot", "shielded": "Shielded", "regen": "Regeneration", "frost": "Frost Aura", "orbit": "Orbitals" }
+SMOKE hero order: ["pioneer", "sheriff", "assassin", "engineer"] default=pioneer list keys=["pioneer", "sheriff", "assassin", "engineer"]
+SMOKE hero pioneer: aimed=true cd=6.0 color=Color(0.35, 0.85, 1, 1) desc="Throws a grenade at the aim point: %d damage in radius %d. Cooldown %s s." dmg=30.0 name="Pioneer" price=0 r=60.0 range=420.0 skill="grenade" skill_name="Hand grenade"
+SMOKE hero sheriff: cd=6.0 color=Color(1, 0.45, 0.3, 1) desc="Blesses the next shot: +%d damage. Cooldown %s s." dmg=40.0 name="Sheriff" price=25 skill="bless" skill_name="Blessing"
+SMOKE hero assassin: aimed=true arc=130.0 cd=0.7 color=Color(0.72, 0.5, 1, 1) desc="A cleaving melee strike in front of you: %d damage. Cooldown %s s, you are slowed by %d%% while striking." dmg=15.0 name="Assassin" price=30 r=95.0 skill="slash" skill_name="Slash" slow=0.5 time=0.25
+SMOKE hero engineer: aimed=true cd=10.0 color=Color(0.95, 0.8, 0.25, 1) desc="Lobs a turret to the aim point (up to %d): it takes the rounds from your magazine and shoots enemies. Cooldown %s s." dmg=0.0 name="Engineer" price=35 r=22.0 range=420.0 skill="turret" skill_name="Turret"
+SMOKE perk order: ["split", "wounds", "poison", "heavy", "parry", "hand", "vandal", "element", "trophies", "smoke", "precise", "economy", "scientist", "ready"]
+SMOKE perk split: desc="The skill fires 3 projectiles and deals +20% total damage, split evenly between them." heroes=["pioneer", "sheriff"] max=0 more="+3 projectiles, +20% damage." name="Split"
+SMOKE perk wounds: desc="Skill hits slow the target by 10% for good, up to 30%. Elites need 2 hits for each step, bosses 3." heroes=["pioneer", "sheriff", "assassin"] max=1 name="Grievous Wounds"
+SMOKE perk poison: desc="Skill damage lands 5 s later, but is 50% higher." heroes=["pioneer", "sheriff", "assassin"] max=0 more="+2 s delay, +50% damage." name="Poison Shell" name_slash="Poison Cut"
+SMOKE perk heavy: desc="+1 s skill cooldown, +20% damage, the hit stuns for 0.7 s." heroes=["pioneer", "sheriff"] max=0 more="+1 s cooldown, +20% damage, +0.4 s stun." name="Heavy Shell"
+SMOKE perk parry: desc="Every 4 s your next strike reflects enemy projectiles back." heroes=["assassin"] max=0 more="Reflected projectiles deal +30% damage." name="Parry"
+SMOKE perk hand: desc="+1 skill charge." heroes=[] max=0 more="+1 skill charge." name="Extra Hand"
+SMOKE perk vandal: desc="The strike knocks enemies far away, but deals 50% less damage." heroes=["assassin"] max=1 name="Vandalism"
+SMOKE perk element: desc="The skill gets an element of your choice." heroes=[] max=1 name="Element"
+SMOKE perk trophies: desc="A kill with the skill gives 1 coin and +0.2% skill damage until the end of the run." heroes=["assassin"] max=0 more="+0.05% skill damage per kill." name="Trophies"
+SMOKE perk smoke: desc="The grenade turns into smoke of radius 300: 25% of its damage every second for 4 s." heroes=["pioneer"] max=0 more="The smoke lasts 1 s longer." name="Smoke Grenade"
+SMOKE perk precise: desc="The blessed shot homes in, flies 20% farther and deals 10% more damage." heroes=["sheriff"] max=0 more="+20% range, +10% damage." name="Precise Shot"
+SMOKE perk economy: desc="The turret gets 40% more rounds than it takes from you." heroes=["engineer"] max=0 more="+40% rounds." name="Economy"
+SMOKE perk scientist: desc="The turret gets a random Synergis gun one rarity above yours. Nothing is taken from your reserve." heroes=["engineer"] max=1 name="Mad Scientist"
+SMOKE perk ready: desc="Dealing damage with the skill takes 1 s off the dodge cooldown." heroes=["assassin", "sheriff"] max=1 name="Readiness"
+SMOKE elements: [0, 1, 2, 3, 4]
+SMOKE describe pioneer: Throws a grenade at the aim point: 30 damage in radius 60. Cooldown 6 s. | Pioneer | (0.35, 0.85, 1.0, 1.0)
+SMOKE   perk split fits=true open0=true open1=true name='Split' d0='The skill fires 3 projectiles' d1='+3 projectiles, +20% damage.'
+SMOKE   perk wounds fits=true open0=true open1=false name='Grievous Wounds' d0='Skill hits slow the target by ' d1='Skill hits slow the target by '
+SMOKE   perk poison fits=true open0=true open1=true name='Poison Shell' d0='Skill damage lands 5 s later, ' d1='+2 s delay, +50% damage.'
+SMOKE   perk heavy fits=true open0=true open1=true name='Heavy Shell' d0='+1 s skill cooldown, +20% dama' d1='+1 s cooldown, +20% damage, +0'
+SMOKE   perk parry fits=false open0=false open1=false name='Parry' d0='Every 4 s your next strike ref' d1='Reflected projectiles deal +30'
+SMOKE   perk hand fits=true open0=true open1=true name='Extra Hand' d0='+1 skill charge.' d1='+1 skill charge.'
+SMOKE   perk vandal fits=false open0=false open1=false name='Vandalism' d0='The strike knocks enemies far ' d1='The strike knocks enemies far '
+SMOKE   perk element fits=true open0=true open1=false name='Element' d0='The skill gets an element of y' d1='The skill gets an element of y'
+SMOKE   perk trophies fits=false open0=false open1=false name='Trophies' d0='A kill with the skill gives 1 ' d1='+0.05% skill damage per kill.'
+SMOKE   perk smoke fits=true open0=true open1=true name='Smoke Grenade' d0='The grenade turns into smoke o' d1='The smoke lasts 1 s longer.'
+SMOKE   perk precise fits=false open0=false open1=false name='Precise Shot' d0='The blessed shot homes in, fli' d1='+20% range, +10% damage.'
+SMOKE   perk economy fits=false open0=false open1=false name='Economy' d0='The turret gets 40% more round' d1='+40% rounds.'
+SMOKE   perk scientist fits=false open0=false open1=false name='Mad Scientist' d0='The turret gets a random Syner' d1='The turret gets a random Syner'
+SMOKE   perk ready fits=false open0=false open1=false name='Readiness' d0='Dealing damage with the skill ' d1='Dealing damage with the skill '
+SMOKE offer pioneer: ["hand", "split", "element"] ["heavy", "element", "poison", "split", "smoke"]
+SMOKE describe sheriff: Blesses the next shot: +40 damage. Cooldown 6 s. | Sheriff | (1.0, 0.45, 0.3, 1.0)
+SMOKE   perk split fits=true open0=true open1=true name='Split' d0='The skill fires 3 projectiles' d1='+3 projectiles, +20% damage.'
+SMOKE   perk wounds fits=true open0=true open1=false name='Grievous Wounds' d0='Skill hits slow the target by ' d1='Skill hits slow the target by '
+SMOKE   perk poison fits=true open0=true open1=true name='Poison Shell' d0='Skill damage lands 5 s later, ' d1='+2 s delay, +50% damage.'
+SMOKE   perk heavy fits=true open0=true open1=true name='Heavy Shell' d0='+1 s skill cooldown, +20% dama' d1='+1 s cooldown, +20% damage, +0'
+SMOKE   perk parry fits=false open0=false open1=false name='Parry' d0='Every 4 s your next strike ref' d1='Reflected projectiles deal +30'
+SMOKE   perk hand fits=true open0=true open1=true name='Extra Hand' d0='+1 skill charge.' d1='+1 skill charge.'
+SMOKE   perk vandal fits=false open0=false open1=false name='Vandalism' d0='The strike knocks enemies far ' d1='The strike knocks enemies far '
+SMOKE   perk element fits=true open0=true open1=false name='Element' d0='The skill gets an element of y' d1='The skill gets an element of y'
+SMOKE   perk trophies fits=false open0=false open1=false name='Trophies' d0='A kill with the skill gives 1 ' d1='+0.05% skill damage per kill.'
+SMOKE   perk smoke fits=false open0=false open1=false name='Smoke Grenade' d0='The grenade turns into smoke o' d1='The smoke lasts 1 s longer.'
+SMOKE   perk precise fits=true open0=true open1=true name='Precise Shot' d0='The blessed shot homes in, fli' d1='+20% range, +10% damage.'
+SMOKE   perk economy fits=false open0=false open1=false name='Economy' d0='The turret gets 40% more round' d1='+40% rounds.'
+SMOKE   perk scientist fits=false open0=false open1=false name='Mad Scientist' d0='The turret gets a random Syner' d1='The turret gets a random Syner'
+SMOKE   perk ready fits=true open0=true open1=false name='Readiness' d0='Dealing damage with the skill ' d1='Dealing damage with the skill '
+SMOKE offer sheriff: ["ready", "poison", "precise"] ["element", "hand", "heavy", "wounds", "poison"]
+SMOKE describe assassin: A cleaving melee strike in front of you: 15 damage. Cooldown 0.7 s, you are slowed by 50% while striking. | Assassin | (0.72, 0.5, 1.0, 1.0)
+SMOKE   perk split fits=false open0=false open1=false name='Split' d0='The skill fires 3 projectiles' d1='+3 projectiles, +20% damage.'
+SMOKE   perk wounds fits=true open0=true open1=false name='Grievous Wounds' d0='Skill hits slow the target by ' d1='Skill hits slow the target by '
+SMOKE   perk poison fits=true open0=true open1=true name='Poison Cut' d0='Skill damage lands 5 s later, ' d1='+2 s delay, +50% damage.'
+SMOKE   perk heavy fits=false open0=false open1=false name='Heavy Shell' d0='+1 s skill cooldown, +20% dama' d1='+1 s cooldown, +20% damage, +0'
+SMOKE   perk parry fits=true open0=true open1=true name='Parry' d0='Every 4 s your next strike ref' d1='Reflected projectiles deal +30'
+SMOKE   perk hand fits=true open0=true open1=true name='Extra Hand' d0='+1 skill charge.' d1='+1 skill charge.'
+SMOKE   perk vandal fits=true open0=true open1=false name='Vandalism' d0='The strike knocks enemies far ' d1='The strike knocks enemies far '
+SMOKE   perk element fits=true open0=true open1=false name='Element' d0='The skill gets an element of y' d1='The skill gets an element of y'
+SMOKE   perk trophies fits=true open0=true open1=true name='Trophies' d0='A kill with the skill gives 1 ' d1='+0.05% skill damage per kill.'
+SMOKE   perk smoke fits=false open0=false open1=false name='Smoke Grenade' d0='The grenade turns into smoke o' d1='The smoke lasts 1 s longer.'
+SMOKE   perk precise fits=false open0=false open1=false name='Precise Shot' d0='The blessed shot homes in, fli' d1='+20% range, +10% damage.'
+SMOKE   perk economy fits=false open0=false open1=false name='Economy' d0='The turret gets 40% more round' d1='+40% rounds.'
+SMOKE   perk scientist fits=false open0=false open1=false name='Mad Scientist' d0='The turret gets a random Syner' d1='The turret gets a random Syner'
+SMOKE   perk ready fits=true open0=true open1=false name='Readiness' d0='Dealing damage with the skill ' d1='Dealing damage with the skill '
+SMOKE offer assassin: ["ready", "parry", "trophies"] ["element", "vandal", "hand", "poison", "parry"]
+SMOKE describe engineer: Lobs a turret to the aim point (up to 420): it takes the rounds from your magazine and shoots enemies. Cooldown 10 s. | Engineer | (0.95, 0.8, 0.25, 1.0)
+SMOKE   perk split fits=false open0=false open1=false name='Split' d0='The skill fires 3 projectiles' d1='+3 projectiles, +20% damage.'
+SMOKE   perk wounds fits=false open0=false open1=false name='Grievous Wounds' d0='Skill hits slow the target by ' d1='Skill hits slow the target by '
+SMOKE   perk poison fits=false open0=false open1=false name='Poison Shell' d0='Skill damage lands 5 s later, ' d1='+2 s delay, +50% damage.'
+SMOKE   perk heavy fits=false open0=false open1=false name='Heavy Shell' d0='+1 s skill cooldown, +20% dama' d1='+1 s cooldown, +20% damage, +0'
+SMOKE   perk parry fits=false open0=false open1=false name='Parry' d0='Every 4 s your next strike ref' d1='Reflected projectiles deal +30'
+SMOKE   perk hand fits=true open0=true open1=true name='Extra Hand' d0='+1 skill charge.' d1='+1 skill charge.'
+SMOKE   perk vandal fits=false open0=false open1=false name='Vandalism' d0='The strike knocks enemies far ' d1='The strike knocks enemies far '
+SMOKE   perk element fits=true open0=true open1=false name='Element' d0='The skill gets an element of y' d1='The skill gets an element of y'
+SMOKE   perk trophies fits=false open0=false open1=false name='Trophies' d0='A kill with the skill gives 1 ' d1='+0.05% skill damage per kill.'
+SMOKE   perk smoke fits=false open0=false open1=false name='Smoke Grenade' d0='The grenade turns into smoke o' d1='The smoke lasts 1 s longer.'
+SMOKE   perk precise fits=false open0=false open1=false name='Precise Shot' d0='The blessed shot homes in, fli' d1='+20% range, +10% damage.'
+SMOKE   perk economy fits=true open0=true open1=true name='Economy' d0='The turret gets 40% more round' d1='+40% rounds.'
+SMOKE   perk scientist fits=true open0=true open1=false name='Mad Scientist' d0='The turret gets a random Syner' d1='The turret gets a random Syner'
+SMOKE   perk ready fits=false open0=false open1=false name='Readiness' d0='Dealing damage with the skill ' d1='Dealing damage with the skill '
+SMOKE offer engineer: ["economy", "scientist", "hand"] ["element", "hand", "scientist", "economy"]
+SMOKE get_hero(unknown) keys: Pioneer
+SMOKE chaos=false L1 picks=["runner", "runner", "runner", "runner", "runner", "runner", "gunner", "runner", "runner", "runner", "runner", "runner"] packs=["[\"gunner\", \"gunner\", \"runner\", \"runner\"]:0:0:0", "[\"runner\", \"gunner\", \"gunner\", \"gunner\", \"runner\"]:0:0:0", "[\"runner\", \"runner\", \"gunner\", \"runner\", \"gunner\"]:0:0:0", "[\"runner\", \"gunner\", \"gunner\", \"gunner\"]:0:0:0"]
+SMOKE chaos=false L2 picks=["bomber", "runner", "brute", "bomber", "runner", "brute", "gunner", "runner", "gunner", "gunner", "runner", "bomber"] packs=["[\"runner\", \"runner\", \"runner\", \"runner\", \"bomber\"]:0:0:0", "[\"runner\", \"bomber\", \"runner\", \"runner\", \"bomber\"]:0:0:0", "[\"bomber\", \"bomber\", \"bomber\", \"runner\"]:0:0:0", "[\"runner\", \"runner\", \"runner\", \"runner\", \"runner\"]:0:0:0"]
+SMOKE chaos=false L3 picks=["runner", "brute", "runner", "spreader", "brute", "spreader", "gunner", "brute", "runner", "gunner", "gunner", "gunner"] packs=["[\"runner\", \"runner\", \"runner\", \"runner\"]:0:0:0", "[\"gunner\", \"gunner\", \"gunner\", \"gunner\"]:1:1:0", "[\"gunner\", \"bomber\", \"gunner\", \"bomber\"]:2:2:0", "[\"runner\", \"gunner\", \"runner\", \"runner\"]:2:2:0"]
+SMOKE chaos=false L4 picks=["charger", "spreader", "spreader", "runner", "runner", "brute", "runner", "brute", "brute", "spreader", "runner", "gunner"] packs=["[\"brute\", \"brute\", \"runner\", \"brute\"]:0:0:0", "[\"runner\", \"runner\", \"runner\", \"runner\", \"runner\"]:1:1:0", "[\"spreader\", \"spreader\", \"spreader\", \"spreader\", \"bomber\", \"bomber\", \"bomber\"]:0:0:0", "[\"gunner\", \"gunner\", \"gunner\", \"gunner\"]:2:2:0"]
+SMOKE chaos=false L6 picks=["spreader", "bomber", "gunner", "bomber", "mortar", "gunner", "gunner", "brute", "runner", "brute", "gunner", "brute"] packs=["[\"runner\", \"runner\", \"runner\", \"runner\", \"runner\", \"runner\"]:0:0:0", "[\"gunner\", \"gunner\", \"gunner\", \"gunner\", \"gunner\"]:1:1:0", "[\"runner\", \"runner\", \"brute\", \"brute\"]:1:1:0", "[\"mortar\", \"mortar\", \"mortar\", \"mortar\"]:0:0:0"]
+SMOKE chaos=false L8 picks=["gunner", "runner", "brute", "runner", "gunner", "runner", "mortar", "runner", "gunner", "spreader", "spreader", "summoner"] packs=["[\"mortar\", \"gunner\", \"mortar\", \"gunner\", \"mortar\"]:1:1:0", "[\"mortar\", \"brute\", \"mortar\", \"brute\", \"brute\", \"mortar\"]:0:0:0", "[\"brute\", \"brute\", \"runner\", \"brute\", \"brute\", \"brute\"]:2:2:0", "[\"runner\", \"runner\", \"runner\", \"runner\"]:1:1:0"]
+SMOKE chaos=false L12 picks=["runner", "charger", "runner", "mortar", "charger", "gunner", "mortar", "charger", "runner", "gunner", "charger", "charger"] packs=["[\"brute\", \"brute\", \"brute\", \"brute\", \"brute\"]:1:2:0", "[\"gunner\", \"gunner\", \"bomber\", \"bomber\", \"bomber\", \"gunner\", \"gunner\", \"gunner\", \"bomber\"]:2:2:0", "[\"runner\", \"brute\", \"brute\", \"runner\", \"runner\"]:1:2:0", "[\"spreader\", \"runner\", \"runner\", \"spreader\", \"runner\", \"spreader\"]:2:2:0"]
+SMOKE chaos=false L30 picks=["bomber", "bomber", "runner", "spreader", "gunner", "runner", "charger", "bomber", "mortar", "spreader", "runner", "spreader"] packs=["[\"spreader\", \"spreader\", \"gunner\", \"gunner\", \"spreader\"]:2:3:0", "[\"gunner\", \"gunner\", \"runner\", \"gunner\"]:2:3:0", "[\"runner\", \"runner\", \"brute\", \"brute\", \"runner\"]:1:2:0", "[\"brute\", \"charger\", \"brute\", \"charger\", \"brute\", \"charger\", \"brute\"]:2:3:0"]
+SMOKE chaos=true L1 picks=["runner", "spreader", "bomber", "runner", "brute", "bomber", "mortar", "spreader", "bomber", "spreader", "bomber", "runner"] packs=["[\"spreader\", \"spreader\", \"spreader\", \"runner\"]:1:1:0", "[\"gunner\", \"gunner\", \"gunner\", \"gunner\", \"gunner\", \"gunner\"]:2:2:0", "[\"spreader\", \"spreader\", \"spreader\", \"spreader\", \"charger\"]:2:2:0", "[\"summoner\", \"summoner\", \"spreader\", \"spreader\"]:1:1:0"]
+SMOKE chaos=true L2 picks=["summoner", "gunner", "mortar", "summoner", "runner", "charger", "spreader", "gunner", "spreader", "bomber", "gunner", "mortar"] packs=["[]:3:0:1", "[\"runner\", \"runner\", \"runner\", \"brute\", \"runner\"]:2:2:0", "[]:3:0:1", "[\"gunner\", \"gunner\", \"runner\", \"runner\", \"gunner\"]:1:1:0"]
+SMOKE chaos=true L3 picks=["gunner", "charger", "brute", "summoner", "charger", "summoner", "brute", "spreader", "gunner", "bomber", "brute", "brute"] packs=["[\"brute\", \"brute\", \"brute\", \"brute\"]:0:0:0", "[\"summoner\", \"bomber\", \"summoner\", \"summoner\"]:2:2:0", "[]:3:0:1", "[\"runner\", \"runner\", \"runner\", \"runner\", \"runner\"]:2:2:0"]
+SMOKE chaos=true L4 picks=["summoner", "charger", "mortar", "runner", "gunner", "spreader", "gunner", "bomber", "bomber", "mortar", "gunner", "brute"] packs=["[\"runner\", \"runner\", \"spreader\", \"spreader\"]:0:0:0", "[\"brute\", \"gunner\", \"brute\", \"brute\"]:1:1:0", "[\"mortar\", \"mortar\", \"mortar\", \"brute\"]:1:1:0", "[\"brute\", \"gunner\", \"gunner\", \"brute\", \"brute\", \"brute\", \"gunner\"]:2:2:0"]
+SMOKE chaos=true L6 picks=["charger", "charger", "bomber", "spreader", "summoner", "brute", "brute", "bomber", "runner", "bomber", "brute", "bomber"] packs=["[]:3:0:1", "[]:3:0:1", "[\"brute\", \"brute\", \"brute\", \"brute\", \"brute\"]:1:1:0", "[]:3:0:1"]
+SMOKE chaos=true L8 picks=["brute", "gunner", "bomber", "gunner", "brute", "gunner", "summoner", "gunner", "brute", "charger", "charger", "summoner"] packs=["[\"summoner\", \"summoner\", \"summoner\", \"brute\", \"brute\"]:1:1:0", "[]:3:0:1", "[\"mortar\", \"runner\", \"runner\", \"mortar\", \"mortar\", \"mortar\", \"mortar\", \"runner\"]:2:2:0", "[]:3:0:1"]
+SMOKE chaos=true L12 picks=["gunner", "mortar", "gunner", "summoner", "mortar", "brute", "summoner", "mortar", "runner", "brute", "mortar", "mortar"] packs=["[]:3:0:1", "[\"gunner\", \"gunner\", \"gunner\", \"gunner\", \"gunner\", \"gunner\", \"bomber\"]:2:2:0", "[]:3:0:1", "[\"summoner\", \"summoner\", \"summoner\", \"summoner\", \"summoner\"]:1:2:0"]
+SMOKE chaos=true L30 picks=["spreader", "spreader", "gunner", "charger", "brute", "runner", "mortar", "spreader", "summoner", "charger", "runner", "charger"] packs=["[\"brute\", \"brute\", \"charger\", \"brute\", \"brute\"]:1:2:0", "[\"gunner\", \"gunner\", \"gunner\", \"runner\", \"gunner\", \"gunner\", \"gunner\", \"gunner\", \"gunner\", \"gunner\"]:0:0:0", "[]:3:0:1", "[\"brute\", \"bomber\", \"brute\", \"bomber\", \"brute\", \"bomber\", \"brute\", \"bomber\", \"brute\", \"brute\"]:2:3:0"]
+SMOKE DONE

@@ -1,0 +1,63 @@
+SMOKE skill:pioneer+ mult=1.0 [ch=1 cd=0.0 gap=0.0 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=0 cd=6.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=-1 cd=6.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] dealt=30.0 proj=0 turrets=0 ammo=12 reload=0.0 coins=120.0
+SMOKE skill:pioneer+split mult=1.2 [ch=1 cd=0.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=0 cd=6.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=-1 cd=6.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] dealt=48.0 proj=0 turrets=0 ammo=29 reload=0.0 coins=120.0
+SMOKE skill:pioneer+wounds mult=1.0 [ch=1 cd=0.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=0 cd=6.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=-1 cd=6.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] dealt=30.0 proj=0 turrets=0 ammo=12 reload=0.0 coins=120.0
+SMOKE skill:pioneer+poison mult=1.5 [ch=1 cd=0.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=0 cd=6.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=-1 cd=6.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] dealt=0.0 proj=0 turrets=0 ammo=4 reload=0.0 coins=120.0
+SMOKE skill:pioneer+heavy mult=1.2 [ch=1 cd=0.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=0 cd=7.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=-1 cd=7.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] dealt=36.0 proj=0 turrets=0 ammo=14 reload=0.0 coins=120.0
+SMOKE skill:pioneer+hand mult=1.0 [ch=2 cd=0.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=1 cd=6.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=0 cd=6.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] dealt=30.0 proj=0 turrets=0 ammo=12 reload=0.0 coins=120.0
+SMOKE skill:pioneer+element mult=1.0 [ch=1 cd=0.0 gap=0.3 el=0 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=0 cd=6.0 gap=0.3 el=0 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=-1 cd=6.0 gap=0.3 el=0 bl=false sl=0.0 pr=0.0 tb=0.0] dealt=30.0 proj=0 turrets=0 ammo=16 reload=0.0 coins=120.0
+SMOKE skill:pioneer+smoke mult=1.0 [ch=1 cd=0.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=0 cd=6.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=-1 cd=6.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] dealt=108.0 proj=0 turrets=0 ammo=14 reload=0.0 coins=120.0
+SMOKE skill:sheriff+ mult=1.0 [ch=1 cd=0.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=0 cd=6.0 gap=0.3 el=-1 bl=true sl=0.0 pr=0.0 tb=0.0] -> [ch=-1 cd=6.0 gap=0.3 el=-1 bl=true sl=0.0 pr=0.0 tb=0.0] dealt=142.5 proj=0 turrets=0 ammo=30 reload=0.0 coins=120.0
+SMOKE skill:sheriff+split mult=1.2 [ch=1 cd=0.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=0 cd=6.0 gap=0.3 el=-1 bl=true sl=0.0 pr=0.0 tb=0.0] -> [ch=-1 cd=6.0 gap=0.3 el=-1 bl=true sl=0.0 pr=0.0 tb=0.0] dealt=33.0 proj=0 turrets=0 ammo=13 reload=0.0 coins=120.0
+SMOKE skill:sheriff+wounds mult=1.0 [ch=1 cd=0.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=0 cd=6.0 gap=0.3 el=-1 bl=true sl=0.0 pr=0.0 tb=0.0] -> [ch=-1 cd=6.0 gap=0.3 el=-1 bl=true sl=0.0 pr=0.0 tb=0.0] dealt=0.0 proj=0 turrets=0 ammo=12 reload=0.0 coins=120.0
+SMOKE skill:sheriff+poison mult=1.5 [ch=1 cd=0.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=0 cd=6.0 gap=0.3 el=-1 bl=true sl=0.0 pr=0.0 tb=0.0] -> [ch=-1 cd=6.0 gap=0.3 el=-1 bl=true sl=0.0 pr=0.0 tb=0.0] dealt=0.0 proj=0 turrets=0 ammo=13 reload=0.0 coins=120.0
+SMOKE skill:sheriff+heavy mult=1.2 [ch=1 cd=0.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=0 cd=7.0 gap=0.3 el=-1 bl=true sl=0.0 pr=0.0 tb=0.0] -> [ch=-1 cd=7.0 gap=0.3 el=-1 bl=true sl=0.0 pr=0.0 tb=0.0] dealt=0.0 proj=0 turrets=0 ammo=12 reload=0.0 coins=120.0
+SMOKE skill:sheriff+hand mult=1.0 [ch=2 cd=0.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=1 cd=6.0 gap=0.3 el=-1 bl=true sl=0.0 pr=0.0 tb=0.0] -> [ch=0 cd=6.0 gap=0.3 el=-1 bl=true sl=0.0 pr=0.0 tb=0.0] dealt=0.0 proj=0 turrets=0 ammo=13 reload=0.0 coins=120.0
+SMOKE skill:sheriff+element mult=1.0 [ch=1 cd=0.0 gap=0.3 el=0 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=0 cd=6.0 gap=0.3 el=0 bl=true sl=0.0 pr=0.0 tb=0.0] -> [ch=-1 cd=6.0 gap=0.3 el=0 bl=true sl=0.0 pr=0.0 tb=0.0] dealt=0.0 proj=0 turrets=0 ammo=14 reload=0.0 coins=120.0
+SMOKE skill:sheriff+precise mult=1.1 [ch=1 cd=0.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=0 cd=6.0 gap=0.3 el=-1 bl=true sl=0.0 pr=0.0 tb=0.0] -> [ch=-1 cd=6.0 gap=0.3 el=-1 bl=true sl=0.0 pr=0.0 tb=0.0] dealt=0.0 proj=0 turrets=0 ammo=13 reload=0.0 coins=120.0
+SMOKE skill:sheriff+ready mult=1.0 [ch=1 cd=0.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=0 cd=6.0 gap=0.3 el=-1 bl=true sl=0.0 pr=0.0 tb=0.0] -> [ch=-1 cd=6.0 gap=0.3 el=-1 bl=true sl=0.0 pr=0.0 tb=0.0] dealt=0.0 proj=0 turrets=0 ammo=13 reload=0.0 coins=120.0
+SMOKE skill:assassin+ mult=1.0 [ch=1 cd=0.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=0 cd=0.7 gap=0.3 el=-1 bl=false sl=0.25 pr=0.0 tb=0.0] -> [ch=-1 cd=0.7 gap=0.3 el=-1 bl=false sl=0.25 pr=0.0 tb=0.0] dealt=90.0 proj=0 turrets=0 ammo=12 reload=0.0 coins=120.0
+SMOKE skill:assassin+wounds mult=1.0 [ch=1 cd=0.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=0 cd=0.7 gap=0.3 el=-1 bl=false sl=0.25 pr=0.0 tb=0.0] -> [ch=-1 cd=0.7 gap=0.3 el=-1 bl=false sl=0.25 pr=0.0 tb=0.0] dealt=90.0 proj=0 turrets=0 ammo=13 reload=0.0 coins=120.0
+SMOKE skill:assassin+poison mult=1.5 [ch=1 cd=0.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=0 cd=0.7 gap=0.3 el=-1 bl=false sl=0.25 pr=0.0 tb=0.0] -> [ch=-1 cd=0.7 gap=0.3 el=-1 bl=false sl=0.25 pr=0.0 tb=0.0] dealt=0.0 proj=0 turrets=0 ammo=4 reload=0.0 coins=120.0
+SMOKE skill:assassin+parry mult=1.0 [ch=1 cd=0.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=0 cd=0.7 gap=0.3 el=-1 bl=false sl=0.25 pr=0.0 tb=0.0] -> [ch=-1 cd=0.7 gap=0.3 el=-1 bl=false sl=0.25 pr=0.0 tb=0.0] dealt=90.0 proj=0 turrets=0 ammo=13 reload=0.0 coins=120.0
+SMOKE skill:assassin+hand mult=1.0 [ch=2 cd=0.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=1 cd=0.7 gap=0.3 el=-1 bl=false sl=0.25 pr=0.0 tb=0.0] -> [ch=0 cd=0.7 gap=0.3 el=-1 bl=false sl=0.25 pr=0.0 tb=0.0] dealt=90.0 proj=0 turrets=0 ammo=11 reload=0.0 coins=120.0
+SMOKE skill:assassin+vandal mult=0.5 [ch=1 cd=0.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=0 cd=0.7 gap=0.3 el=-1 bl=false sl=0.25 pr=0.0 tb=0.0] -> [ch=-1 cd=0.7 gap=0.3 el=-1 bl=false sl=0.25 pr=0.0 tb=0.0] dealt=45.0 proj=0 turrets=0 ammo=12 reload=0.0 coins=120.0
+SMOKE skill:assassin+element mult=1.0 [ch=1 cd=0.0 gap=0.3 el=0 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=0 cd=0.7 gap=0.3 el=0 bl=false sl=0.25 pr=0.0 tb=0.0] -> [ch=-1 cd=0.7 gap=0.3 el=0 bl=false sl=0.25 pr=0.0 tb=0.0] dealt=90.0 proj=0 turrets=0 ammo=12 reload=0.0 coins=120.0
+SMOKE skill:assassin+trophies mult=1.0 [ch=1 cd=0.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=0 cd=0.7 gap=0.3 el=-1 bl=false sl=0.25 pr=0.0 tb=0.0] -> [ch=-1 cd=0.7 gap=0.3 el=-1 bl=false sl=0.25 pr=0.0 tb=0.0] dealt=90.0 proj=0 turrets=0 ammo=20 reload=0.0 coins=120.0
+SMOKE skill:assassin+ready mult=1.0 [ch=1 cd=0.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=0 cd=0.7 gap=0.3 el=-1 bl=false sl=0.25 pr=0.0 tb=0.0] -> [ch=-1 cd=0.7 gap=0.3 el=-1 bl=false sl=0.25 pr=0.0 tb=0.0] dealt=90.0 proj=0 turrets=0 ammo=13 reload=0.0 coins=120.0
+SMOKE skill:engineer+ mult=1.0 [ch=1 cd=0.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=0 cd=10.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=0 cd=10.0 gap=0.0 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] dealt=0.0 proj=0 turrets=1 ammo=0 reload=0.54 coins=120.0
+SMOKE skill:engineer+hand mult=1.0 [ch=2 cd=0.0 gap=0.0 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=1 cd=10.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=1 cd=10.0 gap=0.0 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] dealt=0.0 proj=0 turrets=1 ammo=0 reload=0.593 coins=120.0
+SMOKE skill:engineer+element mult=1.0 [ch=1 cd=0.0 gap=0.0 el=0 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=0 cd=10.0 gap=0.3 el=0 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=0 cd=10.0 gap=0.0 el=0 bl=false sl=0.0 pr=0.0 tb=0.0] dealt=0.0 proj=0 turrets=1 ammo=0 reload=0.516 coins=120.0
+SMOKE skill:engineer+economy mult=1.0 [ch=1 cd=0.0 gap=0.0 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=0 cd=10.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=0 cd=10.0 gap=0.0 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] dealt=0.0 proj=0 turrets=1 ammo=0 reload=0.547 coins=120.0
+SMOKE skill:engineer+scientist mult=1.0 [ch=1 cd=0.0 gap=0.0 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=0 cd=10.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] -> [ch=-1 cd=10.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0] dealt=0.0 proj=0 turrets=1 ammo=14 reload=0.0 coins=120.0
+SMOKE turret:full mag spec: ammo=4 gun=Cluster Pistol " rar=3 | player gun ammo=0 reload=0.551 burst=0
+SMOKE turret:empty mag spec: empty | player gun ammo=0 reload=0.0 burst=0
+SMOKE turret:reloading spec: ammo=13 gun=Sawn-Off Pistol  rar=3 | player gun ammo=0 reload=0.586 burst=0
+SMOKE turret:scientist spec: ammo=17 gun="Granny's Surpri rar=4 | player gun ammo=31 reload=0.0 burst=0
+SMOKE turret:economy+hand spec: ammo=17 gun=Mean Pistol "Mot rar=3 | player gun ammo=0 reload=0.514 burst=0
+SMOKE bless: blessed_after_fire=false proj 0->1 dealt=520.85 ch=0 cd=6.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0
+SMOKE bless:split blessed_after_fire=false proj 0->3 dealt=781.91 ch=0 cd=6.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0
+SMOKE bless:precise blessed_after_fire=false proj 0->6 dealt=291.08 ch=0 cd=6.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0
+SMOKE bless:poison blessed_after_fire=false proj 0->1 dealt=320.19 ch=0 cd=6.0 gap=0.3 el=-1 bl=false sl=0.0 pr=0.0 tb=0.0
+SMOKE epic:ar mag=26 ["14/0.0/0", "2/0.0/0", "0/0.47/0", "16/0.0/0"] reserve=174 dealt=3597.96 bloom=0.0 kick=0.0 shots=18 cd=0.243
+SMOKE epic:cannon mag=4 ["2/0.0/0", "2/0.0/0", "0/0.0/0", "0/0.0/0"] reserve=200 dealt=9854.19 bloom=0.0 kick=2200.0 shots=2 cd=1.017
+SMOKE epic:crossbow mag=21 ["17/0.0/0", "14/0.0/0", "10/0.0/1", "7/0.0/0"] reserve=200 dealt=2840.87 bloom=0.0 kick=0.0 shots=14 cd=0.331
+SMOKE epic:launcher mag=6 ["4/0.0/0", "2/0.0/0", "0/0.0/0", "0/0.5/0"] reserve=200 dealt=2268.24 bloom=0.0 kick=0.0 shots=6 cd=-0.009
+SMOKE epic:lmg mag=87 ["66/0.0/0", "45/0.0/0", "24/0.0/0", "3/0.0/0"] reserve=200 dealt=8599.46 bloom=0.0 kick=0.0 shots=84 cd=0.03
+SMOKE epic:mortar mag=7 ["5/0.0/1", "4/0.0/1", "2/0.0/1", "1/0.0/1"] reserve=200 dealt=0.0 bloom=0.0 kick=0.0 shots=6 cd=0.559
+SMOKE epic:pistol mag=11 ["6/0.0/0", "1/0.0/0", "8/0.0/0", "3/0.0/0"] reserve=189 dealt=5902.37 bloom=0.0 kick=0.0 shots=19 cd=0.184
+SMOKE epic:revolver mag=6 ["3/0.0/0", "1/0.0/0", "0/0.78/0", "4/0.0/0"] reserve=194 dealt=5359.75 bloom=0.0 kick=0.0 shots=8 cd=0.512
+SMOKE epic:rocket mag=2 ["0/0.0/7", "0/1.96/0", "0/0.21/0", "0/0.0/8"] reserve=198 dealt=18690.43 bloom=0.0 kick=0.0 shots=4 cd=1.22
+SMOKE epic:shotgun mag=6 ["0/0.0/0", "0/1.54/0", "0/0.0/1", "0/0.0/0"] reserve=194 dealt=8885.56 bloom=0.0 kick=0.0 shots=2 cd=0.814
+SMOKE epic:smg mag=8 ["0/0.14/0", "0/0.28/0", "0/0.43/0", "0/0.56/0"] reserve=176 dealt=7857.06 bloom=0.0 kick=0.0 shots=32 cd=-0.003
+SMOKE epic:sniper mag=8 ["4/0.0/0", "0/0.0/0", "0/1.85/0", "0/0.1/0"] reserve=200 dealt=1426.61 bloom=0.0 kick=0.0 shots=2 cd=-0.012
+SMOKE legendary#0 mag=66 ["54/0.0/0", "42/0.0/0", "32/0.0/0", "21/0.0/0"] reserve=200 dealt=7167.27 bloom=0.0 kick=0.0 shots=45 cd=0.152
+SMOKE legendary#1 mag=24 ["11/0.0/1", "0/1.65/0", "23/0.0/0", "11/0.0/0"] reserve=200 dealt=3187.45 bloom=0.0 kick=0.0 shots=37 cd=0.029
+SMOKE legendary#2 mag=12 ["5/0.0/23", "0/0.32/14", "7/0.0/15", "0/0.0/20"] reserve=188 dealt=10747.63 bloom=0.324 kick=0.0 shots=24 cd=0.268
+SMOKE legendary#3 mag=6 ["4/0.0/0", "2/0.0/1", "0/0.0/4", "0/0.02/0"] reserve=200 dealt=23490.94 bloom=0.0 kick=0.0 shots=6 cd=-0.002
+SMOKE absurd#0 mag=2 ["0/1.02/0", "0/2.04/54", "0/0.29/0", "0/1.32/0"] reserve=196 dealt=0.0 bloom=0.0 kick=0.0 shots=3 cd=-0.01
+SMOKE absurd#1 mag=192 ["173/0.0/0", "154/0.0/1", "136/0.0/0", "117/0.0/0"] reserve=200 dealt=14961.44 bloom=0.877 kick=0.0 shots=75 cd=0.063
+SMOKE absurd#2 mag=32 ["22/0.0/0", "13/0.0/0", "4/0.0/0", "28/0.0/0"] reserve=168 dealt=15564.44 bloom=0.0 kick=0.0 shots=36 cd=0.134
+SMOKE reload:manual ammo=12/12 reserve=191 reload_t=0.0
+SMOKE reload:dry reload_t=0.0 dry_cd>0=false
+SMOKE reload:crossbow ["15.47/0.2/0", "13.8/0.87/0", "12.14/0.53/0", "10.47/0.2/0", "8.8/0.87/0", "7.14/0.53/0", "5.47/0.2/0", "3.8/0.87/0", "2.14/0.53/0", "0.47/0.2/0"] ammo=21/21 bonus=0.0
+SMOKE DONE

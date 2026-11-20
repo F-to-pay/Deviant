@@ -1,0 +1,48 @@
+SMOKE pause opened | current=pause mode=pause visible=true paused=false
+SMOKE esc from settings | current=pause mode=pause visible=true paused=false
+SMOKE esc from controls | current=settings mode=pause visible=true paused=false
+SMOKE esc from release | current=controls mode=pause visible=true paused=false
+SMOKE esc from codex | current=pause mode=pause visible=true paused=false
+SMOKE esc from tree | current=pause mode=pause visible=true paused=false
+SMOKE settings widgets: sliders=8 checks=6
+SMOKE slider0 -> master=0.35
+SMOKE check0 -> music_muted=true
+SMOKE refresh on show: slider0=0.9 check0=true
+SMOKE card button: On the right
+SMOKE card after press: On the left gun_card=left
+SMOKE first bind button: W/Up
+SMOKE listening step -> captures: Press 6
+SMOKE after key J: J binds_set=true current=controls
+SMOKE after reset: binds='' first bind button=W/Up
+SMOKE touch opt: Always setting=on
+SMOKE touch opt cycled: Auto (when playing with fingers) setting=auto
+SMOKE Esc key while listening (becomes the binding) | current=controls mode=pause visible=true paused=false
+SMOKE after Esc binding: Escape current=controls
+SMOKE release checks=12
+SMOKE release on: {"pistol":true}
+SMOKE release off: ''
+SMOKE restart btn: Restart run
+SMOKE restart armed: Restart? Click again
+SMOKE restart after reopen: Restart run
+SMOKE skill tree btn: Skill tree
+SMOKE codex pages=16
+SMOKE codex page 0 Character len=2028 pressed=true
+SMOKE codex page 1 Heroes len=4004 pressed=true
+SMOKE codex page 2 Skill tree len=1877 pressed=true
+SMOKE codex page 3 Damage and elements len=1445 pressed=true
+SMOKE codex page 4 Zones and loot len=1149 pressed=true
+SMOKE codex page 5 Towns and coins len=2995 pressed=true
+SMOKE mods -> how to make mods | current=codex mode=pause visible=true paused=false
+SMOKE codex text after: How to make mods||Everything on these pa
+SMOKE custom sliders=2
+SMOKE custom slider0 -> profile.custom hp/dmg: 0.5/1.0
+SMOKE custom reset -> hp/dmg: 1.0/1.0
+SMOKE esc from custom (town) | current=custom mode=pause visible=false paused=false
+SMOKE heroes opened | current=heroes mode=town visible=true paused=true
+SMOKE esc from heroes (town) | current=heroes mode=pause visible=false paused=false
+SMOKE after language ru | current=codex mode=pause visible=true paused=false
+SMOKE codex still has text after rebuild: true PanelContainer
+SMOKE pause labels ru: ["", ": 123     1.00", "WASD  ,   ,   ", "Space/Shift  :  4 ,  0.5 ,   "]
+SMOKE lang button: :
+SMOKE after language en | current=main mode=pause visible=true paused=false
+SMOKE DONE

@@ -27,7 +27,7 @@ func _initialize() -> void:
 	while not (M.get("menu") != null and M.menu.visible) and guard < 3000:
 		await process_frame
 		guard += 1
-	print("SMOKE menu after frames: ", guard)
+	print("SMOKE menu ready: ", guard < 3000)
 	M.start_game({"seed": "123"})
 	for i in 5:
 		await process_frame
