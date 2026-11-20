@@ -201,6 +201,37 @@ func copy() -> Gun:
 	return c
 
 
+## Все поля пушки (статы, перки, имя, патроны) словарём — для сейва забега. Не сид генератора: генератор меняется, а сохранённая
+## пушка должна остаться той же. Кэши и геттер имени (`gun_name`: он строится из name_parts / _fixed_name) не пишем.
+func to_dict() -> Dictionary:
+	var d := {}
+	for pr in get_property_list():
+		if (int(pr["usage"]) & PROPERTY_USAGE_SCRIPT_VARIABLE) == 0:
+			continue
+		var n := str(pr["name"])
+		if n == "gun_name" or n.begins_with("_fx"):
+			continue
+		var v: Variant = get(n)
+		d[n] = v.duplicate(true) if (v is Array or v is Dictionary) else v
+	return d
+
+
+## Пушка из словаря `to_dict`. Неизвестные поля (убранные в новой версии) пропускаются, недостающие остаются по умолчанию.
+static func from_dict(d: Dictionary) -> Gun:
+	var g := Gun.new()
+	var valid := {}
+	for pr in g.get_property_list():
+		if (int(pr["usage"]) & PROPERTY_USAGE_SCRIPT_VARIABLE) != 0:
+			valid[str(pr["name"])] = true
+	for k in d:
+		var n := str(k)
+		if not valid.has(n) or n == "gun_name" or n.begins_with("_fx"):
+			continue
+		var v: Variant = d[k]
+		g.set(n, v.duplicate(true) if (v is Array or v is Dictionary) else v)
+	return g
+
+
 func eff_range() -> float:
 	if no_falloff:
 		return NO_FALLOFF_RANGE

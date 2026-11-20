@@ -7,7 +7,7 @@ SMOKE epic:mortar rar=3 pellets=1 dealt=14574.07 player_lost=0.0 proj=[9, 9, 0, 
 SMOKE epic:pistol rar=3 pellets=1 dealt=1625.47 player_lost=187.38 proj=[1, 0, 0, 0] left=0
 SMOKE epic:revolver rar=3 pellets=1 dealt=6412.38 player_lost=317.51 proj=[1, 0, 0, 0] left=0
 SMOKE epic:rocket rar=3 pellets=6 dealt=41546.33 player_lost=113.17 proj=[13, 0, 0, 0] left=0
-SMOKE epic:shotgun rar=3 pellets=2 dealt=27226.33 player_lost=0.0 proj=[1, 0, 0, 0] left=0
+SMOKE epic:shotgun rar=3 pellets=22 dealt=36320.1 player_lost=123.56 proj=[22, 0, 0, 0] left=0
 SMOKE epic:smg rar=3 pellets=13 dealt=1524.32 player_lost=6.72 proj=[18, 1, 0, 0] left=0
 SMOKE epic:sniper rar=3 pellets=2 dealt=8244.0 player_lost=0.0 proj=[0, 0, 0, 0] left=0
 SMOKE legendary#0 rar=4 pellets=6 dealt=801.2 player_lost=15.43 proj=[0, 0, 0, 0] left=0
@@ -21,6 +21,6 @@ SMOKE legendary#7 rar=4 pellets=6 dealt=0.0 player_lost=16.73 proj=[0, 0, 0, 0] 
 SMOKE absurd#0 rar=5 pellets=54 dealt=2276.45 player_lost=0.0 proj=[9, 9, 0, 0] left=0
 SMOKE absurd#1 rar=5 pellets=1 dealt=2081.92 player_lost=0.0 proj=[1, 0, 0, 0] left=0
 SMOKE absurd#2 rar=5 pellets=1 dealt=1880.26 player_lost=0.0 proj=[2, 0, 0, 0] left=0
-SMOKE absurd#3 rar=5 pellets=16 dealt=303.4 player_lost=2.29 proj=[7, 0, 0, 0] left=0
+SMOKE absurd#3 rar=5 pellets=16 dealt=2354.22 player_lost=0.0 proj=[96, 31, 0, 0] left=0
 SMOKE absurd#4 rar=5 pellets=17 dealt=9792.46 player_lost=75.96 proj=[0, 0, 0, 0] left=0
 SMOKE DONE

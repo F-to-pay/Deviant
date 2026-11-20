@@ -371,6 +371,7 @@ SMOKE   VBoxContainer
 SMOKE     Label L:DEVIANT
 SMOKE     Label L:an endless diablo-like with absurd guns
 SMOKE     Control
+SMOKE     Button B:Continue: Zone 1  Pioneer  level 1
 SMOKE     Button B:New game
 SMOKE     Button B:Custom start
 SMOKE     Button B:Codex
@@ -3205,6 +3206,7 @@ SMOKE   VBoxContainer
 SMOKE     Label L:DEVIANT
 SMOKE     Label L:
 SMOKE     Control
+SMOKE     Button B::  1     1
 SMOKE     Button B:
 SMOKE     Button B:
 SMOKE     Button B:
@@ -3527,18 +3529,18 @@ SMOKE           Label L:
 SMOKE           PanelContainer
 SMOKE             VBoxContainer
 SMOKE               Label L: :  50%
-SMOKE               Button B: - -82  36 ( 72)
+SMOKE               Button B: - -11  36 ( 72)
 SMOKE           VBoxContainer
 SMOKE             Button B: -  -20  72
+SMOKE             Button B: - -82  72
 SMOKE             Button B:  -44  36
 SMOKE             Button B: -83  18
 SMOKE             Button B:  -37  18
-SMOKE             Button B: -53  18
-SMOKE             Button B: -59  18
-SMOKE             Button B:  &  -92  36
-SMOKE             Button B: &  -48  18
-SMOKE             Button B: -57  18
-SMOKE             Button B:  -55  36
+SMOKE             Button B:  -46  18
+SMOKE             Button B:  -59  72
+SMOKE             Button B:   -44  36
+SMOKE             Button B:  -77  36
+SMOKE             Button B:  -18  36
 SMOKE           Button B:   18
 SMOKE         VBoxContainer
 SMOKE           Label L:
@@ -3560,7 +3562,7 @@ SMOKE             Button B:+6   9  ( -84)
 SMOKE         Control
 SMOKE       Label L:
 SMOKE       Button B:
-SMOKE press shop #4   -37  18
+SMOKE press shop #4  -83  18
 SMOKE == ru:shop after press 4 current=shop mode=town
 SMOKE VBoxContainer
 SMOKE   PanelContainer
@@ -3574,17 +3576,17 @@ SMOKE           Label L:
 SMOKE           PanelContainer
 SMOKE             VBoxContainer
 SMOKE               Label L: :  50%
-SMOKE               Button B: - -82  36 ( 72)
+SMOKE               Button B: - -11  36 ( 72)
 SMOKE           VBoxContainer
 SMOKE             Button B: -  -20  72
+SMOKE             Button B: - -82  72
 SMOKE             Button B:  -44  36
-SMOKE             Button B: -83  18
-SMOKE             Button B: -53  18
-SMOKE             Button B: -59  18
-SMOKE             Button B:  &  -92  36
-SMOKE             Button B: &  -48  18
-SMOKE             Button B: -57  18
-SMOKE             Button B:  -55  36
+SMOKE             Button B:  -37  18
+SMOKE             Button B:  -46  18
+SMOKE             Button B:  -59  72
+SMOKE             Button B:   -44  36
+SMOKE             Button B:  -77  36
+SMOKE             Button B:  -18  36
 SMOKE           Button B:   18
 SMOKE         VBoxContainer
 SMOKE           Label L:
@@ -3599,13 +3601,13 @@ SMOKE               Button B:+5     -14 ()
 SMOKE               Button B:+18    -69 ()
 SMOKE               Button B:+18    &   -44 ()
 SMOKE               Button B:+9    -92 ()
-SMOKE               Button B:+5    -37 ()
+SMOKE               Button B:+5   -83 ()
 SMOKE           Label L:
 SMOKE           VBoxContainer
 SMOKE             Button B:+78 -  94  ( - &   )
 SMOKE             Button B:+6   9  ( -84)
 SMOKE         Control
-SMOKE       Label L::   -37
+SMOKE       Label L::  -83
 SMOKE       Button B:
 SMOKE == ru:tree_A current=tree_A mode=pause
 SMOKE CenterContainer
@@ -5571,7 +5573,7 @@ SMOKE               Button B:   -14 ()
 SMOKE               Button B:  -69 ()
 SMOKE               Button B:  &   -44 ()
 SMOKE               Button B:  -92 ()
-SMOKE               Button B:  -37 ()
+SMOKE               Button B: -83 ()
 SMOKE         Control
 SMOKE         VBoxContainer
 SMOKE           Label L:
@@ -5587,6 +5589,7 @@ SMOKE             Button B:   -10  18
 SMOKE             Button B:    -14  18
 SMOKE             Button B:   -69  36
 SMOKE             Button B:   -92  18
+SMOKE             Button B:  -83  18
 SMOKE       Label L:
 SMOKE       Button B:
 SMOKE press workshop #0  -53 ( 1)
@@ -5611,7 +5614,7 @@ SMOKE               Button B:   -14 ()
 SMOKE               Button B:  -69 ()
 SMOKE               Button B:  &   -44 ()
 SMOKE               Button B:  -92 ()
-SMOKE               Button B:  -37 ()
+SMOKE               Button B: -83 ()
 SMOKE         Control
 SMOKE         VBoxContainer
 SMOKE           Label L:
@@ -5626,7 +5629,6 @@ SMOKE             Button B:   -52  18
 SMOKE             Button B:    -14  9
 SMOKE             Button B:   -69  36
 SMOKE             Button B:   -92  18
-SMOKE             Button B:   -37  9
 SMOKE       Label L:
 SMOKE       Button B:
 SMOKE press workshop #1  - &    ( 2)
@@ -5651,7 +5653,7 @@ SMOKE               Button B:   -14 ()
 SMOKE               Button B:  -69 ()
 SMOKE               Button B:  &   -44 ()
 SMOKE               Button B:  -92 ()
-SMOKE               Button B:  -37 ()
+SMOKE               Button B: -83 ()
 SMOKE         Control
 SMOKE         VBoxContainer
 SMOKE           Label L:
@@ -5687,7 +5689,7 @@ SMOKE               Button B:   -14 ()
 SMOKE               Button B:  -69 ()
 SMOKE               Button B:  &   -44 ()
 SMOKE               Button B:  -92 ()
-SMOKE               Button B:  -37 ()
+SMOKE               Button B: -83 ()
 SMOKE         Control
 SMOKE         VBoxContainer
 SMOKE           Label L:
@@ -5702,7 +5704,7 @@ SMOKE             Button B:   -10  18
 SMOKE             Button B:   -52  18
 SMOKE             Button B:    -14  9
 SMOKE             Button B:   -92  18
-SMOKE             Button B:   -37  9
+SMOKE             Button B:  -83  9
 SMOKE       Label L:
 SMOKE       Button B:
 SMOKE press workshop #3   -10 ( 4)
@@ -5727,7 +5729,7 @@ SMOKE               Button B:   -14 ()
 SMOKE               Button B:  -69 ()
 SMOKE               Button B:  &   -44 ()
 SMOKE               Button B:  -92 ()
-SMOKE               Button B:  -37 ()
+SMOKE               Button B: -83 ()
 SMOKE         Control
 SMOKE         VBoxContainer
 SMOKE           Label L:
@@ -5742,7 +5744,6 @@ SMOKE             Button B:   -52  18
 SMOKE             Button B:    -14  18
 SMOKE             Button B:   -69  36
 SMOKE             Button B:   -92  18
-SMOKE             Button B:   -37  18
 SMOKE       Label L:
 SMOKE       Button B:
 SMOKE press workshop #4   -52 ()
@@ -5767,7 +5768,7 @@ SMOKE               Button B:   -14 ()
 SMOKE               Button B:  -69 ()
 SMOKE               Button B:  &   -44 ()
 SMOKE               Button B:  -92 ()
-SMOKE               Button B:  -37 ()
+SMOKE               Button B: -83 ()
 SMOKE         Control
 SMOKE         VBoxContainer
 SMOKE           Label L:
@@ -5783,6 +5784,7 @@ SMOKE             Button B:   -10  18
 SMOKE             Button B:    -14  18
 SMOKE             Button B:   -69  36
 SMOKE             Button B:   -92  18
+SMOKE             Button B:  -83  18
 SMOKE       Label L:
 SMOKE       Button B:
 SMOKE DONE

@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+### Run save
+- **Continue.** The run is saved at every checkpoint (start of a run, entrance to each zone and town) in `user://run.save`; the main menu gets a **Continue**
+  button. Resuming starts the location from its beginning (no mid-zone saves: enemies and loot are not stored). One slot; death erases it.
+- Everything about the run is stored: run parameters, XP and levels, skill tree, contracts, coins, all guns exactly (`Gun.to_dict`, not a seed), ammo, flasks, skill perks,
+  health and the random state before the location was generated, so the same map and the same town stock come back. The file is binary (numbers bit for bit), versioned and
+  written atomically; a broken or foreign file is ignored; a changed set of mods gives a warning.
+- Fixed: a seed did not fully repeat a run — the shotgun's slug chance used the global random generator instead of the run's. Guns generated from the same seed are now identical.
+
+### Data and structure
+- Enemies, heroes and hero perks are data (`data/enemies.json`, `heroes.json`, `hero_perks.json`); mods can add and change them. Behaviour (enemy `ai`, hero `skill`) stays in code.
+- Internal: `Game` split into `Settings` / `Profile` / `RunState` / `RunConfig` / `Balance` / `Save`; the menu into screens (`ui/screens/`); `Main` into `Loot` / `Interact` /
+  `Rewards` / `ZoneLoader` (+ `ZoneSource`); `Player` into `HeroSkill` / `Shooting`. Test suite: `tests/run_all.ps1` with golden fingerprints in `tests/golden/`.
+
 ## 0.2
 
 ### Common guns

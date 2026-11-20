@@ -65,21 +65,21 @@ func _initialize() -> void:
 	C.set("touch_fire", false)
 
 	# прицел: kbm (мышь), pad (правый стик, здесь не тронут), touch (правый экранный стик)
-	print("SMOKE aim kbm: ", C.call("aim_world", Vector2(100, 100)))
+	print("SMOKE aim kbm: ", rnd(C.call("aim_world", Vector2(100, 100))))
 	C.call("_set_mode", "pad")
 	await process_frame
-	print("SMOKE aim pad idle: ", C.call("aim_world", Vector2(100, 100)))
+	print("SMOKE aim pad idle: ", rnd(C.call("aim_world", Vector2(100, 100))))
 	C.call("_set_mode", "touch")
 	C.set("touch_aim", Vector2(0.5, 0))
 	await process_frame
-	print("SMOKE aim touch stick 0.5: ", C.call("aim_world", Vector2(100, 100)))
+	print("SMOKE aim touch stick 0.5: ", rnd(C.call("aim_world", Vector2(100, 100))))
 	C.set("touch_aim", Vector2(0, -1))
 	await process_frame
-	print("SMOKE aim touch stick up: ", C.call("aim_world", Vector2(100, 100)))
+	print("SMOKE aim touch stick up: ", rnd(C.call("aim_world", Vector2(100, 100))))
 	C.set("touch_aim", Vector2.ZERO)
 	C.set("touch_target", Vector2(777, 555))
 	await process_frame
-	print("SMOKE aim touch tap target: ", C.call("aim_world", Vector2(100, 100)))
+	print("SMOKE aim touch tap target: ", rnd(C.call("aim_world", Vector2(100, 100))))
 	C.set("touch_target", null)
 	C.set("skill_aim", Vector2(0.3, 0.4))
 	print("SMOKE skill_aim: ", C.get("skill_aim"))
@@ -105,6 +105,11 @@ func _initialize() -> void:
 	print("SMOKE mode switching by events: ", mode_log, " now=", C.get("mode"))
 	print("SMOKE DONE")
 	quit()
+
+
+## Округление до 0.1: прицел мышью зависит от размера окна, и в последних разрядах он плавает.
+func rnd(v: Vector2) -> Vector2:
+	return Vector2(snappedf(v.x, 0.1), snappedf(v.y, 0.1))
 
 
 func dump(tag: String) -> void:

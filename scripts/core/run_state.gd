@@ -45,6 +45,42 @@ func reset(rng: RandomNumberGenerator) -> void:
 	biome_offset = rng.randi_range(0, 10)
 
 
+## Состояние забега словарём (для сейва, `RunSave`). Лучшая пушка забега (best_gun) — тоже словарём.
+func to_dict() -> Dictionary:
+	var d := {}
+	for pr in get_property_list():
+		if (int(pr["usage"]) & PROPERTY_USAGE_SCRIPT_VARIABLE) == 0:
+			continue
+		var n := str(pr["name"])
+		var v: Variant = get(n)
+		if n == "best_gun":
+			d[n] = (v as Gun).to_dict() if v != null else null
+		elif v is Array or v is Dictionary:
+			d[n] = v.duplicate(true)
+		else:
+			d[n] = v
+	return d
+
+
+## Вернуть состояние из словаря `to_dict` (неизвестные поля пропускаются, недостающие остаются как после `reset`).
+func from_dict(d: Dictionary) -> void:
+	var valid := {}
+	for pr in get_property_list():
+		if (int(pr["usage"]) & PROPERTY_USAGE_SCRIPT_VARIABLE) != 0:
+			valid[str(pr["name"])] = true
+	for k in d:
+		var n := str(k)
+		if not valid.has(n):
+			continue
+		var v: Variant = d[k]
+		if n == "best_gun":
+			best_gun = Gun.from_dict(v) if v is Dictionary else null
+		elif v is Array or v is Dictionary:
+			set(n, v.duplicate(true))
+		else:
+			set(n, v)
+
+
 func add_coins(n: float) -> void:
 	coins = clampf(coins + n, 0.0, Balance.MONEY_MAX)
 

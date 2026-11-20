@@ -142,6 +142,7 @@ func _boss_dead(b: Enemy) -> void:
 
 
 func on_player_died() -> void:
+	RunSave.delete()   # рогалик: после смерти продолжать нечего
 	var rec: bool = Game.record_death()
 	main.hud.show_death(rec)
 	main.music.on_death()

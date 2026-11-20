@@ -75,7 +75,11 @@ and set touch controls to "Always".
 
 ## Menus and settings
 
-The game starts in the main menu: New game, Custom start, Codex, Settings, Mods, Quit, language switch.
+The game starts in the main menu: Continue (only when there is a saved run), New game, Custom start, Codex, Settings, Mods, Quit, language switch.
+**Saves.** The run is saved automatically at every checkpoint: the start of a run and the entrance to each zone and town. "Continue" resumes from
+the start of that location (enemies and loot on the map are not saved, so quitting does not let you re-roll a fight). One slot; dying erases it,
+a new run replaces it. The save keeps your guns exactly as they are, ammo, flasks, skill perks, skill tree, contracts and the seed state, so the
+same map and the same shop come back. If the set of enabled mods changed, you get a warning. File: `user://run.save` (`RunSave`).
 The background is a parade of random guns from the real generator (`ui/menu_bg.gd`); later it will be replaced by a demo with an AI player.
 
 **Custom start** (`RunConfig.DEFAULTS` / `Game.profile.custom`, the last choice is saved in `[custom]`):

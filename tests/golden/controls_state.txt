@@ -13,7 +13,7 @@ SMOKE release_fire (kbm): false
 SMOKE move_vector: (0.6, 0.8)
 SMOKE firing idle: false
 SMOKE firing touch_fire: true
-SMOKE aim kbm: (400.0001, -100.0)
+SMOKE aim kbm: (400.0, -100.0)
 SMOKE aim pad idle: (456.0, 100.0)
 SMOKE aim touch stick 0.5: (415.0, 100.0)
 SMOKE aim touch stick up: (100.0, -420.0)

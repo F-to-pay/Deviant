@@ -9,10 +9,10 @@ GDScript со статической типизацией. Пользовате�
 ```
 godot --headless --path . --quit          # загрузить проект: все ошибки разбора/компиляции скриптов вылезут в консоль
 godot --headless --path . --import        # после нового class_name (иначе «Identifier not declared»: кэш классов в .godot)
-powershell -ExecutionPolicy Bypass -File tests/run_all.ps1     # все 13 тестов за ~минуту (Godot: -Godot <путь> или переменная GODOT_BIN)
+powershell -ExecutionPolicy Bypass -File tests/run_all.ps1     # все 14 тестов за ~минуту (Godot: -Godot <путь> или переменная GODOT_BIN)
 ```
 Раннер подменяет `user://deviant.cfg` каноническим (язык en, отладчик модов включён) и возвращает ваш на место. Два вида тестов:
-- **assert** (`unit_core`, `skip_zone`, `zone_source`, `mod_data`) — сами печатают `SMOKE RESULT fails=0`;
+- **assert** (`unit_core`, `skip_zone`, `zone_source`, `mod_data`, `run_save`) — сами печатают `SMOKE RESULT fails=0`;
 - **golden** (`smoke`, `ui_screens`, `ui_actions`, `gen_fingerprint`, `proj_fingerprint`, `player_state`, `controls_state`,
   `console_commands`, `data_tables`) — печатают «отпечаток» поведения, раннер сравнивает его с `tests/golden/<имя>.txt`.
   **Рефакторинг без смены поведения обязан оставить эталоны как есть.** Если поведение изменилось намеренно — `run_all.ps1 -Update`
@@ -42,6 +42,7 @@ powershell -ExecutionPolicy Bypass -File tests/run_all.ps1     # все 13 те�
   - `Game.run` — параметры забега (словарь, ключи `RunConfig.DEFAULTS`); `RunConfig` — статические правила: этапы (`TOWN_EVERY`), рейтинг, `counts_for_records`, `seed_from`;
   - `Balance` — статические числа и кривые: опыт (`xp_need`), сложность (`enemy_hp_mult(level, hp_mult)`, `gun_dmg_mult`), экономика (`econ`, `coins_for`, `money`) — без обращений к `Game`;
   - `Save` — чтение/запись `user://deviant.cfg` (`Profile` + `Settings`).
+  - `RunSave` (`core/run_save.gd`) — сейв забега `user://run.save` (отдельно от `Save`): контрольная точка перед входом в локацию (`Main.checkpoint`), `Main.continue_run`; состав и правила — в шапке файла.
   - `Game.controls` (`Controls`) — ввод игрока, `Game.debug_log` (`DebugLog`) — журнал отладчика: это тоже экземпляры, не статика; статических переменных с состоянием в проекте почти нет (кроме таблиц данных `GunData`, `EnemyData`, `Codex`, `I18n`, `Mods`, заполняемых при загрузке контента).
 - **Порядок старта:** `Game._ready` → `InputSetup.setup()` → загрузка настроек → `load_content()`
   (`Mods.scan`, `GunData`, `EnemyData`, `Codex`, `I18n`) → применение настроек → `Main._ready` строит мир →

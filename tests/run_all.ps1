@@ -33,7 +33,7 @@ if (-not $Godot -or -not (Test-Path $Godot)) {
     Write-Error "Не найден Godot. Укажите -Godot <путь к консольному exe> или переменную GODOT_BIN."
 }
 
-$ASSERT = @('unit_core', 'skip_zone', 'zone_source', 'mod_data')
+$ASSERT = @('unit_core', 'skip_zone', 'zone_source', 'mod_data', 'run_save')
 $GOLDEN = @('smoke', 'ui_screens', 'ui_actions', 'gen_fingerprint', 'proj_fingerprint', 'player_state', 'controls_state',
     'console_commands', 'data_tables')
 $all = $ASSERT + $GOLDEN
@@ -42,12 +42,15 @@ if ($Only.Count -gt 0) { $all = $all | Where-Object { $Only -contains $_ } }
 $projName = ((Select-String -Path (Join-Path $root 'project.godot') -Pattern '^config/name="(.+)"').Matches[0].Groups[1].Value)
 $userDir = Join-Path $env:APPDATA "Godot\app_userdata\$projName"
 $cfg = Join-Path $userDir 'deviant.cfg'
+$runSave = Join-Path $userDir 'run.save'
 $goldenDir = Join-Path $PSScriptRoot 'golden'
 New-Item -ItemType Directory -Force -Path $userDir, $goldenDir | Out-Null
 
 $canonical = "[settings]`r`n`r`nlanguage=`"en`"`r`nmod_debug=true`r`n"
 $backup = $null
 if (Test-Path $cfg) { $backup = Get-Content -Raw -Path $cfg }
+$saveBackup = $null
+if (Test-Path $runSave) { $saveBackup = [IO.File]::ReadAllBytes($runSave) }
 $rootFwd = ($root -replace '\\', '/')
 
 # Вывод в сравнимый вид: только строки теста, без не-ASCII (консоль Windows портит юникод), без путей машины.
@@ -64,14 +67,18 @@ function Normalize([string[]]$lines) {
 }
 
 function Run-Test([string]$name) {
-    [IO.File]::WriteAllText($cfg, $canonical)   # каждый тест начинает с канонических настроек
+    [IO.File]::WriteAllText($cfg, $canonical)   # каждый тест начинает с канонических настроек и без сейва забега
+    Remove-Item $runSave -Force -ErrorAction SilentlyContinue
     $outFile = Join-Path $env:TEMP "deviant_test_$name.out"
     $errFile = Join-Path $env:TEMP "deviant_test_$name.err"
     $p = Start-Process -FilePath $Godot -ArgumentList @('--headless', '--path', "`"$root`"", '-s', "res://tests/$name.gd") `
         -NoNewWindow -PassThru -RedirectStandardOutput $outFile -RedirectStandardError $errFile
     if (-not $p.WaitForExit($TimeoutSec * 1000)) {
         try { $p.Kill() } catch {}
-        return @{ lines = @(); timeout = $true }
+        $part = @()
+        if (Test-Path $outFile) { $part += Get-Content -Path $outFile -Encoding UTF8 }
+        if (Test-Path $errFile) { $part += Get-Content -Path $errFile -Encoding UTF8 }
+        return @{ lines = $part; timeout = $true }
     }
     $lines = @()
     if (Test-Path $outFile) { $lines += Get-Content -Path $outFile -Encoding UTF8 }
@@ -92,6 +99,7 @@ try {
         $problems = @($norm | Where-Object { $_ -match 'SCRIPT ERROR|Parse Error|Compile Error' })
         if ($r.timeout) {
             Write-Host ("FAIL  {0,-18} timeout after {1}s (скрипт не вышел: ошибка компиляции или зависание)" -f $name, $TimeoutSec) -ForegroundColor Red
+            $problems | Select-Object -First 5 | ForEach-Object { Write-Host "        $_" }
             $failed += $name
             continue
         }
@@ -147,6 +155,7 @@ try {
 }
 finally {
     if ($null -ne $backup) { [IO.File]::WriteAllText($cfg, $backup) } elseif (Test-Path $cfg) { Remove-Item $cfg -Force }
+    if ($null -ne $saveBackup) { [IO.File]::WriteAllBytes($runSave, $saveBackup) } else { Remove-Item $runSave -Force -ErrorAction SilentlyContinue }
 }
 
 $total = [int]((Get-Date) - $started).TotalSeconds
@@ -156,3 +165,4 @@ if ($failed.Count -gt 0) {
 }
 Write-Host ("`nВсе тесты прошли ({0}) за {1}s" -f $all.Count, $total) -ForegroundColor Green
 exit 0
+

@@ -3,6 +3,8 @@ extends MenuScreen
 ## Главный экран: заголовок, кнопки, строка рекордов.
 
 var records: Label
+var _continue: Button     # «Продолжить»: виден, пока есть пригодный сейв забега (RunSave)
+var _new_game: Button
 
 
 func build(root: Control) -> void:
@@ -10,9 +12,12 @@ func build(root: Control) -> void:
 	box.add_child(MenuKit.label("DEVIANT", 104, ACCENT, true))
 	box.add_child(MenuKit.label(U.t("an endless diablo-like with absurd guns"), 22, DIM))
 	box.add_child(MenuKit.gap(36))
-	var b := MenuKit.button(U.t("New game"), func() -> void: Game.main.start_game())
-	box.add_child(b)
-	menu.first_focus["main"] = b
+	_continue = MenuKit.button("", func() -> void: Game.main.continue_run())
+	_continue.visible = false
+	box.add_child(_continue)
+	_new_game = MenuKit.button(U.t("New game"), func() -> void: Game.main.start_game())
+	box.add_child(_new_game)
+	menu.first_focus["main"] = _new_game
 	box.add_child(MenuKit.button(U.t("Custom start"), func() -> void: menu.show_screen("custom")))
 	box.add_child(MenuKit.button(U.t("Codex"), func() -> void: menu.show_screen("codex")))
 	box.add_child(MenuKit.button(U.t("Settings"), func() -> void: menu.show_screen("settings")))
@@ -34,6 +39,18 @@ func _records_text() -> String:
 
 func refresh_records() -> void:
 	records.text = _records_text()
+
+
+## Главный экран показан: рекорды и кнопка «Продолжить» (после смерти сейва нет — кнопка пропадает).
+func refresh(_sname: String = "") -> void:
+	refresh_records()
+	var r := RunSave.read()
+	_continue.visible = bool(r["ok"])
+	if bool(r["ok"]):
+		_continue.text = U.t("Continue: %s") % RunSave.summary(r["data"])
+	elif str(r["reason"]) in ["version", "corrupt", "invalid"]:
+		Game.debug_log.warn("run save ignored: %s" % str(r["reason"]), "save")
+	menu.first_focus["main"] = _continue if _continue.visible else _new_game
 
 
 func after_rebuild() -> void:

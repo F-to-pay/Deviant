@@ -141,11 +141,40 @@ func start_run() -> void:
 			var sg: Gun = o
 			if not sg.free_ammo:
 				player.add_ammo(sg.ammo_type(), GunData.ammo_cap(sg.ammo_type()))
-	if RunConfig.town_before(Game.run, 1):
+	var first_town := RunConfig.town_before(Game.run, 1)
+	checkpoint(1, first_town)
+	if first_town:
 		loader.load_town(1)
 	else:
 		loader.load_zone(1)
 	hud.on_run_start()
+
+
+## Контрольная точка забега перед входом в локацию level (to_town — город перед ней): сейв, с которого можно продолжить (`RunSave`).
+func checkpoint(level: int, to_town: bool) -> void:
+	RunSave.write(self, level, to_town)
+
+
+## «Продолжить» с главного экрана: развернуть сейв и загрузить локацию контрольной точки. false — сейва нет или он негоден.
+func continue_run() -> bool:
+	var r := RunSave.read()
+	if not bool(r["ok"]):
+		return false
+	var d: Dictionary = r["data"]
+	get_tree().paused = false
+	menu.close()
+	hud.visible = true
+	RunSave.restore(self, d)
+	var cp: Dictionary = d["checkpoint"]
+	if bool(cp["town"]):
+		loader.load_town(int(cp["level"]))
+	else:
+		loader.load_zone(int(cp["level"]))
+	hud.on_run_start()
+	Game.say(U.t("Run restored"), Color(0.7, 1.0, 0.7))
+	for w in r["warnings"]:
+		Game.say(str(w), Color(1.0, 0.8, 0.4))
+	return true
 
 
 # --- Зоны -------------------------------------------------------------------------
@@ -271,6 +300,7 @@ func restart_from_stone() -> void:
 
 
 func _do_next_zone() -> void:
+	checkpoint(_next_level, _next_town)
 	if _next_town:
 		loader.load_town(_next_level)
 	else:

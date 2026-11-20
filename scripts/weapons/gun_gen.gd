@@ -375,7 +375,7 @@ static func _apply_base(g: Gun, rng: RandomNumberGenerator = null) -> void:
 		g.pierce = 0
 		g.bounces = 0
 	# Пулевой дробовик (slug_chance основы): вся дробь в одном снаряде, точно и дальше
-	if g.legendary == "" and g.pellets > 1 and randf() < float(a.get("slug_chance", 0.0)):
+	if g.legendary == "" and g.pellets > 1 and (rng.randf() if rng != null else randf()) < float(a.get("slug_chance", 0.0)):
 		g.damage *= float(g.pellets) * 0.85
 		g.slug_n = g.pellets   # один снаряд толкает как весь залп (Gun.volley_knock_mult считает по slug_n)
 		g.pellets = 1
