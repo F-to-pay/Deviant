@@ -76,10 +76,10 @@ and set touch controls to "Always".
 ## Menus and settings
 
 The game starts in the main menu: Continue (only when there is a saved run), New game, Custom start, Codex, Settings, Mods, Quit, language switch.
-**Saves.** The run is saved automatically at every checkpoint: the start of a run and the entrance to each zone and town. "Continue" resumes the last
+**Saves.** The run is saved automatically at every checkpoint: the start of a run and the entrance to each zone and town (Settings → "Autosave", on by default; with it off nothing is written until you press "Save game" in the pause menu, which saves the last checkpoint). "Continue" resumes the last
 save from the start of that location (enemies and loot on the map are not saved, so quitting does not let you re-roll a fight). Every run has its own slot and
 "New game" never overwrites another one: there can be as many saves as you like. "Load game" lists them (newest first); the "✕" button deletes a slot at once,
-"Delete all saves" asks twice. Dying erases that run's slot, unless you turned on "Keep the save after death" in Custom start: then the save stays, but rating
+"Delete all saves" asks twice. A slot is erased by itself only when that run dies, unless you turned on "Keep the save after death" in Custom start: then the save stays, but rating
 and XP are halved and the run does not count for records. The save keeps your guns exactly as they are, ammo, flasks, skill perks, skill tree, contracts and the seed state, so the
 same map and the same shop come back. If the set of enabled mods changed, you get a warning. Files: `user://saves/` (`RunSave`).
 The background is a parade of random guns from the real generator (`ui/menu_bg.gd`); later it will be replaced by a demo with an AI player.

@@ -4,6 +4,7 @@ extends MenuScreen
 
 var _pause_tree_btn: Button
 var _pause_restart_btn: Button   # «Начать заново»: первое нажатие просит подтверждения
+var _pause_save_btn: Button      # «Сохранить»: виден при выключенном автосейве
 var _restart_armed := false
 var _pause_info: Label
 var _help_box: VBoxContainer
@@ -19,6 +20,8 @@ func build(root: Control) -> void:
 	_pause_tree_btn = MenuKit.button(U.t("Skill tree"), func() -> void: menu.show_screen("tree_" + str(LevelTree.branches[0]["id"])))
 	_pause_tree_btn.visible = not LevelTree.branches.is_empty()
 	box.add_child(_pause_tree_btn)
+	_pause_save_btn = MenuKit.button(U.t("Save game"), _on_save_pressed)
+	box.add_child(_pause_save_btn)
 	_pause_restart_btn = MenuKit.button(U.t("Restart run"), _on_restart_pressed)
 	box.add_child(_pause_restart_btn)
 	box.add_child(MenuKit.button(U.t("Settings"), func() -> void: menu.show_screen("settings")))
@@ -31,6 +34,15 @@ func build(root: Control) -> void:
 	_help_box = VBoxContainer.new()
 	_help_box.add_theme_constant_override("separation", 4)
 	box.add_child(_help_box)
+
+
+## «Сохранить» (виден при выключенном автосейве): записать последнюю контрольную точку — загрузка начнёт с начала текущей локации.
+func _on_save_pressed() -> void:
+	if Game.main.save_now():
+		Game.say(U.t("Saved: loading continues from the start of this location"), Color(0.7, 1.0, 0.7))
+	else:
+		Sfx.ui("ui/error", -6.0)
+		Game.say(U.t("Could not save"), Color(1.0, 0.5, 0.4))
 
 
 ## «Начать заново» из паузы: забег с теми же настройками (Main.start_run). Первое нажатие только просит подтвердить —
@@ -124,6 +136,7 @@ func on_pause_open() -> void:
 	_pause_tree_btn.text = U.t("Skill tree") + (" (%d)" % fp if fp > 0 else "")
 	_restart_armed = false
 	_pause_restart_btn.text = U.t("Restart run")
+	_pause_save_btn.visible = not bool(Game.settings.get_value("autosave"))
 
 
 func after_rebuild() -> void:

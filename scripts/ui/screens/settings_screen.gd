@@ -40,6 +40,7 @@ func build(root: Control) -> void:
 	slider(grid, "shake", U.t("Screen shake"), 0.0, 1.5, 0.05, "pct")
 	check(grid, "damage_numbers", U.t("Damage numbers"))
 	check(grid, "show_fps", U.t("Show FPS"))
+	check(grid, "autosave", U.t("Autosave at the start of each zone and town"))
 	slider(grid, "ui_scale", U.t("Interface size"), 0.7, 1.5, 0.05, "pct")
 	slider(grid, "ui_margin_x", U.t("Screen edge margin: sides"), 0.0, 160.0, 4.0, "px")
 	slider(grid, "ui_margin_y", U.t("Screen edge margin: top and bottom"), 0.0, 120.0, 4.0, "px")

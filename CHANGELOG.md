@@ -6,7 +6,8 @@
 - **Continue and Load game.** The run is saved at every checkpoint (start of a run, entrance to each zone and town). Every run has its own slot in `user://saves/`; there can be
   any number of them. The main menu gets **Continue** (the latest save) and **Load game** (a paged list, newest first, one-click delete, "Delete all" with a second press). Resuming starts the
   location from its beginning (no mid-zone saves: enemies and loot are not stored).
-- **New game never overwrites a save.** Death erases only that run's slot.
+- **New game never overwrites a save.** A slot is erased by itself only when that run dies (and only that run's slot).
+- **Autosave toggle** (Settings, on by default). Off: checkpoints wait in memory and are written only by **Save game** in the pause menu (it saves the last checkpoint, so loading still starts at the beginning of that location).
 - **Keep the save after death** (Custom start): the slot survives death, in exchange for −50% rating (and therefore XP); such runs do not count for records.
 - Everything about the run is stored: run parameters, XP and levels, skill tree, contracts, coins, all guns exactly (`Gun.to_dict`, not a seed), ammo, flasks, skill perks,
   health and the random state before the location was generated, so the same map and the same town stock come back. The format is binary (numbers bit for bit), versioned and

@@ -447,6 +447,7 @@ SMOKE       Label L:PAUSED
 SMOKE       Control
 SMOKE       Button B:Resume
 SMOKE       Button B:Skill tree
+SMOKE       (hidden) Button
 SMOKE       Button B:Restart run
 SMOKE       Button B:Settings
 SMOKE       Button B:Codex
@@ -554,6 +555,9 @@ SMOKE           CheckButton B: pressed=true
 SMOKE           Control
 SMOKE           Label L:Show FPS
 SMOKE           CheckButton B: pressed=false
+SMOKE           Control
+SMOKE           Label L:Autosave at the start of each zone and town
+SMOKE           CheckButton B: pressed=true
 SMOKE           Control
 SMOKE           Label L:Interface size
 SMOKE           HSlider S:1.0
@@ -3288,6 +3292,7 @@ SMOKE       Label L:
 SMOKE       Control
 SMOKE       Button B:
 SMOKE       Button B:
+SMOKE       (hidden) Button
 SMOKE       Button B:
 SMOKE       Button B:
 SMOKE       Button B:
@@ -3395,6 +3400,9 @@ SMOKE           CheckButton B: pressed=true
 SMOKE           Control
 SMOKE           Label L: FPS
 SMOKE           CheckButton B: pressed=false
+SMOKE           Control
+SMOKE           Label L:
+SMOKE           CheckButton B: pressed=true
 SMOKE           Control
 SMOKE           Label L:
 SMOKE           HSlider S:1.0

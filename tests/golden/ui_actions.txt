@@ -4,7 +4,7 @@ SMOKE esc from controls | current=settings mode=pause visible=true paused=false
 SMOKE esc from release | current=controls mode=pause visible=true paused=false
 SMOKE esc from codex | current=pause mode=pause visible=true paused=false
 SMOKE esc from tree | current=pause mode=pause visible=true paused=false
-SMOKE settings widgets: sliders=8 checks=6
+SMOKE settings widgets: sliders=8 checks=7
 SMOKE slider0 -> master=0.35
 SMOKE check0 -> music_muted=true
 SMOKE refresh on show: slider0=0.9 check0=true

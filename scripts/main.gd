@@ -4,6 +4,7 @@ extends Node2D
 
 
 var zone: Zone
+var pending_save: Dictionary = {}   # последняя контрольная точка забега (снимок для `RunSave`), пока она не записана на диск
 var player: Player
 var projectiles: Projectiles
 var fx: FX
@@ -151,8 +152,18 @@ func start_run() -> void:
 
 
 ## Контрольная точка забега перед входом в локацию level (to_town — город перед ней): сейв, с которого можно продолжить (`RunSave`).
+## Автосейв включён — пишется сразу; выключен — снимок ждёт в `pending_save`, пока игрок не нажмёт «Сохранить» (`save_now`).
 func checkpoint(level: int, to_town: bool) -> void:
-	RunSave.write(self, level, to_town)
+	if Game.state.save_id == "":
+		Game.state.save_id = RunSave.new_id()
+	pending_save = RunSave.snapshot(self, level, to_town)
+	if bool(Game.settings.get_value("autosave")):
+		RunSave.store(pending_save)
+
+
+## Записать на диск последнюю контрольную точку (кнопка «Сохранить» в паузе при выключенном автосейве). Загрузится с начала той же локации.
+func save_now() -> bool:
+	return not pending_save.is_empty() and RunSave.store(pending_save)
 
 
 ## Загрузить слот id (пусто — последний сохранённый): развернуть сейв и загрузить локацию контрольной точки.
@@ -168,6 +179,7 @@ func continue_run(id: String = "") -> bool:
 	menu.close()
 	hud.visible = true
 	RunSave.restore(self, d, id)
+	pending_save = d   # ручное «Сохранить» сразу после загрузки пишет ту же точку
 	var cp: Dictionary = d["checkpoint"]
 	if bool(cp["town"]):
 		loader.load_town(int(cp["level"]))

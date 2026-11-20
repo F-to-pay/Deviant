@@ -338,5 +338,38 @@ func _initialize() -> void:
 	ok(int(RS.call("count")) == 1 and not FileAccess.file_exists("user://run.save"), "legacy run.save is migrated into a slot")
 	ok(int(RS.call("latest")["zone"]) == 3, "migrated slot is readable")
 	RS.call("delete_all")
+
+	# --- автосейв: по умолчанию включён; выключен — на диск ничего само не пишется, только кнопкой «Сохранить»
+	ok(G.settings.get_value("autosave") == true, "autosave is on by default")
+	G.settings.set_value("autosave", false)
+	M.start_game({"seed": "11"})
+	for i in 3:
+		await process_frame
+	var sid_off: String = G.state.save_id
+	ok(sid_off != "" and not bool(RS.call("exists", sid_off)) and int(RS.call("count")) == 0, "autosave off: the checkpoint is not written to disk")
+	ok(not M.pending_save.is_empty(), "autosave off: the checkpoint waits in memory")
+	M.hud.toggle_pause()
+	await process_frame
+	var pb: Button = M.menu.screen_of("pause")._pause_save_btn
+	ok(pb.visible, "pause menu shows Save game when autosave is off")
+	pb.pressed.emit()
+	ok(bool(RS.call("exists", sid_off)) and RS.call("latest")["id"] == sid_off, "Save game writes the slot")
+	M.hud.toggle_pause()
+	await process_frame
+	M.checkpoint(2, false)
+	ok(int(RS.call("read", sid_off)["data"]["checkpoint"]["level"]) == 1, "autosave off: a new checkpoint does not overwrite the slot")
+	M.rewards.on_player_died()
+	ok(not bool(RS.call("exists", sid_off)), "death is the only thing that erases the slot by itself")
+	G.settings.set_value("autosave", true)
+	M.start_game({"seed": "12"})
+	for i in 3:
+		await process_frame
+	var sid_on: String = G.state.save_id
+	ok(bool(RS.call("exists", sid_on)), "autosave on: the checkpoint is written at once")
+	M.hud.toggle_pause()
+	await process_frame
+	ok(not M.menu.screen_of("pause")._pause_save_btn.visible, "pause menu hides Save game when autosave is on")
+	M.hud.toggle_pause()
+	RS.call("delete_all")
 	print("SMOKE RESULT fails=", fails)
 	quit()
