@@ -1,4 +1,4 @@
-SMOKE screen ids: ["codex", "controls", "custom", "guild", "healer", "heroes", "main", "mods", "mystic", "pause", "release", "settings", "shop", "tree_A", "tree_U", "tree_V", "tree_W", "workshop"]
+SMOKE screen ids: ["codex", "controls", "custom", "guild", "healer", "heroes", "main", "mods", "mystic", "pause", "release", "saves", "settings", "shop", "tree_A", "tree_U", "tree_V", "tree_W", "workshop"]
 SMOKE == en:codex current=codex mode=pause
 SMOKE MarginContainer
 SMOKE   PanelContainer
@@ -193,6 +193,9 @@ SMOKE         Label L:rating +25%
 SMOKE         Label L:Towns between stages
 SMOKE         CheckButton B: pressed=true
 SMOKE         Label L:
+SMOKE         Label L:Keep the save after death (rating and XP 50%)
+SMOKE         CheckButton B: pressed=false
+SMOKE         Label L:rating 50%
 SMOKE         Label L:Starting gun: type
 SMOKE         OptionButton B:Pistol
 SMOKE         Control
@@ -373,6 +376,7 @@ SMOKE     Label L:an endless diablo-like with absurd guns
 SMOKE     Control
 SMOKE     Button B:Continue: Zone 1  Pioneer  level 1
 SMOKE     Button B:New game
+SMOKE     Button B:Load game (1)
 SMOKE     Button B:Custom start
 SMOKE     Button B:Codex
 SMOKE     Button B:Settings
@@ -493,6 +497,25 @@ SMOKE         CheckButton B: pressed=false
 SMOKE         Label L:Crossbow
 SMOKE         CheckButton B: pressed=false
 SMOKE       Control
+SMOKE       Button B:Back
+SMOKE == en:saves current=saves mode=pause
+SMOKE CenterContainer
+SMOKE   PanelContainer
+SMOKE     VBoxContainer
+SMOKE       Label L:LOAD GAME
+SMOKE       Label L:Saves: 1
+SMOKE       Control
+SMOKE       VBoxContainer
+SMOKE         HBoxContainer
+SMOKE           Button B:Zone 1  Pioneer  level 1  DD.MM HH:MM
+SMOKE           Button B:
+SMOKE       Control
+SMOKE       HBoxContainer
+SMOKE         Button B: [off]
+SMOKE         Label L:1 / 1
+SMOKE         Button B: [off]
+SMOKE       Control
+SMOKE       Button B:Delete all saves
 SMOKE       Button B:Back
 SMOKE == en:settings current=settings mode=pause
 SMOKE CenterContainer
@@ -3106,6 +3129,9 @@ SMOKE         Label L: +25%
 SMOKE         Label L:
 SMOKE         CheckButton B: pressed=true
 SMOKE         Label L:
+SMOKE         Label L:    (   50%)
+SMOKE         CheckButton B: pressed=false
+SMOKE         Label L: 50%
 SMOKE         Label L: :
 SMOKE         OptionButton B:
 SMOKE         Control
@@ -3208,6 +3234,7 @@ SMOKE     Label L:
 SMOKE     Control
 SMOKE     Button B::  1     1
 SMOKE     Button B:
+SMOKE     Button B:  (1)
 SMOKE     Button B:
 SMOKE     Button B:
 SMOKE     Button B:
@@ -3311,6 +3338,25 @@ SMOKE         CheckButton B: pressed=false
 SMOKE         Label L:
 SMOKE         CheckButton B: pressed=false
 SMOKE       Control
+SMOKE       Button B:
+SMOKE == ru:saves current=saves mode=pause
+SMOKE CenterContainer
+SMOKE   PanelContainer
+SMOKE     VBoxContainer
+SMOKE       Label L:
+SMOKE       Label L:: 1
+SMOKE       Control
+SMOKE       VBoxContainer
+SMOKE         HBoxContainer
+SMOKE           Button B: 1     1  DD.MM HH:MM
+SMOKE           Button B:
+SMOKE       Control
+SMOKE       HBoxContainer
+SMOKE         Button B: [off]
+SMOKE         Label L:1 / 1
+SMOKE         Button B: [off]
+SMOKE       Control
+SMOKE       Button B:
 SMOKE       Button B:
 SMOKE == ru:settings current=settings mode=pause
 SMOKE CenterContainer

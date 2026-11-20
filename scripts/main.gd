@@ -155,16 +155,19 @@ func checkpoint(level: int, to_town: bool) -> void:
 	RunSave.write(self, level, to_town)
 
 
-## «Продолжить» с главного экрана: развернуть сейв и загрузить локацию контрольной точки. false — сейва нет или он негоден.
-func continue_run() -> bool:
-	var r := RunSave.read()
+## Загрузить слот id (пусто — последний сохранённый): развернуть сейв и загрузить локацию контрольной точки.
+## false — слота нет или он негоден.
+func continue_run(id: String = "") -> bool:
+	if id == "":
+		id = str(RunSave.latest().get("id", ""))
+	var r := RunSave.read(id)
 	if not bool(r["ok"]):
 		return false
 	var d: Dictionary = r["data"]
 	get_tree().paused = false
 	menu.close()
 	hud.visible = true
-	RunSave.restore(self, d)
+	RunSave.restore(self, d, id)
 	var cp: Dictionary = d["checkpoint"]
 	if bool(cp["town"]):
 		loader.load_town(int(cp["level"]))

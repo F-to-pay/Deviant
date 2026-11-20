@@ -1,10 +1,12 @@
 extends SceneTree
-## Сохранение забега (RunSave): пушки туда-обратно, полный забег (сохранить → начать другой → продолжить → всё совпало, включая ту же карту
-## и товар города), смерть стирает сейв, битые и чужие файлы, смена модов, кнопка «Продолжить» на главном экране.
-## ВНИМАНИЕ: тест пишет и стирает user://run.save — раннер сам прячет ваш сейв; вручную перед запуском скопируйте файл.
+## Сохранение забега (RunSave): пушки туда-обратно, полный забег (сохранить → сломать → продолжить → всё совпало, включая ту же карту
+## и товар города), много слотов (новая игра не стирает старые, удаление, «удалить все», сотни слотов), смерть стирает только свой слот,
+## «оставлять сейв» (−50% рейтинга), битые и чужие файлы, смена модов, миграция старого run.save, кнопки главного экрана и экран сейвов.
+## ВНИМАНИЕ: тест стирает всё в user://saves и user://run.save — раннер сам прячет ваши сейвы; вручную перед запуском скопируйте папку.
 ## Запуск: godot --headless --path . -s res://tests/run_save.gd   (в конце «SMOKE RESULT fails=0»)
 
-const PATH := "user://run.save"
+const DIR := "user://saves"
+const TID := "test"   # слот для битых файлов
 var fails := 0
 var G: Node
 var M: Node
@@ -28,14 +30,24 @@ func vars_of(o: Object) -> Dictionary:
 	return out
 
 
-func put(text: String) -> void:
-	var f := FileAccess.open(PATH, FileAccess.WRITE)
+func put(text: String, id: String = TID) -> void:
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(DIR))
+	var f := FileAccess.open(DIR.path_join(id + ".save"), FileAccess.WRITE)
 	f.store_string(text)
 	f.close()
 
 
-func put_dict(d: Dictionary) -> void:
-	put("DEVRUN1:" + Marshalls.raw_to_base64(var_to_bytes(d)))
+func put_dict(d: Dictionary, id: String = TID) -> void:
+	put("DEVRUN1:" + Marshalls.raw_to_base64(var_to_bytes(d)), id)
+
+
+## Фальшивый слот (описание + пустой файл): для проверки списка и скорости.
+func fake_slot(i: int) -> void:
+	var id := "fake_%05d" % i
+	put("x", id)
+	var f := FileAccess.open(DIR.path_join(id + ".meta"), FileAccess.WRITE)
+	f.store_string(JSON.stringify({"saved_at": 1000 + i, "started_at": 900 + i, "zone": 3, "town": false, "hero": load("res://scripts/entities/heroes.gd").DEFAULT, "hero_level": 2, "keep": false}))
+	f.close()
 
 
 ## Заметное состояние забега: монеты, опыт, уровни, дерево, задание, шесть пушек, патроны, фляги, перки навыка, здоровье.
@@ -107,7 +119,7 @@ func _initialize() -> void:
 	var GGC: GDScript = load("res://scripts/weapons/gun_gen.gd")
 	var GunC: GDScript = load("res://scripts/weapons/gun.gd")
 	var RS: GDScript = load("res://scripts/core/run_save.gd")
-	RS.call("delete")
+	RS.call("delete_all")
 
 	# --- пушки: словарь -> текст -> пушка, все поля равны
 	var bad := 0
@@ -142,8 +154,9 @@ func _initialize() -> void:
 	M.start_game({"seed": "777", "chaos": true})
 	for i in 5:
 		await process_frame
-	ok(bool(RS.call("exists")), "start of a run writes a checkpoint")
-	var r0: Dictionary = RS.call("read")
+	var sid: String = G.state.save_id
+	ok(sid != "" and bool(RS.call("exists", sid)), "start of a run writes a checkpoint into its own slot")
+	var r0: Dictionary = RS.call("read", sid)
 	ok(bool(r0["ok"]) and int(r0["data"]["checkpoint"]["level"]) == 1, "first checkpoint: level 1")
 	setup_state(GGC)
 	var P: Object = M.player
@@ -197,27 +210,27 @@ func _initialize() -> void:
 
 	# --- смерть стирает сейв, кнопка пропадает
 	M.rewards.on_player_died()
-	ok(not bool(RS.call("exists")), "death erases the save")
+	ok(not bool(RS.call("exists", sid)), "death erases the slot of that run")
 	M.menu.open_main()
 	await process_frame
-	ok(not cont.visible, "Continue disappears with the save")
+	ok(not cont.visible and not M.menu.screen_of("main")._load.visible, "Continue and Load disappear with the save")
 	ok(not M.continue_run(), "continue_run() with no save returns false")
 	M.menu.close()
 
 	# --- битые и чужие файлы
 	put("this is not a save")
-	ok(RS.call("read")["reason"] == "corrupt", "garbage file -> corrupt")
+	ok(RS.call("read", TID)["reason"] == "corrupt", "garbage file -> corrupt")
 	put("DEVRUN1:AAAA")
-	ok(RS.call("read")["reason"] == "corrupt", "truncated payload -> corrupt")
+	ok(RS.call("read", TID)["reason"] == "corrupt", "truncated payload -> corrupt")
 	put("DEVRUN1:" + Marshalls.raw_to_base64(PackedByteArray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])))
-	ok(RS.call("read")["reason"] == "corrupt", "random bytes -> corrupt")
+	ok(RS.call("read", TID)["reason"] == "corrupt", "random bytes -> corrupt")
 	put_dict({"version": 99, "checkpoint": {"level": 3}})
-	ok(RS.call("read")["reason"] == "version", "other format version -> version")
+	ok(RS.call("read", TID)["reason"] == "version", "other format version -> version")
 	put_dict({"version": 1, "run": {}, "state": {}, "player": {"guns": []}})
-	ok(RS.call("read")["reason"] == "invalid", "missing checkpoint -> invalid")
+	ok(RS.call("read", TID)["reason"] == "invalid", "missing checkpoint -> invalid")
 	put_dict({"version": 1, "checkpoint": {"level": 0}, "run": {}, "state": {}, "player": {"guns": []}})
-	ok(RS.call("read")["reason"] == "invalid", "level 0 -> invalid")
-	RS.call("delete")
+	ok(RS.call("read", TID)["reason"] == "invalid", "level 0 -> invalid")
+	RS.call("delete", TID)
 
 	# --- смена модов: загружается, но с предупреждением
 	M.start_game({"seed": "777"})
@@ -226,12 +239,104 @@ func _initialize() -> void:
 	var snap: Dictionary = RS.call("snapshot", M, 3, false)
 	snap["mods"] = ["someone_else@9"]
 	put_dict(snap)
-	var rm: Dictionary = RS.call("read")
+	var rm: Dictionary = RS.call("read", TID)
 	ok(bool(rm["ok"]) and (rm["warnings"] as Array).size() == 1, "changed mod set loads with a warning")
-	var summary: String = RS.call("summary", rm["data"])
+	var summary: String = RS.call("summary", RS.call("meta_of", rm["data"], TID))
 	ok(summary.contains("3"), "summary mentions the zone: '%s'" % summary)
-	# запись атомарна: временного файла не остаётся
-	ok(bool(RS.call("write", M, 4, false)) and not FileAccess.file_exists(PATH + ".tmp"), "write leaves no temp file")
-	RS.call("delete")
+	# запись атомарна: временных файлов не остаётся
+	var wid: String = G.state.save_id
+	ok(bool(RS.call("write", M, 4, false)) and not FileAccess.file_exists(DIR.path_join(wid + ".save.tmp")) and not FileAccess.file_exists(DIR.path_join(wid + ".meta.tmp")), "write leaves no temp files")
+	RS.call("delete_all")
+
+	# --- много слотов: новая игра ничего не стирает
+	M.start_game({"seed": "1"})
+	for i in 3:
+		await process_frame
+	var id1: String = G.state.save_id
+	await create_timer(1.1).timeout   # время сейва — секунды: чтобы порядок в списке был однозначным
+	M.start_game({"seed": "2"})
+	for i in 3:
+		await process_frame
+	var id2: String = G.state.save_id
+	ok(id1 != "" and id2 != "" and id1 != id2 and bool(RS.call("exists", id1)) and bool(RS.call("exists", id2)), "a new game takes a new slot and keeps the old one")
+	ok(int(RS.call("count")) == 2 and RS.call("list_slots")[0]["id"] == id2, "two slots, newest first")
+	ok(RS.call("latest")["id"] == id2, "Continue points at the latest slot")
+	await create_timer(1.1).timeout
+	ok(M.continue_run(id1) and G.state.seed_value == 1 and G.state.save_id == id1, "loading an older slot restores that run and keeps writing into it")
+	for i in 3:
+		await process_frame
+	M.checkpoint(2, false)
+	ok(RS.call("latest")["id"] == id1, "after a new checkpoint that slot is the latest")
+	RS.call("delete", id1)
+	ok(int(RS.call("count")) == 1 and not bool(RS.call("exists", id1)), "delete removes exactly one slot")
+	# id наружу не выходит из папки
+	var vf := FileAccess.open("user://victim.save", FileAccess.WRITE)
+	vf.store_string("keep me")
+	vf.close()
+	RS.call("delete", "../victim")
+	ok(FileAccess.file_exists("user://victim.save") and not bool(RS.call("exists", "../victim")), "a path-like id cannot reach outside the saves folder")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path("user://victim.save"))
+
+	# --- «оставлять сейв»: −50% рейтинга и опыта, смерть слот не стирает
+	var RC: GDScript = load("res://scripts/core/run_config.gd")
+	var base_cfg: Dictionary = RC.DEFAULTS.duplicate()
+	var keep_cfg: Dictionary = RC.DEFAULTS.duplicate()
+	keep_cfg["keep_save"] = true
+	ok(is_equal_approx(float(RC.call("rating_mult", keep_cfg)), 0.5 * float(RC.call("rating_mult", base_cfg))), "keep_save halves rating (and XP, which follows rating)")
+	ok(not bool(RC.call("counts_for_records", keep_cfg)), "a keep_save run does not count for records")
+	M.start_game({"seed": "3", "keep_save": true})
+	for i in 3:
+		await process_frame
+	var id3: String = G.state.save_id
+	M.rewards.on_player_died()
+	ok(bool(RS.call("exists", id3)), "keep_save: death leaves the slot")
+	M.start_game({"seed": "4"})
+	for i in 3:
+		await process_frame
+	var id4: String = G.state.save_id
+	M.rewards.on_player_died()
+	ok(not bool(RS.call("exists", id4)) and bool(RS.call("exists", id3)), "normal death erases only its own slot")
+	ok(RS.call("latest")["id"] == id3, "Continue falls back to the remaining slot")
+	RS.call("delete_all")
+
+	# --- сотни слотов, экран сейвов, быстрое удаление
+	var t0 := Time.get_ticks_msec()
+	for i in 400:
+		fake_slot(i)
+	var t1 := Time.get_ticks_msec()
+	var listed: Array = RS.call("list_slots")
+	var dt := Time.get_ticks_msec() - t1
+	ok(listed.size() == 400 and RS.call("count") == 400 and listed[0]["id"] == "fake_00399", "400 slots listed, newest first (%d ms to create, %d ms to list)" % [t1 - t0, dt])
+	ok(dt < 3000, "listing 400 slots is fast (%d ms)" % dt)
+	M.menu.open_main()
+	await process_frame
+	var ms: Object = M.menu.screen_of("main")
+	ok(ms._load.visible and ms._load.text.contains("400"), "main menu: Load game (400)")
+	M.menu.show_screen("saves")
+	await process_frame
+	var ss: Object = M.menu.screen_of("saves")
+	ok(ss._list.get_child_count() == 10, "saves screen shows one page of 10")
+	ss._go(1)
+	ok(ss._list.get_child_count() == 10 and not ss._prev.disabled, "next page")
+	ss._delete("fake_00399")
+	ok(int(RS.call("count")) == 399, "quick delete removes a slot at once")
+	ss._on_delete_all()
+	ok(int(RS.call("count")) == 399, "delete all needs a second press")
+	ss._on_delete_all()
+	ok(int(RS.call("count")) == 0 and not ss._delete_all.visible, "second press deletes everything")
+	M.menu.close()
+
+	# --- старый одиночный user://run.save становится слотом
+	M.start_game({"seed": "9"})
+	for i in 3:
+		await process_frame
+	var legacy_snap: Dictionary = RS.call("snapshot", M, 3, false)
+	RS.call("delete_all")
+	var lf := FileAccess.open("user://run.save", FileAccess.WRITE)
+	lf.store_string(RS.call("encode", legacy_snap))
+	lf.close()
+	ok(int(RS.call("count")) == 1 and not FileAccess.file_exists("user://run.save"), "legacy run.save is migrated into a slot")
+	ok(int(RS.call("latest")["zone"]) == 3, "migrated slot is readable")
+	RS.call("delete_all")
 	print("SMOKE RESULT fails=", fails)
 	quit()

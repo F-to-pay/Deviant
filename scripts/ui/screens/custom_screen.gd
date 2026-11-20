@@ -44,6 +44,7 @@ func build(root: Control) -> void:
 	_custom_check(grid, "no_heal", U.t("Hardcore: no flasks, healer or lifesteal"))
 	_custom_check(grid, "chaos", U.t("Chaos: all gun rarities and enemy types equally likely"))
 	_custom_check(grid, "towns", U.t("Towns between stages"))
+	_custom_check(grid, "keep_save", U.t("Keep the save after death (rating and XP −50%)"))
 
 	# Стартовая пушка
 	var arch_ids: Array = ["random"]

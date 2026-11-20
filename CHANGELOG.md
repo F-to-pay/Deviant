@@ -2,12 +2,15 @@
 
 ## Unreleased
 
-### Run save
-- **Continue.** The run is saved at every checkpoint (start of a run, entrance to each zone and town) in `user://run.save`; the main menu gets a **Continue**
-  button. Resuming starts the location from its beginning (no mid-zone saves: enemies and loot are not stored). One slot; death erases it.
+### Run saves
+- **Continue and Load game.** The run is saved at every checkpoint (start of a run, entrance to each zone and town). Every run has its own slot in `user://saves/`; there can be
+  any number of them. The main menu gets **Continue** (the latest save) and **Load game** (a paged list, newest first, one-click delete, "Delete all" with a second press). Resuming starts the
+  location from its beginning (no mid-zone saves: enemies and loot are not stored).
+- **New game never overwrites a save.** Death erases only that run's slot.
+- **Keep the save after death** (Custom start): the slot survives death, in exchange for −50% rating (and therefore XP); such runs do not count for records.
 - Everything about the run is stored: run parameters, XP and levels, skill tree, contracts, coins, all guns exactly (`Gun.to_dict`, not a seed), ammo, flasks, skill perks,
-  health and the random state before the location was generated, so the same map and the same town stock come back. The file is binary (numbers bit for bit), versioned and
-  written atomically; a broken or foreign file is ignored; a changed set of mods gives a warning.
+  health and the random state before the location was generated, so the same map and the same town stock come back. The format is binary (numbers bit for bit), versioned and
+  written atomically; a broken or foreign file is ignored; a changed set of mods gives a warning. An old single `run.save` is moved into a slot.
 - Fixed: a seed did not fully repeat a run — the shotgun's slug chance used the global random generator instead of the run's. Guns generated from the same seed are now identical.
 
 ### Data and structure

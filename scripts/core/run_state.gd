@@ -22,6 +22,8 @@ var town_name := ""
 var new_rating_record := false   # для экрана смерти
 var seed_value: int = 0      # фактический сид забега
 var quests: Array = []       # взятые задания Гильдии (Quests): словари {type, need, have, reward...}
+var save_id := ""            # слот сейва этого забега (`RunSave`); пусто, пока не поставлена первая контрольная точка
+var started_at: int = 0      # когда начат забег (unix-время), для списка сейвов
 
 
 ## Начать забег с нуля. rng — общий ГСЧ игры, уже засеянный сидом (биом берётся первым же броском).
@@ -42,6 +44,8 @@ func reset(rng: RandomNumberGenerator) -> void:
 	town_name = ""
 	new_rating_record = false
 	quests = []
+	save_id = ""
+	started_at = int(Time.get_unix_time_from_system())
 	biome_offset = rng.randi_range(0, 10)
 
 

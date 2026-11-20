@@ -46,7 +46,7 @@ func _make_screens() -> void:
 	_all = [_main, CustomScreen.new(self), HeroesScreen.new(self), TreeScreen.new(self), ShopScreen.new(self),
 		MysticScreen.new(self), WorkshopScreen.new(self), GuildScreen.new(self), HealerScreen.new(self),
 		SettingsScreen.new(self), _pause, ModsScreen.new(self), CodexScreen.new(self), ControlsScreen.new(self),
-		ReleaseScreen.new(self)]
+		ReleaseScreen.new(self), SavesScreen.new(self)]
 
 
 ## Экран по id (например, "settings"), null — если такого нет.

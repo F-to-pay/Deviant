@@ -3,15 +3,16 @@ extends RefCounted
 ## Правила и параметры забега: «Настраиваемый старт», структура этапов, рейтинг. Только константы и чистые
 ## статические функции над словарём параметров `cfg` (текущий забег — `Game.run`, последний пользовательский — `Game.profile.custom`).
 
-## Параметры забега («Настраиваемый старт»). Обычная «Новая игра» = DEFAULTS.
+## Параметры забега («Настраиваемый старт»). Обычная «Новая игра» = DEFAULTS. keep_save — сейв забега остаётся после смерти
+## (рейтинг, а с ним и опыт, −50%).
 ##  hp/dmg — множители здоровья и урона врагов; arch/maker — стартовая пушка ("" — по умолчанию,
 ##  "random" — случайно); seed — текст сида ("" — случайный).
 const DEFAULTS := {
 	"hp": 1.0, "dmg": 1.0, "zone_heal": false, "no_normals": false, "chests": false,
-	"no_heal": false, "chaos": false, "arch": "", "maker": "", "seed": "", "towns": true,
+	"no_heal": false, "chaos": false, "arch": "", "maker": "", "seed": "", "towns": true, "keep_save": false,
 }
 ## Параметры, из-за которых забег не идёт в рекорды (сложность и переключатели; стартовая пушка и сид не в счёт).
-const RECORD_KEYS := ["hp", "dmg", "zone_heal", "no_normals", "chests", "no_heal", "chaos"]
+const RECORD_KEYS := ["hp", "dmg", "zone_heal", "no_normals", "chests", "no_heal", "chaos", "keep_save"]
 
 ## Этап = TOWN_EVERY зон (последняя — с боссом). Перед каждым этапом, и в начале забега, — город.
 const TOWN_EVERY := 5
@@ -30,6 +31,7 @@ const RATING_BONUS := [
 	["chaos", true, 0.25, "chaos"],
 	["chests", true, -0.2, "chests"],
 	["zone_heal", true, -0.5, "heal between zones"],
+	["keep_save", true, -0.5, "keeping the save after death"],
 ]
 const POINTS_ZONE := 100     # за каждую пройденную зону
 const POINTS_KILL := 1

@@ -43,12 +43,16 @@ $projName = ((Select-String -Path (Join-Path $root 'project.godot') -Pattern '^c
 $userDir = Join-Path $env:APPDATA "Godot\app_userdata\$projName"
 $cfg = Join-Path $userDir 'deviant.cfg'
 $runSave = Join-Path $userDir 'run.save'
+$savesDir = Join-Path $userDir 'saves'
+$savesBak = Join-Path $userDir 'saves.runner_backup'
 $goldenDir = Join-Path $PSScriptRoot 'golden'
 New-Item -ItemType Directory -Force -Path $userDir, $goldenDir | Out-Null
 
 $canonical = "[settings]`r`n`r`nlanguage=`"en`"`r`nmod_debug=true`r`n"
 $backup = $null
 if (Test-Path $cfg) { $backup = Get-Content -Raw -Path $cfg }
+# Ваши сейвы забегов (папка saves) на время прогона убираются в saves.runner_backup и возвращаются в конце.
+if ((Test-Path $savesDir) -and -not (Test-Path $savesBak)) { Move-Item $savesDir $savesBak }
 $saveBackup = $null
 if (Test-Path $runSave) { $saveBackup = [IO.File]::ReadAllBytes($runSave) }
 $rootFwd = ($root -replace '\\', '/')
@@ -60,6 +64,7 @@ function Normalize([string[]]$lines) {
         if ($l -notmatch 'SMOKE |SCRIPT ERROR|Parse Error|Compile Error') { continue }
         $t = $l -replace [regex]::Escape($rootFwd), '<ROOT>' -replace [regex]::Escape($root), '<ROOT>'
         $t = [regex]::Replace($t, '[^\x09\x20-\x7E]', '').Trim()
+        $t = [regex]::Replace($t, '\d\d\.\d\d \d\d:\d\d', 'DD.MM HH:MM')   # время сохранения слота (экран сейвов)
         $t = $t -replace '^SMOKE STREAM-END$', ''
         if ($t -ne '') { $out.Add($t) }
     }
@@ -69,6 +74,7 @@ function Normalize([string[]]$lines) {
 function Run-Test([string]$name) {
     [IO.File]::WriteAllText($cfg, $canonical)   # каждый тест начинает с канонических настроек и без сейва забега
     Remove-Item $runSave -Force -ErrorAction SilentlyContinue
+    Remove-Item $savesDir -Recurse -Force -ErrorAction SilentlyContinue
     $outFile = Join-Path $env:TEMP "deviant_test_$name.out"
     $errFile = Join-Path $env:TEMP "deviant_test_$name.err"
     $p = Start-Process -FilePath $Godot -ArgumentList @('--headless', '--path', "`"$root`"", '-s', "res://tests/$name.gd") `
@@ -155,6 +161,8 @@ try {
 }
 finally {
     if ($null -ne $backup) { [IO.File]::WriteAllText($cfg, $backup) } elseif (Test-Path $cfg) { Remove-Item $cfg -Force }
+    Remove-Item $savesDir -Recurse -Force -ErrorAction SilentlyContinue
+    if (Test-Path $savesBak) { Move-Item $savesBak $savesDir }
     if ($null -ne $saveBackup) { [IO.File]::WriteAllBytes($runSave, $saveBackup) } else { Remove-Item $runSave -Force -ErrorAction SilentlyContinue }
 }
 

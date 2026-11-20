@@ -3,7 +3,8 @@ extends MenuScreen
 ## Главный экран: заголовок, кнопки, строка рекордов.
 
 var records: Label
-var _continue: Button     # «Продолжить»: виден, пока есть пригодный сейв забега (RunSave)
+var _continue: Button     # «Продолжить»: последний сейв забега (RunSave); виден, пока он есть
+var _load: Button         # «Загрузить игру (N)»: список всех сейвов; виден, если сейвы есть
 var _new_game: Button
 
 
@@ -17,6 +18,9 @@ func build(root: Control) -> void:
 	box.add_child(_continue)
 	_new_game = MenuKit.button(U.t("New game"), func() -> void: Game.main.start_game())
 	box.add_child(_new_game)
+	_load = MenuKit.button("", func() -> void: menu.show_screen("saves"))
+	_load.visible = false
+	box.add_child(_load)
 	menu.first_focus["main"] = _new_game
 	box.add_child(MenuKit.button(U.t("Custom start"), func() -> void: menu.show_screen("custom")))
 	box.add_child(MenuKit.button(U.t("Codex"), func() -> void: menu.show_screen("codex")))
@@ -41,15 +45,16 @@ func refresh_records() -> void:
 	records.text = _records_text()
 
 
-## Главный экран показан: рекорды и кнопка «Продолжить» (после смерти сейва нет — кнопка пропадает).
+## Главный экран показан: рекорды и кнопки сейвов («Продолжить» — последний слот, «Загрузить игру» — все; без сейвов их нет).
 func refresh(_sname: String = "") -> void:
 	refresh_records()
-	var r := RunSave.read()
-	_continue.visible = bool(r["ok"])
-	if bool(r["ok"]):
-		_continue.text = U.t("Continue: %s") % RunSave.summary(r["data"])
-	elif str(r["reason"]) in ["version", "corrupt", "invalid"]:
-		Game.debug_log.warn("run save ignored: %s" % str(r["reason"]), "save")
+	var last := RunSave.latest()
+	_continue.visible = not last.is_empty()
+	if _continue.visible:
+		_continue.text = U.t("Continue: %s") % RunSave.summary(last)
+	var n := RunSave.count()
+	_load.visible = n > 0
+	_load.text = U.t("Load game (%d)") % n
 	menu.first_focus["main"] = _continue if _continue.visible else _new_game
 
 
