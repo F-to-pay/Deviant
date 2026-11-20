@@ -78,7 +78,7 @@ and set touch controls to "Always".
 The game starts in the main menu: New game, Custom start, Codex, Settings, Mods, Quit, language switch.
 The background is a parade of random guns from the real generator (`ui/menu_bg.gd`); later it will be replaced by a demo with an AI player.
 
-**Custom start** (`Game.RUN_DEFAULTS` / `Game.custom`, the last choice is saved in `[custom]`):
+**Custom start** (`RunConfig.DEFAULTS` / `Game.profile.custom`, the last choice is saved in `[custom]`):
 - difficulty: presets Easy (enemy health 80%, damage 50%) / Normal / Hard (120% / 120%) and manual sliders 10–200%;
 - full heal on entering a new zone; no regular enemies (regular packs → champions, leader escorts too);
 - chests (off by default — switch them on here); hardcore — no flasks, no healer and no Vampiric perk (legendary lifesteal is zeroed);
@@ -89,7 +89,7 @@ The background is a parade of random guns from the real generator (`ui/menu_bg.g
 
 **Rating** (any run) = points × multiplier. Points = (zone − 1) × 100 + kills + bosses × 250.
 Multiplier = enemy health × enemy damage × (1 + bonuses): hardcore +100%, elites only +50%, chaos +25%,
-chests on −20%, heal between zones −50% (`Game.RATING_BONUS`, `POINTS_*`). Easy ×0.4, Normal ×1, Hard ×1.44.
+chests on −20%, heal between zones −50% (`RunConfig.RATING_BONUS`, `POINTS_*`). Easy ×0.4, Normal ×1, Hard ×1.44.
 The multiplier is shown in Custom start and in the pause menu; it also multiplies the XP your hero earns (so harder settings level you up faster); rating and best rating — on the death screen and in the main menu.
 
 The seed and the differences from a normal game are shown in the pause menu and on the death screen; R repeats the run with the
@@ -97,11 +97,11 @@ same parameters (a given seed gives the same world and loot). Best zone/kills on
 
 Esc in game — pause menu (resume / settings / codex / main menu); on the death screen Esc goes to the main menu.
 
-Settings (`Game.DEFAULTS`, stored in `user://deviant.cfg`, section `[settings]`): master volume, music (+ mute), game sounds,
+Settings (`Settings.DEFAULTS`, stored in `user://deviant.cfg`, section `[settings]`): master volume, music (+ mute), game sounds,
 interface sounds, fullscreen, V-Sync, screen shake (0–150%), damage numbers, FPS, interface size, screen-edge margins
 (sides / top-bottom) and the phone's safe area (`ui/ui_fit.gd`), gun card position for guns on the ground
-(right / left / above the gun). A new setting = a key in `DEFAULTS`, a `_slider`/`_check` line in `Menu._build_settings()`
-and reading it via `Game.setting("key")`.
+(right / left / above the gun). A new setting = a key in `DEFAULTS`, a `_slider`/`_check` line in `SettingsScreen.build()`
+and reading it via `Game.settings.get_value("key")`.
 
 ## Languages
 
@@ -124,7 +124,7 @@ operations on stats (`GunOps`), not code. Mods live in `Mods/<name>/` (next to t
 mirror the game's layout (`data/`, `lang/`, `sfx/`, `music/`, their own `.gd`) and are toggled in the Mods menu.
 Full description of the format, operations and scripts — **`Mods/README.md`**, example — `Mods/ExampleMod/`.
 The mod debugger (a log of checks and errors + a console with `give`/`reload`/`validate`...) — F8; enable it in the
-Mods menu, it works after a restart (`DebugLog`, `ui/debug_console.gd`).
+Mods menu, it works after a restart (`Game.debug_log`, `ui/debug_console.gd`).
 
 **Codex** (main menu / pause → Codex, `systems/codex.gd`) — pages from `data/codex.json` of the game and mods:
 character, damage and elements, zones and loot, gun types, makers, gun generation, perks, legendaries, enemies,
@@ -173,7 +173,7 @@ next to the exe — the text from `data/guide.json` plus a reference of every lo
 
 ## Skill tree
 
-Every hero level (`Game.hero_level`, XP from kills) gives 5 skill points. The tree (`K`, or Pause → Skill tree) has four branches on
+Every hero level (`Game.state.hero_level`, XP from kills) gives 5 skill points. The tree (`K`, or Pause → Skill tree) has four branches on
 four screens — **Weapon**, **Vitality**, **Abilities**, **Utility**. Level N of a tier 1 skill costs N points, of a tier 2 skill 2×N.
 A tier 2 skill needs a level in every parent; skills of one class exclude each other; personal skills exist only for one hero.
 Firepower, Toughness and Skill Power also scale with the hero's level (bonus = skill level × hero level × base bonus, `per_hero`). The tree lasts one run (it is not meta-progression). The data is in `data/skill_branches.json` and `data/skill_tree.json`, so mods can add

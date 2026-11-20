@@ -42,7 +42,7 @@ func _ready() -> void:
 	add_child(cursor)
 	cursor.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	Game.message.connect(_on_message)
-	Game.settings_changed.connect(_on_setting)
+	Game.settings.changed.connect(_on_setting)
 	get_viewport().size_changed.connect(fit)
 	fit()
 
@@ -182,6 +182,6 @@ func _process(delta: float) -> void:
 		help_t -= delta
 	if dead_screen:
 		death_t += delta
-	cursor.visible = not Game.main.menu.visible and not (inv.visible and Controls.mode != "kbm")
+	cursor.visible = not Game.main.menu.visible and not (inv.visible and Game.controls.mode != "kbm")
 	root.queue_redraw()
 	cursor.queue_redraw()

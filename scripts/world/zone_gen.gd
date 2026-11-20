@@ -11,7 +11,7 @@ const HAZARD := Zone.HAZARD
 
 static func generate(level: int, rng: RandomNumberGenerator) -> Dictionary:
 	var biome: Dictionary = Biomes.for_level(level)
-	if Game.is_boss_zone(level):
+	if RunConfig.is_boss_zone(level):
 		return _gen_boss(level, rng, biome)
 	for attempt in 6:
 		var d := _try_gen(level, rng, biome, -1.0)
@@ -25,7 +25,7 @@ static func map_size(level: int) -> int:
 	return 64 + mini(level, 24)
 
 
-## Сколько паков в зоне (максимум; на тесной карте может встать меньше). Влияет и на экономику: Game.expected_enemies.
+## Сколько паков в зоне (максимум; на тесной карте может встать меньше). Влияет и на экономику: Balance.expected_enemies.
 static func pack_count(level: int) -> int:
 	return mini(14 + level / 2, 28)
 
@@ -45,7 +45,41 @@ static func _try_gen(level: int, rng: RandomNumberGenerator, biome: Dictionary, 
 	var grid := PackedByteArray()
 	grid.resize(w * h)
 	grid.fill(FLOOR)
+	_carve_terrain(grid, w, h, rng, biome, th_override)
 
+	var style: String = biome["style"]
+	if style == "ruins":
+		_add_ruins(grid, w, h, rng)
+	elif style == "scrap":
+		_add_scrap(grid, w, h, rng)
+
+	var sp := _pick_spawn(grid, w, h, rng)
+	# Заливка: всё недостижимое — в скалу
+	var dist := _bfs(grid, w, h, sp)
+	var reach := _seal_unreachable(grid, dist)
+	# th_override >= 0.9 — аварийный режим, принимаем любую карту
+	if reach < int(w * h * 0.33) and th_override < 0.9:
+		return {}
+
+	var portal := _pick_portal(grid, w, dist, rng)
+
+	# Кандидаты под паки врагов и сундуки
+	var cands: Array = []
+	for i in w * h:
+		if grid[i] == FLOOR and dist[i] >= 14:
+			cands.append(i)
+	U.shuffle(cands, rng)
+	var packs := _place_packs(cands, w, portal, pack_count(level))
+	var chests := _place_chests(cands, w, portal, rng)
+
+	return {"w": w, "h": h, "level": level, "grid": grid, "biome": biome, "boss": false,
+		"spawn": sp, "portal": portal, "packs": packs, "chests": chests,
+		"decor": _make_decor(grid, w, h, rng, 380)}
+
+
+## Рельеф: шум n1 даёт скалы, шум n2 — жижу/ямы (пороги биома). Рамка в 2 клетки — всегда скала.
+static func _carve_terrain(grid: PackedByteArray, w: int, h: int, rng: RandomNumberGenerator, biome: Dictionary,
+		th_override: float) -> void:
 	var n1 := FastNoiseLite.new()
 	n1.seed = rng.randi()
 	n1.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
@@ -71,15 +105,11 @@ static func _try_gen(level: int, rng: RandomNumberGenerator, biome: Dictionary, 
 			elif n2.get_noise_2d(x, y) > pit_th:
 				grid[i] = liquid
 
-	var style: String = biome["style"]
-	if style == "ruins":
-		_add_ruins(grid, w, h, rng)
-	elif style == "scrap":
-		_add_scrap(grid, w, h, rng)
 
-	# Спавн у случайного края
+## Спавн у случайного края; вокруг него расчищается круг.
+static func _pick_spawn(grid: PackedByteArray, w: int, h: int, rng: RandomNumberGenerator) -> Vector2i:
 	var side := rng.randi_range(0, 3)
-	var along := rng.randi_range(12, size - 13)
+	var along := rng.randi_range(12, w - 13)
 	var sp: Vector2i
 	match side:
 		0:
@@ -91,21 +121,24 @@ static func _try_gen(level: int, rng: RandomNumberGenerator, biome: Dictionary, 
 		_:
 			sp = Vector2i(along, h - 8)
 	_clear_circle(grid, w, h, sp, 5)
+	return sp
 
-	# Заливка: всё недостижимое — в скалу
-	var dist := _bfs(grid, w, h, sp)
+
+## Всё, куда не дойти от спавна (dist < 0), замуровать в скалу. Возвращает число достижимых клеток.
+static func _seal_unreachable(grid: PackedByteArray, dist: PackedInt32Array) -> int:
 	var reach := 0
-	for i in w * h:
+	for i in grid.size():
 		if dist[i] < 0:
 			if grid[i] == FLOOR or grid[i] == HAZARD:
 				grid[i] = ROCK
 		else:
 			reach += 1
-	# th_override >= 0.9 — аварийный режим, принимаем любую карту
-	if reach < int(w * h * 0.33) and th_override < 0.9:
-		return {}
+	return reach
 
-	# Портал — в одной из самых дальних клеток
+
+## Портал — в одной из самых дальних клеток (от 88% максимальной дальности); вокруг расчищается круг.
+static func _pick_portal(grid: PackedByteArray, w: int, dist: PackedInt32Array, rng: RandomNumberGenerator) -> Vector2i:
+	var h := grid.size() / w
 	var maxd := 0
 	for i in w * h:
 		if dist[i] > maxd and grid[i] == FLOOR:
@@ -117,16 +150,12 @@ static func _try_gen(level: int, rng: RandomNumberGenerator, biome: Dictionary, 
 	var pidx: int = far[rng.randi() % far.size()]
 	var portal := Vector2i(pidx % w, pidx / w)
 	_clear_circle(grid, w, h, portal, 2)
+	return portal
 
-	# Кандидаты под паки врагов и сундуки
-	var cands: Array = []
-	for i in w * h:
-		if grid[i] == FLOOR and dist[i] >= 14:
-			cands.append(i)
-	U.shuffle(cands, rng)
 
+## Паки врагов: клетки из перемешанных кандидатов не ближе 5 к порталу и не ближе 8 друг к другу.
+static func _place_packs(cands: Array, w: int, portal: Vector2i, want: int) -> Array:
 	var packs: Array = []
-	var want := pack_count(level)
 	for i in cands:
 		if packs.size() >= want:
 			break
@@ -140,7 +169,11 @@ static func _try_gen(level: int, rng: RandomNumberGenerator, biome: Dictionary, 
 				break
 		if ok:
 			packs.append(c)
+	return packs
 
+
+## Сундуки (3–6): с хвоста того же списка, не ближе 4 к порталу и не ближе 16 друг к другу.
+static func _place_chests(cands: Array, w: int, portal: Vector2i, rng: RandomNumberGenerator) -> Array:
 	var chests: Array = []
 	var want_chests := rng.randi_range(3, 6)
 	for k in range(cands.size() - 1, -1, -1):
@@ -157,10 +190,7 @@ static func _try_gen(level: int, rng: RandomNumberGenerator, biome: Dictionary, 
 				break
 		if ok:
 			chests.append(c)
-
-	return {"w": w, "h": h, "level": level, "grid": grid, "biome": biome, "boss": false,
-		"spawn": sp, "portal": portal, "packs": packs, "chests": chests,
-		"decor": _make_decor(grid, w, h, rng, 380)}
+	return chests
 
 
 static func _gen_boss(level: int, rng: RandomNumberGenerator, biome: Dictionary) -> Dictionary:

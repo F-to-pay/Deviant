@@ -113,7 +113,7 @@ func _ready() -> void:
 
 	panel.visible = false
 	cursor.visible = false
-	DebugLog.info("mod debugger on — F8 or ` to open (in the Godot editor only `: F8 stops the game there), type help", "debug")
+	Game.debug_log.info("mod debugger on — F8 or ` to open (in the Godot editor only `: F8 stops the game there), type help", "debug")
 
 
 func _input(event: InputEvent) -> void:
@@ -146,23 +146,23 @@ func _process(delta: float) -> void:
 	_poll_t -= delta
 	if _poll_t <= 0.0:
 		_poll_t = 0.3
-		DebugLog.poll_engine_log()
-	var w := DebugLog.warns
-	var e := DebugLog.errors
+		Game.debug_log.poll_engine_log()
+	var w := Game.debug_log.warns
+	var e := Game.debug_log.errors
 	badge.visible = not panel.visible and (w > 0 or e > 0)
 	if badge.visible:
 		badge.text = U.t("Mods") + ": %s%s — F8 / `" % [("⚠ %d  " % w) if w > 0 else "", ("✖ %d" % e) if e > 0 else ""]
 		badge.add_theme_color_override("font_color", Color(1.0, 0.4, 0.35) if e > 0 else Color(1.0, 0.8, 0.35))
 	if panel.visible:
 		cursor.queue_redraw()
-		if _ver != DebugLog.version:
-			_ver = DebugLog.version
+		if _ver != Game.debug_log.version:
+			_ver = Game.debug_log.version
 			_redraw_log()
 
 
 func _redraw_log() -> void:
 	var lines := PackedStringArray()
-	for en in DebugLog.snapshot():
+	for en in Game.debug_log.snapshot():
 		var lvl := str(en["level"])
 		if only_problems.button_pressed and not (lvl in ["warn", "error"]):
 			continue
@@ -200,115 +200,175 @@ func _on_submit(text: String) -> void:
 		return
 	_history.append(line)
 	_hist_i = _history.size()
-	DebugLog.add("cmd", "> " + line)
+	Game.debug_log.add("cmd", "> " + line)
 	var parts := line.split(" ", false)
 	var cmd := parts[0].to_lower()
 	var args := parts.slice(1)
 	match cmd:
 		"help":
 			for h in HELP:
-				DebugLog.add("cmd", str(h))
+				Game.debug_log.add("cmd", str(h))
 		"clear":
 			_clear()
 		"validate":
 			_cmd_validate()
 		"reload":
-			Game.reload_content()
-			if Game.main != null:
-				Game.main.menu._rebuild.call_deferred()
-			Mods.validate()
+			_cmd_reload()
 		"lang":
-			if args.is_empty() or not I18n.langs.has(args[0]):
-				_say("languages: " + ", ".join(PackedStringArray(I18n.available())))
-			else:
-				Game.set_setting("language", args[0])
-				_say("language: " + I18n.current())
+			_cmd_lang(args)
 		"list":
 			_cmd_list(args[0] if not args.is_empty() else "")
 		"give":
 			_give(args[0] if args.size() > 0 else "random", args[1] if args.size() > 1 else "random",
 				int(args[2]) if args.size() > 2 else -1, "", "")
 		"perk":
-			if args.is_empty() or GunData.perk(args[0]).is_empty():
-				_say("unknown perk — try: list perks")
-			else:
-				_give(args[1] if args.size() > 1 else "random", "random", GunData.R_RARE, args[0], "")
+			_cmd_perk(args)
 		"legendary":
-			if args.is_empty():
-				_say("which one? — try: list legendaries")
-			else:
-				_give("random", "random", GunData.R_LEGENDARY, "", args[0])
+			_cmd_legendary(args)
 		"coins":
-			Game.add_coins(float(args[0]) if not args.is_empty() else 100.0)
-			_say("coins: %s" % U.money(Game.coins))
+			_cmd_coins(args)
 		"ancient":
-			Game.add_meta(int(args[0]) if not args.is_empty() else 10)
-			_say("ancient coins: %d" % Game.meta_coins)
+			_cmd_ancient(args)
 		"skip":
-			var mskip: Main = Game.main
-			if mskip == null or mskip.menu.visible and mskip.menu.mode == "main" or mskip.player.dead:
-				_say("start a run first")
-			else:
-				var skip_n := 1
-				var skip_boss := false
-				var skip_bad := ""
-				for skip_tok in args:
-					var sa := str(skip_tok)
-					if sa == "--boss" or sa == "-b" or sa == "boss":
-						skip_boss = true
-					elif sa.is_valid_int() and int(sa) >= 1:
-						skip_n = mini(int(sa), 200)
-					else:
-						skip_bad = sa
-				if skip_bad != "":
-					_say("usage: skip [n] [--boss]   (got '%s')" % skip_bad)
-				else:
-					mskip.skip_zone(skip_n, skip_boss)
+			_cmd_skip(args)
 		"town":
-			var main: Main = Game.main
-			if main == null or main.menu.visible and main.menu.mode == "main" or main.player.dead:
-				_say("start a run first")
-			else:
-				main.next_zone(main.zone.level if Game.in_town else Game.zone_level + 1, true)
+			_cmd_town()
 		"unlock":
-			var which: String = args[0] if not args.is_empty() else "all"
-			var ids: Array = Heroes.ORDER if which == "all" else [which]
-			for h in ids:
-				if Game.unlock_hero(str(h), true):
-					_say("unlocked: %s" % str(h))
-				else:
-					_say("unknown hero '%s' — heroes: %s" % [str(h), ", ".join(PackedStringArray(Heroes.ORDER))])
+			_cmd_unlock(args)
 		"hero":
-			var hid: String = args[0] if not args.is_empty() else ""
-			if not Heroes.LIST.has(hid):
-				_say("heroes: " + ", ".join(PackedStringArray(Heroes.ORDER)))
-			else:
-				Game.unlock_hero(hid, true)
-				Game.select_hero(hid)
-				_say("hero: %s" % hid)
+			_cmd_hero(args)
 		"skillperk":
-			var main2: Main = Game.main
-			var pid: String = args[0] if not args.is_empty() else ""
-			if not Heroes.PERKS.has(pid):
-				_say("skill perks: " + ", ".join(PackedStringArray(Heroes.PERKS.keys())))
-			elif main2 == null or main2.player == null:
-				_say("start a run first")
-			else:
-				main2.player.add_run_perk(pid, int(args[1]) if args.size() > 1 else 0)
-				_say("skill perk %s ×%d%s" % [pid, int(main2.player.run_perks[pid]),
-					"" if Heroes.perk_fits(pid, main2.player.hero) else " (not for this hero — no effect)"])
+			_cmd_skillperk(args)
 		"missing":
-			var code: String = args[0] if not args.is_empty() else I18n.current()
-			var d: Dictionary = DebugLog.missing_tr.get(code, {})
-			_say("[%s] %d strings without translation seen so far" % [code, d.size()])
-			for s in d:
-				DebugLog.add("tr", "  \"%s\"" % str(s))
+			_cmd_missing(args)
 		_:
 			_say("unknown command '%s' — type help" % cmd)
 
 
+## Перечитать данные и моды, перестроить меню, проверить.
+func _cmd_reload() -> void:
+	Game.reload_content()
+	if Game.main != null:
+		Game.main.menu.rebuild.call_deferred()
+	Mods.validate()
+
+
+## Сменить язык или показать список языков.
+func _cmd_lang(args: PackedStringArray) -> void:
+	if args.is_empty() or not I18n.langs.has(args[0]):
+		_say("languages: " + ", ".join(PackedStringArray(I18n.available())))
+	else:
+		Game.settings.set_value("language", args[0])
+		_say("language: " + I18n.current())
+
+
+## Выдать пушку с этим перком.
+func _cmd_perk(args: PackedStringArray) -> void:
+	if args.is_empty() or GunData.perk(args[0]).is_empty():
+		_say("unknown perk — try: list perks")
+	else:
+		_give(args[1] if args.size() > 1 else "random", "random", GunData.R_RARE, args[0], "")
+
+
+## Выдать легендарку по id.
+func _cmd_legendary(args: PackedStringArray) -> void:
+	if args.is_empty():
+		_say("which one? — try: list legendaries")
+	else:
+		_give("random", "random", GunData.R_LEGENDARY, "", args[0])
+
+
+## Добавить монеты.
+func _cmd_coins(args: PackedStringArray) -> void:
+	Game.state.add_coins(float(args[0]) if not args.is_empty() else 100.0)
+	_say("coins: %s" % U.money(Game.state.coins))
+
+
+## Добавить древние монеты (сохраняются сразу).
+func _cmd_ancient(args: PackedStringArray) -> void:
+	Game.add_meta(int(args[0]) if not args.is_empty() else 10)
+	_say("ancient coins: %d" % Game.profile.meta_coins)
+
+
+## Пропустить зоны: skip [n] [--boss].
+func _cmd_skip(args: PackedStringArray) -> void:
+	var mskip: Main = Game.main
+	if mskip == null or mskip.menu.visible and mskip.menu.mode == "main" or mskip.player.dead:
+		_say("start a run first")
+	else:
+		var skip_n := 1
+		var skip_boss := false
+		var skip_bad := ""
+		for skip_tok in args:
+			var sa := str(skip_tok)
+			if sa == "--boss" or sa == "-b" or sa == "boss":
+				skip_boss = true
+			elif sa.is_valid_int() and int(sa) >= 1:
+				skip_n = mini(int(sa), 200)
+			else:
+				skip_bad = sa
+		if skip_bad != "":
+			_say("usage: skip [n] [--boss]   (got '%s')" % skip_bad)
+		else:
+			mskip.skip_zone(skip_n, skip_boss)
+
+
+## Отправиться в город (или в следующий).
+func _cmd_town() -> void:
+	var main: Main = Game.main
+	if main == null or main.menu.visible and main.menu.mode == "main" or main.player.dead:
+		_say("start a run first")
+	else:
+		main.next_zone(main.zone.level if Game.state.in_town else Game.state.zone_level + 1, true)
+
+
+## Открыть героя (или всех) без оплаты.
+func _cmd_unlock(args: PackedStringArray) -> void:
+	var which: String = args[0] if not args.is_empty() else "all"
+	var ids: Array = Heroes.ORDER if which == "all" else [which]
+	for h in ids:
+		if Game.profile.unlock_hero(str(h), true):
+			_say("unlocked: %s" % str(h))
+		else:
+			_say("unknown hero '%s' — heroes: %s" % [str(h), ", ".join(PackedStringArray(Heroes.ORDER))])
+
+
+## Выбрать героя, открыв его.
+func _cmd_hero(args: PackedStringArray) -> void:
+	var hid: String = args[0] if not args.is_empty() else ""
+	if not Heroes.LIST.has(hid):
+		_say("heroes: " + ", ".join(PackedStringArray(Heroes.ORDER)))
+	else:
+		Game.profile.unlock_hero(hid, true)
+		Game.select_hero(hid)
+		_say("hero: %s" % hid)
+
+
+## Выдать перк навыка героя на этот забег.
+func _cmd_skillperk(args: PackedStringArray) -> void:
+	var main2: Main = Game.main
+	var pid: String = args[0] if not args.is_empty() else ""
+	if not Heroes.PERKS.has(pid):
+		_say("skill perks: " + ", ".join(PackedStringArray(Heroes.PERKS.keys())))
+	elif main2 == null or main2.player == null:
+		_say("start a run first")
+	else:
+		main2.player.add_run_perk(pid, int(args[1]) if args.size() > 1 else 0)
+		_say("skill perk %s ×%d%s" % [pid, int(main2.player.run_perks[pid]),
+			"" if Heroes.perk_fits(pid, main2.player.hero) else " (not for this hero — no effect)"])
+
+
+## Строки без перевода, встреченные в игре.
+func _cmd_missing(args: PackedStringArray) -> void:
+	var code: String = args[0] if not args.is_empty() else I18n.current()
+	var d: Dictionary = Game.debug_log.missing_tr.get(code, {})
+	_say("[%s] %d strings without translation seen so far" % [code, d.size()])
+	for s in d:
+		Game.debug_log.add("tr", "  \"%s\"" % str(s))
+
+
 func _say(s: String) -> void:
-	DebugLog.add("cmd", s)
+	Game.debug_log.add("cmd", s)
 
 
 func _cmd_validate() -> void:
@@ -361,7 +421,7 @@ func _give(arch: String, maker: String, rarity: int, perk: String, leg: String) 
 			_say("unknown legendary '%s' — try: list legendaries" % leg)
 			return
 	GunGen.force_legendary = leg
-	var g := GunGen.generate(maxi(1, Game.zone_level), main.rng, 0.0, 0,
+	var g := GunGen.generate(maxi(1, Game.state.zone_level), main.rng, 0.0, 0,
 		clampi(rarity, -1, GunData.R_ABSURD),
 		"" if arch == "random" else arch, "" if maker == "random" else maker)
 	GunGen.force_legendary = ""
@@ -374,7 +434,7 @@ func _give(arch: String, maker: String, rarity: int, perk: String, leg: String) 
 
 func _copy() -> void:
 	var lines := PackedStringArray()
-	for en in DebugLog.snapshot():
+	for en in Game.debug_log.snapshot():
 		lines.append("%s %s%s%s" % [str(en["level"]).to_upper(), ("[%s] " % str(en["src"])) if str(en["src"]) != "" else "",
 			str(en["text"]), ("  x%d" % int(en["n"])) if int(en["n"]) > 1 else ""])
 	DisplayServer.clipboard_set("\n".join(lines))
@@ -382,4 +442,4 @@ func _copy() -> void:
 
 
 func _clear() -> void:
-	DebugLog.clear()
+	Game.debug_log.clear()

@@ -4,7 +4,7 @@ extends RefCounted
 ##  1. Бюджет: зона, зачищенная целиком, даёт LEVELS_PER_ZONE уровней героя (считается от его уровня на входе в зону).
 ##  2. Вкус: паки с чемпионами и вожаками выпадают в ELITE_LOVE раз чаще обычного (`EnemyData.roll_pack`).
 ##  3. Выравнивание: когда зона расставлена, `finish_zone()` считает множитель `xp_scale`, при котором сумма XP всех
-##     её врагов ровно равна бюджету. Награда за врага = `Game.enemy_xp` × `xp_scale` (`kill_xp`). Так кривая уровней
+##     её врагов ровно равна бюджету. Награда за врага = `Balance.enemy_xp` × `xp_scale` (`kill_xp`). Так кривая уровней
 ##     не зависит от того, сколько и каких врагов выпало: чем глубже зона, тем дороже каждый убитый.
 ## Призванные враги опыта не дают и в запас не входят. Вывод — в оверлее отладки (F3), строка `describe()`.
 
@@ -34,33 +34,39 @@ func note_pack() -> void:
 
 func note_spawn(level: int, elite: int) -> void:
 	enemies += 1
-	pool_xp += Game.enemy_xp(level, elite)
+	pool_xp += Balance.enemy_xp(level, elite)
 	by_elite[clampi(elite, 0, 3)] += 1
+
+
+## Сколько «сырого» XP (до множителя рейтинга) отдаёт зона, зачищенная целиком, герою уровня hero_level — бюджет судьи.
+## Им же платит пропущенная зона (`Main.skip_zone`).
+static func zone_xp(hero_level: int) -> float:
+	return Balance.xp_span(hero_level, LEVELS_PER_ZONE)
 
 
 ## Зона расставлена: подогнать награду так, чтобы вся она стоила LEVELS_PER_ZONE уровней (с учётом множителя рейтинга,
 ## который `Game.add_xp` применяет сам).
 func finish_zone() -> void:
-	var raw := pool_xp * maxf(0.05, Game.rating_mult())
+	var raw := pool_xp * maxf(0.05, RunConfig.rating_mult(Game.run))
 	if raw <= 0.0:
 		xp_scale = 1.0
 		return
-	xp_scale = Game.xp_span(Game.hero_level, LEVELS_PER_ZONE) / raw
+	xp_scale = zone_xp(Game.state.hero_level) / raw
 
 
 ## Награда героя за убийство врага в этой зоне (до множителя рейтинга).
 func kill_xp(level: int, elite: int) -> float:
-	return Game.enemy_xp(level, elite) * xp_scale
+	return Balance.enemy_xp(level, elite) * xp_scale
 
 
 ## Сколько уровней героя дал бы весь запас XP зоны из текущего состояния (дробное: остаток — доля следующего).
 func levels_worth() -> float:
-	var x: float = Game.xp + pool_xp * xp_scale * Game.rating_mult()   # опыт в зоне идёт с множителем рейтинга
-	var lvl: int = Game.hero_level
-	while x >= Game.xp_need(lvl):
-		x -= Game.xp_need(lvl)
+	var x: float = Game.state.xp + pool_xp * xp_scale * RunConfig.rating_mult(Game.run)   # опыт в зоне идёт с множителем рейтинга
+	var lvl: int = Game.state.hero_level
+	while x >= Balance.xp_need(lvl):
+		x -= Balance.xp_need(lvl)
 		lvl += 1
-	return float(lvl - Game.hero_level) + x / Game.xp_need(lvl)
+	return float(lvl - Game.state.hero_level) + x / Balance.xp_need(lvl)
 
 
 func describe() -> String:

@@ -5,7 +5,7 @@ extends RefCounted
 ##  Мистик — один перк навыка героя за город (1 из 3, Heroes.PERKS), на забег; каждый следующий дороже.
 ##  Мастерская — перебросить перк, поднять редкость (подтягивать уровень нельзя — пушки должны устаревать).
 ##  Лекарь — вылечить до полного, наполнить фляги (в хардкоре не работает).
-## Все цены — в обычных монетах и растут с этапом так же, как доход (Game.econ: ×1.2 за этап).
+## Все цены — в обычных монетах и растут с этапом так же, как доход (Balance.econ: ×1.2 за этап).
 ## Ассортимент города создаётся при входе в него (Main.load_town -> make_town) и живёт до выхода.
 
 ## Цена пушки по редкости (обычная ... абсурдная) при стоимости монетки 1.
@@ -24,11 +24,11 @@ const COMBINE_SHARE := 0.5     # объединение двух пушек — 
 const RARITY_UP_SHARE := 0.7    # повышение редкости — доля цены пушки новой редкости
 
 static func cv(level: int) -> float:
-	return Game.econ(level)
+	return Balance.econ(level)
 
 
 static func price_of(rarity: int, level: int) -> float:
-	return Game.money(float(RARITY_PRICE[clampi(rarity, 0, RARITY_PRICE.size() - 1)]) * cv(level))
+	return Balance.money(float(RARITY_PRICE[clampi(rarity, 0, RARITY_PRICE.size() - 1)]) * cv(level))
 
 
 static func gun_price(g: Gun) -> float:
@@ -36,16 +36,16 @@ static func gun_price(g: Gun) -> float:
 
 
 static func sell_price(g: Gun) -> float:
-	return maxf(1.0, Game.money(float(gun_price(g)) * SELL_SHARE))
+	return maxf(1.0, Balance.money(float(gun_price(g)) * SELL_SHARE))
 
 
 static func reroll_price(g: Gun) -> float:
-	return maxf(1.0, Game.money(float(gun_price(g)) * REROLL_SHARE))
+	return maxf(1.0, Balance.money(float(gun_price(g)) * REROLL_SHARE))
 
 
 ## Цена объединения пушек в гибрид (обе пушки пропадают, появляется одна).
 static func combine_price(a: Gun, b: Gun) -> float:
-	return maxf(1.0, Game.money(float(price_of(maxi(a.rarity, b.rarity), maxi(a.level, b.level))) * COMBINE_SHARE))
+	return maxf(1.0, Balance.money(float(price_of(maxi(a.rarity, b.rarity), maxi(a.level, b.level))) * COMBINE_SHARE))
 
 
 ## Поднять редкость можно до эпической и не у легендарок/абсурдных.
@@ -54,11 +54,11 @@ static func can_rarity_up(g: Gun) -> bool:
 
 
 static func rarity_up_price(g: Gun) -> float:
-	return maxf(1.0, Game.money(float(price_of(g.rarity + 1, g.level)) * RARITY_UP_SHARE))
+	return maxf(1.0, Balance.money(float(price_of(g.rarity + 1, g.level)) * RARITY_UP_SHARE))
 
 
 static func stock_reroll_price(level: int, done: int) -> float:
-	return Game.money(float(REROLL_STOCK_BASE) * cv(level) * (1.0 + 0.5 * float(done)))
+	return Balance.money(float(REROLL_STOCK_BASE) * cv(level) * (1.0 + 0.5 * float(done)))
 
 
 ## Сколько патронов даёт разбор пушки сам по себе (без патронов в магазине) — как в Player.scrap.
@@ -70,26 +70,26 @@ static func scrap_rounds(g: Gun) -> int:
 ## Так разобрать пушку на патроны всегда выгоднее, чем купить их, но не в разы.
 static func ammo_price(g: Gun, rounds: int) -> float:
 	var per := float(sell_price(g)) / float(maxi(1, scrap_rounds(g)))
-	return maxf(1.0, Game.money(ceilf(per * float(rounds) * AMMO_MARKUP)))
+	return maxf(1.0, Balance.money(ceilf(per * float(rounds) * AMMO_MARKUP)))
 
 
 ## Вылечить до полного: цена пропорциональна недостающему здоровью.
 static func heal_price(level: int, missing_frac: float) -> float:
 	if missing_frac <= 0.0:
 		return 0
-	return maxf(1.0, Game.money(ceilf(float(HEAL_FULL) * cv(level) * missing_frac)))
+	return maxf(1.0, Balance.money(ceilf(float(HEAL_FULL) * cv(level) * missing_frac)))
 
 
 static func flask_price(level: int) -> float:
-	return Game.money(float(FLASK_PRICE) * cv(level))
+	return Balance.money(float(FLASK_PRICE) * cv(level))
 
 
 static func mystic_price(level: int, bought: int) -> float:
-	return Game.money(float(MYSTIC_BASE) * cv(level) * (1.0 + 0.5 * float(bought)))
+	return Balance.money(float(MYSTIC_BASE) * cv(level) * (1.0 + 0.5 * float(bought)))
 
 
 ## Товар города перед зоной level: пушки Оружейной, перки Мистика, задания Гильдии.
-## Перки Мистика подбираются под героя при первом заходе к нему (Menu._refresh_mystic) —
+## Перки Мистика подбираются под героя при первом заходе к нему (MysticScreen.refresh) —
 ## в стартовом городе героя ещё могут сменить.
 static func make_town(level: int, rng: RandomNumberGenerator) -> Dictionary:
 	var stock := make_stock(level, rng)
@@ -128,5 +128,5 @@ static func make_stock(level: int, rng: RandomNumberGenerator) -> Array:
 ## Сколько стоит пушка из ассортимента: «Товар дня» (town["deal"]) — со скидкой, остальные по полной цене.
 static func buy_price(g: Gun, town: Dictionary) -> float:
 	if g == town.get("deal"):
-		return maxf(1.0, Game.money(float(gun_price(g)) * DEAL_SHARE))
+		return maxf(1.0, Balance.money(float(gun_price(g)) * DEAL_SHARE))
 	return gun_price(g)

@@ -61,8 +61,8 @@ func setup(t: String, lvl: int, el: int, affs: Array) -> void:
 	elem_res = int(def.get("res", -1))
 	color = def["col"]
 	speed = float(def["speed"]) * randf_range(0.92, 1.08)
-	var hpm: float = Game.enemy_hp_mult(lvl)
-	var dmgm: float = Game.enemy_dmg_mult(lvl)
+	var hpm: float = Balance.enemy_hp_mult(lvl, float(Game.run["hp"]))
+	var dmgm: float = Balance.enemy_dmg_mult(lvl, float(Game.run["dmg"]))
 	max_hp = float(def["hp"]) * hpm
 	dmg = float(def["dmg"]) * dmgm
 	if elite == 1:

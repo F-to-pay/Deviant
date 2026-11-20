@@ -34,8 +34,8 @@ func setup_boss(lvl: int, rng: RandomNumberGenerator) -> void:
 	setup("brute", lvl, 3, [])
 	elem_res = -1   # босс не наследует сопротивление громилы (у него и так status_resist 3)
 	radius = 46.0
-	var hpm: float = Game.enemy_hp_mult(lvl)
-	var dmgm: float = Game.enemy_dmg_mult(lvl)
+	var hpm: float = Balance.enemy_hp_mult(lvl, float(Game.run["hp"]))
+	var dmgm: float = Balance.enemy_dmg_mult(lvl, float(Game.run["dmg"]))
 	max_hp = BASE_HP * hpm
 	hp = max_hp
 	dmg = 16.0 * dmgm

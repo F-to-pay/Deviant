@@ -209,7 +209,7 @@ func eff_range() -> float:
 
 ## Урон одного снаряда без учёта уровня (с редкостью) — мера «веса» выстрела.
 func norm_damage() -> float:
-	var lvl_mult: float = Game.gun_dmg_mult(level)
+	var lvl_mult: float = Balance.gun_dmg_mult(level)
 	return damage / lvl_mult
 
 
@@ -220,7 +220,7 @@ func sync_level(new_level: int) -> bool:
 	new_level = maxi(1, new_level)
 	if rarity != GunData.R_COMMON or new_level == level:
 		return false
-	damage *= Game.gun_dmg_mult(new_level) / Game.gun_dmg_mult(level)
+	damage *= Balance.gun_dmg_mult(new_level) / Balance.gun_dmg_mult(level)
 	level = new_level
 	return true
 
@@ -359,7 +359,7 @@ func perk_lines() -> Array:
 	elif pierce > 0:
 		out.append([U.t("Pierces enemies: %d (−40%% damage each)") % pierce, w])
 	if rhythm:
-		out.append([U.t("Rhythm reload: press [%s] or fire on the beat (once a second) to cut it by %d s; a miss locks it for %d s") % [Controls.label("reload"), roundi(RHYTHM_CUT), roundi(RHYTHM_LOCK)], good])
+		out.append([U.t("Rhythm reload: press [%s] or fire on the beat (once a second) to cut it by %d s; a miss locks it for %d s") % [Game.controls.label("reload"), roundi(RHYTHM_CUT), roundi(RHYTHM_LOCK)], good])
 		out.append([U.t("Every hit on the beat: +%d%% damage to the next magazine (stacks)") % roundi(RHYTHM_BONUS * 100.0), good])
 	if recoil > 0.0:
 		out.append([U.t("Recoil: throws you back %d m") % roundi(recoil_m()), bad])

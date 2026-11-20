@@ -1,6 +1,6 @@
 class_name Player
 extends Actor
-## Игрок. Вся сила в пушках, а уровни героя (Game.hero_level) дают очки дерева навыков (LevelTree) на один забег.
+## Игрок. Вся сила в пушках, а уровни героя (Game.state.hero_level) дают очки дерева навыков (LevelTree) на один забег.
 ## 4 слота + рюкзак. Плюс герой (Heroes) с активным навыком.
 
 const BASE_HP := 100.0
@@ -117,7 +117,7 @@ func reset() -> void:
 	acid = 0.0
 	cryo = 0.0
 	frozen_time = 0.0
-	set_hero(Game.hero)
+	set_hero(Game.profile.hero)
 
 
 ## Сменить героя (в стартовом городе): навык готов сразу.
@@ -182,7 +182,7 @@ func on_skill_kill(e: Node2D) -> void:
 	if tr <= 0:
 		return
 	trophy_bonus += 0.002 + 0.0005 * float(tr - 1)
-	Game.add_coins(1)
+	Game.state.add_coins(1)
 	Quests.progress("coins", 1)
 	Game.main.fx.text(e.position + Vector2(0, -30), "+1", Color(1.0, 0.85, 0.3), 14, 0.7)
 
@@ -348,7 +348,7 @@ func hurt_dot(amount: float, el: int) -> void:
 func leech(dmg_dealt: float, frac: float) -> void:
 	if dead or frac <= 0.0 or dmg_dealt <= 0.0:
 		return
-	var lvl_mult: float = Game.gun_dmg_mult(Game.zone_level)
+	var lvl_mult: float = Balance.gun_dmg_mult(Game.state.zone_level)
 	var amt := minf(dmg_dealt / lvl_mult * frac, leech_budget)
 	if amt <= 0.0:
 		return
@@ -458,11 +458,11 @@ func _physics_process(delta: float) -> void:
 	if slash_t > 0.0:
 		slash_t -= delta
 
-	var mp := Controls.aim_world(position)
+	var mp := Game.controls.aim_world(position)
 	if mp.distance_squared_to(position) > 16.0:
 		aim = (mp - position).normalized()
 
-	var input := Controls.move_vector()
+	var input := Game.controls.move_vector()
 	var g := gun()
 	var spd := SPEED
 	if g != null:
@@ -501,7 +501,7 @@ func _physics_process(delta: float) -> void:
 		if hazard_tick <= 0.0:
 			hazard_tick = 0.5
 			var el: int = main.zone.biome.get("hazard_el", -1)
-			var dmgm: float = Game.enemy_dmg_mult(Game.zone_level)
+			var dmgm: float = Balance.enemy_dmg_mult(Game.state.zone_level, float(Game.run["dmg"]))
 			hurt_dot(4.0 * dmgm, el)
 			if el >= 0:
 				apply_element(el, 1.0)
@@ -511,7 +511,7 @@ func _physics_process(delta: float) -> void:
 	# Пассивного регена нет. Только хилки и (редкий) вампиризм.
 	leech_budget = minf(LEECH_CAP, leech_budget + LEECH_CAP * delta)
 
-	var skill_cast: Variant = Controls.take_skill()   # навык, прицеленный отдельным стиком на сенсоре
+	var skill_cast: Variant = Game.controls.take_skill()   # навык, прицеленный отдельным стиком на сенсоре
 	if not main.transitioning:
 		if skill_cast != null and skill_charges > 0 and skill_gap <= 0.0 and not blessed:
 			_use_skill(skill_cast)
@@ -551,7 +551,7 @@ func _use_skill(cast: Variant = null) -> void:
 				cdir = (cast["dir"] as Vector2).normalized()
 				dist = lerpf(60.0, float(h["range"]), clampf(float(cast["len"]), 0.0, 1.0))
 			else:
-				var to := Controls.aim_world(position) - position
+				var to := Game.controls.aim_world(position) - position
 				dist = clampf(to.length(), 40.0, float(h["range"]))
 			var target := position + cdir * dist
 			var n := 3 * perk("split") if perk("split") > 0 else 1
@@ -569,7 +569,7 @@ func _use_skill(cast: Variant = null) -> void:
 				tdir = (cast["dir"] as Vector2).normalized()
 				tdist = lerpf(60.0, float(h["range"]), clampf(float(cast["len"]), 0.0, 1.0))
 			else:
-				tdist = clampf((Controls.aim_world(position) - position).length(), 40.0, float(h["range"]))
+				tdist = clampf((Game.controls.aim_world(position) - position).length(), 40.0, float(h["range"]))
 			var tpos := position + tdir * tdist
 			# в скале или пропасти турель не встанет — ищем свободное место рядом
 			if main.zone.circle_blocked(tpos, 18.0):
@@ -636,7 +636,7 @@ func _make_turret_spec() -> Dictionary:
 		# легендарка может быть привязана к другой марке — тогда free_ammo выставляем сами, а перки с повышенным расходом
 		# патронов (Двуствольный) для безлимитной пушки недопустимы: перебрасываем, пока не пропадут
 		for attempt in 30:
-			tg = GunGen.generate(Game.zone_level, main.rng, 0.0, 0, mini(g.rarity + 1, GunData.R_LEGENDARY), "", "synergis")
+			tg = GunGen.generate(Game.state.zone_level, main.rng, 0.0, 0, mini(g.rarity + 1, GunData.R_LEGENDARY), "", "synergis")
 			var costly := tg.ammo_per_shot > 1
 			for m in tg.mods:
 				if GunData.perk_costs_ammo(GunData.perk(str(m))):
@@ -751,7 +751,7 @@ func _rhythm_update(g: Gun, delta: float) -> void:
 	if not in_window:
 		rhythm_hit_beat = false
 	# в такт можно жать и R, и огонь (ЛКМ / курок / экранная кнопка): стрелять во время перезарядки всё равно нельзя
-	var tf := Controls.touch_fire
+	var tf := Game.controls.touch_fire
 	var pressed := Input.is_action_just_pressed("reload") or Input.is_action_just_pressed("shoot") or (tf and not _touch_fire_prev)
 	_touch_fire_prev = tf
 	if not pressed:
@@ -803,7 +803,7 @@ func start_reload(manual: bool = false) -> void:
 		return
 	reload_t = g.reload_time
 	reload_total = reload_t
-	_touch_fire_prev = Controls.touch_fire   # огонь, зажатый до перезарядки, нажатием не считается
+	_touch_fire_prev = Game.controls.touch_fire   # огонь, зажатый до перезарядки, нажатием не считается
 	rhythm_phase = 0.2   # первый такт — примерно через 0.8 с после старта
 	rhythm_lock = 0.0
 	rhythm_hit_beat = false
@@ -853,14 +853,14 @@ func _update_gun(delta: float) -> void:
 		start_reload(true)
 		return
 	# «Стрельба по отпусканию» (сенсор): один выстрел, когда отпустили правый стик
-	if Controls.take_shot(fire_cd <= 0.0):
+	if Game.controls.take_shot(fire_cd <= 0.0):
 		if g.ammo <= 0:
 			start_reload()
 			return
 		fire_cd = maxf(fire_cd, 0.0)
 		_pull_trigger(g)
 		return
-	if not Controls.firing():
+	if not Game.controls.firing():
 		if g.ammo <= 0 and (g.free_ammo or reserve_of(g.ammo_type()) > 0):
 			start_reload()
 		return
@@ -890,7 +890,7 @@ func _pull_trigger(g: Gun) -> bool:
 ## пропорционально дистанции. Несколько мин (дробь) ложатся пятном.
 func _fire_shells(g: Gun, mpos: Vector2, spr: float, n: int) -> void:
 	var main: Main = Game.main
-	var to := Controls.aim_world(position) - position
+	var to := Game.controls.aim_world(position) - position
 	var dist := clampf(to.length(), 60.0, g.eff_range())
 	var aim_pt := position + aim * dist
 	var dev := dist * tan(clampf(spr * 0.5, 0.0, 1.2))
@@ -958,7 +958,7 @@ func _draw_skill_preview() -> void:
 	if not bool(hd.get("aimed", false)):
 		return
 	var col: Color = hd["color"] if skill_element < 0 else U.el_color(skill_element)
-	var sd := Controls.skill_aim
+	var sd := Game.controls.skill_aim
 	var dir := sd.normalized()
 	var ready := skill_charges > 0
 	var a := 1.0 if ready else 0.4
@@ -1000,7 +1000,7 @@ func _draw() -> void:
 		var pulse := 1.0 + sin(anim * 8.0) * 0.15
 		draw_circle(Vector2.ZERO, (radius + 7.0) * pulse, Color(1.0, 0.8, 0.3, 0.22))
 		draw_arc(Vector2.ZERO, (radius + 7.0) * pulse, 0.0, TAU, 24, Color(1.0, 0.85, 0.4, 0.8), 2.0)
-	if Controls.skill_aim != Vector2.ZERO:
+	if Game.controls.skill_aim != Vector2.ZERO:
 		_draw_skill_preview()
 	if slash_t > 0.0:
 		# дуга удара: метёт от одного края к другому

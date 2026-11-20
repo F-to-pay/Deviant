@@ -57,7 +57,7 @@ static func scan() -> void:
 
 ## Включение/выключение хранится в настройке mod_states (JSON-строка {id: bool}).
 static func _states() -> Dictionary:
-	var raw := str(Game.setting("mod_states"))
+	var raw := str(Game.settings.get_value("mod_states"))
 	var v: Variant = JSON.parse_string(raw) if raw != "" else {}
 	return v if v is Dictionary else {}
 
@@ -65,7 +65,7 @@ static func _states() -> Dictionary:
 static func set_enabled(id: String, on: bool) -> void:
 	var st := _states()
 	st[id] = on
-	Game.set_setting("mod_states", JSON.stringify(st))
+	Game.settings.set_value("mod_states", JSON.stringify(st))
 	for m in list:
 		if m["id"] == id:
 			m["enabled"] = on
@@ -88,7 +88,7 @@ static func read_json(path: String) -> Variant:
 	var txt := FileAccess.get_file_as_string(path)
 	var j := JSON.new()
 	if j.parse(txt) != OK:
-		DebugLog.error("JSON error in %s, line %d: %s" % [path, j.get_error_line(), j.get_error_message()], source_of(path))
+		Game.debug_log.error("JSON error in %s, line %d: %s" % [path, j.get_error_line(), j.get_error_message()], source_of(path))
 		return null
 	return j.data
 
@@ -170,9 +170,9 @@ static func script_instance(mod_root: String, rel: String) -> Object:
 		if s.reload() == OK:
 			inst = s.new()
 		else:
-			DebugLog.error("script failed to compile: %s" % path, source_of(path))
+			Game.debug_log.error("script failed to compile: %s" % path, source_of(path))
 	else:
-		DebugLog.error("script not found: %s" % path, source_of(path))
+		Game.debug_log.error("script not found: %s" % path, source_of(path))
 	_scripts[path] = inst
 	return inst
 
@@ -208,23 +208,22 @@ static func _src(entry: Dictionary) -> String:
 
 
 const KNOWN_TAGS := ["proc", "explosive", "heal", "no_shell"]
-const KNOWN_SPECIALS := ["", "ring", "nuke10", "chaos", "expert", "singularity", "bounce_keep"]
 const KNOWN_TEMPLATES := ["gun_plain", "gun_adj", "gun_nick", "gun_nick2", "gun_legendary", "type_hybrid", "elite", "rare", "boss"]
 
 
 ## Полная проверка загруженных данных. Пишет в DebugLog; вызывается отладчиком при старте
 ## и командой validate. Ничего не меняет.
 static func validate() -> void:
-	DebugLog.info("--- validate: mods folder %s" % root(), "mods")
+	Game.debug_log.info("--- validate: mods folder %s" % root(), "mods")
 	if list.is_empty():
-		DebugLog.info("no mods found", "mods")
+		Game.debug_log.info("no mods found", "mods")
 	for m in list:
 		var info: Dictionary = m["info"]
-		DebugLog.info("%s %s %s" % ["[on] " if bool(m["enabled"]) else "[off]", str(m["name"]),
+		Game.debug_log.info("%s %s %s" % ["[on] " if bool(m["enabled"]) else "[off]", str(m["name"]),
 			("v" + str(info["version"])) if info.has("version") else ""], str(m["id"]))
 		if not FileAccess.file_exists(str(m["path"]).path_join("mod.json")):
-			DebugLog.info("no mod.json (optional)", str(m["id"]))
-	DebugLog.info("loaded: %d archetypes, %d makers, %d perks, %d legendaries, %d nicknames; languages: %s" % [
+			Game.debug_log.info("no mod.json (optional)", str(m["id"]))
+	Game.debug_log.info("loaded: %d archetypes, %d makers, %d perks, %d legendaries, %d nicknames; languages: %s" % [
 		GunData.ARCH.size(), GunData.MAKERS.size(), GunData.MODS.size(), GunData.LEGENDARIES.size(),
 		GunData.NICKNAMES.size(), ", ".join(PackedStringArray(I18n.available()))], "mods")
 	var banks: Dictionary = {}
@@ -235,33 +234,33 @@ static func validate() -> void:
 		var src := _src(a)
 		for f in ["damage", "fire_rate", "mag", "reload", "speed", "lifetime"]:
 			if not a.has(f):
-				DebugLog.warn("archetype '%s' has no '%s' — default used" % [k, f], src)
+				Game.debug_log.warn("archetype '%s' has no '%s' — default used" % [k, f], src)
 		var snd: Dictionary = a.get("sound", {})
 		if not banks.is_empty() and not banks.has(str(snd.get("bank", "guns/" + str(k)))):
-			DebugLog.info("archetype '%s' has no shot sounds (sfx/guns/%s/ or sound.bank)" % [k, k], src)
+			Game.debug_log.info("archetype '%s' has no shot sounds (sfx/guns/%s/ or sound.bank)" % [k, k], src)
 		for key in ["reload", "reload_done"]:
 			if snd.has(key) and not banks.is_empty() and not banks.has(str(snd[key])):
-				DebugLog.warn("archetype '%s': sound.%s '%s' — no such sound" % [k, key, str(snd[key])], src)
+				Game.debug_log.warn("archetype '%s': sound.%s '%s' — no such sound" % [k, key, str(snd[key])], src)
 	for k in GunData.MAKERS:
 		var mk: Dictionary = GunData.MAKERS[k]
 		var src := _src(mk)
 		_check_ops(mk, "maker '%s'" % k, src)
 		for p in mk.get("perks", []):
 			if GunData.perk(str(p)).is_empty():
-				DebugLog.warn("maker '%s': unknown perk '%s'" % [k, str(p)], src)
+				Game.debug_log.warn("maker '%s': unknown perk '%s'" % [k, str(p)], src)
 		var pa := str(mk.get("projectile_arch", ""))
 		if pa != "" and not GunData.ARCH.has(pa):
-			DebugLog.warn("maker '%s': projectile_arch '%s' — no such archetype" % [k, pa], src)
+			Game.debug_log.warn("maker '%s': projectile_arch '%s' — no such archetype" % [k, pa], src)
 	for p in GunData.MODS:
 		var src := _src(p)
 		var id := str(p.get("id", "?"))
 		_check_ops(p, "perk '%s'" % id, src)
 		for t in p.get("tags", []):
 			if not (str(t) in KNOWN_TAGS):
-				DebugLog.warn("perk '%s': unknown tag '%s' (known: %s)" % [id, str(t), ", ".join(PackedStringArray(KNOWN_TAGS))], src)
+				Game.debug_log.warn("perk '%s': unknown tag '%s' (known: %s)" % [id, str(t), ", ".join(PackedStringArray(KNOWN_TAGS))], src)
 		for c in p.get("fits", []):
 			for prob in GunOps.cond_problems(c):
-				DebugLog.warn("perk '%s' fits: %s" % [id, prob], src)
+				Game.debug_log.warn("perk '%s' fits: %s" % [id, prob], src)
 	for l in GunData.LEGENDARIES:
 		var src := _src(l)
 		var id := str(l.get("id", "?"))
@@ -269,43 +268,44 @@ static func validate() -> void:
 		for key in ["arch", "arch2"]:
 			var a := str(l.get(key, ""))
 			if a != "" and not GunData.ARCH.has(a):
-				DebugLog.warn("legendary '%s': %s '%s' — no such archetype" % [id, key, a], src)
+				Game.debug_log.warn("legendary '%s': %s '%s' — no such archetype" % [id, key, a], src)
 		for m in l.get("perks", []):
 			if GunData.perk(str(m)).is_empty():
-				DebugLog.warn("legendary '%s': unknown perk '%s'" % [id, str(m)], src)
-		if not (str(l.get("special", "")) in KNOWN_SPECIALS):
-			DebugLog.warn("legendary '%s': unknown special '%s' (known: %s)" % [id, str(l["special"]),
-				", ".join(PackedStringArray(KNOWN_SPECIALS))], src)
+				Game.debug_log.warn("legendary '%s': unknown perk '%s'" % [id, str(m)], src)
+		var sp := str(l.get("special", ""))
+		if sp != "" and not GunData.SPECIALS.has(sp):
+			Game.debug_log.warn("legendary '%s': unknown special '%s' (known: %s)" % [id, sp,
+				", ".join(PackedStringArray(GunData.SPECIALS.keys()))], src)
 	for p in Codex.pages:
 		var pid := str(p.get("id", "?"))
 		var auto := str(p.get("auto", ""))
 		if auto != "" and not (auto in Codex.AUTO_KINDS):
-			DebugLog.warn("codex page '%s': unknown auto '%s' (known: %s)" % [pid, auto,
+			Game.debug_log.warn("codex page '%s': unknown auto '%s' (known: %s)" % [pid, auto,
 				", ".join(PackedStringArray(Codex.AUTO_KINDS))], "codex")
 		var acts: Variant = p.get("actions", [])
 		for act in (acts if acts is Array else []):
 			if not (str(act) in Codex.ACTIONS):
-				DebugLog.warn("codex page '%s': unknown action '%s' (known: %s)" % [pid, str(act),
+				Game.debug_log.warn("codex page '%s': unknown action '%s' (known: %s)" % [pid, str(act),
 					", ".join(PackedStringArray(Codex.ACTIONS))], "codex")
 		if not p.has("title"):
-			DebugLog.warn("codex page '%s' has no title" % pid, "codex")
-	DebugLog.info("skill tree: %d branches, %d nodes" % [LevelTree.branches.size(), LevelTree.nodes.size()], "mods")
+			Game.debug_log.warn("codex page '%s' has no title" % pid, "codex")
+	Game.debug_log.info("skill tree: %d branches, %d nodes" % [LevelTree.branches.size(), LevelTree.nodes.size()], "mods")
 	for prob in LevelTree.problems():
-		DebugLog.warn(str(prob), "skill_tree")
+		Game.debug_log.warn(str(prob), "skill_tree")
 	_check_translations()
-	DebugLog.info("--- validate done: %d warnings, %d errors" % [DebugLog.warns, DebugLog.errors], "mods")
+	Game.debug_log.info("--- validate done: %d warnings, %d errors" % [Game.debug_log.warns, Game.debug_log.errors], "mods")
 
 
 static func _check_ops(entry: Dictionary, what: String, src: String) -> void:
 	for prob in GunOps.problems(entry.get("ops", [])):
-		DebugLog.warn("%s: %s" % [what, prob], src)
+		Game.debug_log.warn("%s: %s" % [what, prob], src)
 	var rel := str(entry.get("script", ""))
 	if rel != "":
 		var inst := script_instance(str(entry.get("_root", "res://")), rel)
 		if inst == null:
-			DebugLog.error("%s: script '%s' not loaded" % [what, rel], src)
+			Game.debug_log.error("%s: script '%s' not loaded" % [what, rel], src)
 		elif not inst.has_method("apply"):
-			DebugLog.warn("%s: script '%s' has no apply(gun, rng)" % [what, rel], src)
+			Game.debug_log.warn("%s: script '%s' has no apply(gun, rng)" % [what, rel], src)
 
 
 ## Какие названия из данных не переведены в каждом языке.
@@ -338,8 +338,8 @@ static func _check_translations() -> void:
 			if str(n) != "" and not st.has(str(n)) and not miss.has(str(n)):
 				miss.append(str(n))
 		if not miss.is_empty():
-			DebugLog.warn("[%s] %d data names untranslated: %s%s" % [code, miss.size(),
+			Game.debug_log.warn("[%s] %d data names untranslated: %s%s" % [code, miss.size(),
 				", ".join(PackedStringArray(miss.slice(0, 12))), " ..." if miss.size() > 12 else ""], "i18n")
 		for t in I18n.langs[code]["templates"]:
 			if not (str(t) in KNOWN_TEMPLATES):
-				DebugLog.warn("[%s] unknown template '%s'" % [code, str(t)], "i18n")
+				Game.debug_log.warn("[%s] unknown template '%s'" % [code, str(t)], "i18n")

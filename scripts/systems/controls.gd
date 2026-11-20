@@ -1,6 +1,7 @@
 class_name Controls
 extends Node
-## Единая точка ввода для игрока: клавиатура+мышь, геймпад и сенсор.
+## Единая точка ввода для игрока: клавиатура+мышь, геймпад и сенсор. Единственный экземпляр — `Game.controls`
+## (узел-потомок Game, живёт всю игру): пиши `Game.controls.mode`, `Game.controls.label("interact")`.
 ## mode — чем играли последним ("kbm" / "pad" / "touch"); от него зависят прицел, подсказки
 ## с названиями кнопок, курсор и экранные стики. Переключается само по первому же событию.
 ##  Прицел: мышь — точка под курсором; геймпад — правый стик (направление и дальность по наклону);
@@ -21,39 +22,36 @@ const AIM_MAX := 520.0           # ... и при полном (миномёт п
 const AUTO_RANGE := 760.0        # автоприцел видит врагов не дальше
 const PAD_MOTION_MIN := 0.35     # наклон стика, с которого считаем, что взяли геймпад
 
-static var mode := "kbm"
-static var touch_move := Vector2.ZERO    # левый экранный стик, длина 0..1
-static var touch_aim := Vector2.ZERO     # правый экранный стик
-static var touch_fire := false           # палец на правом стике (дальше мёртвой зоны) или на кнопке огня
-static var _aim_dir := Vector2.RIGHT
-static var _aim_len := 0.6
-static var _auto_target: Variant = null  # Vector2 ближайшего врага или null
-static var _manual_aim := false          # в этом кадре прицел ведётся стиком вручную
-static var _self: Controls = null
-static var _frame := -1                  # кадр, для которого уже посчитан прицел
-static var touch_target: Variant = null  # «стрельба по тапу»: мировая точка под пальцем (или null)
-static var _visible_target: Variant = null  # ближайший враг на экране в прямой видимости (для автоогня)
-static var skill_aim := Vector2.ZERO     # сенсор: отдельный стик навыка (длина 0..1), ZERO — не целимся им
-static var _skill_cast: Variant = null   # отпустили стик навыка: {"dir": Vector2, "len": float}; dir = ZERO — тап, целимся как обычно
-static var _shot_ms := 0                 # когда отпустили стик в режиме «по отпусканию» (0 — выстрела нет)
-static var _release_cache := {}          # разобранная настройка touch_release_fire
-static var _release_src := "?"
+var mode := "kbm"
+var touch_move := Vector2.ZERO    # левый экранный стик, длина 0..1
+var touch_aim := Vector2.ZERO     # правый экранный стик
+var touch_fire := false           # палец на правом стике (дальше мёртвой зоны) или на кнопке огня
+var _aim_dir := Vector2.RIGHT
+var _aim_len := 0.6
+var _auto_target: Variant = null  # Vector2 ближайшего врага или null
+var _manual_aim := false          # в этом кадре прицел ведётся стиком вручную
+var _frame := -1                  # кадр, для которого уже посчитан прицел
+var touch_target: Variant = null  # «стрельба по тапу»: мировая точка под пальцем (или null)
+var _visible_target: Variant = null  # ближайший враг на экране в прямой видимости (для автоогня)
+var skill_aim := Vector2.ZERO     # сенсор: отдельный стик навыка (длина 0..1), ZERO — не целимся им
+var _skill_cast: Variant = null   # отпустили стик навыка: {"dir": Vector2, "len": float}; dir = ZERO — тап, целимся как обычно
+var _shot_ms := 0                 # когда отпустили стик в режиме «по отпусканию» (0 — выстрела нет)
+var _release_cache := {}          # разобранная настройка touch_release_fire
+var _release_src := "?"
 const SHOT_WAIT_MS := 600                # отложенный выстрел ждёт перезарядки ствола не дольше
 
 
 func _ready() -> void:
-	_self = self
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	if OS.has_feature("mobile") or OS.has_feature("web_android") or OS.has_feature("web_ios"):
 		_set_mode("touch")
 
 
-static func _set_mode(m: String) -> void:
+func _set_mode(m: String) -> void:
 	if m == mode:
 		return
 	mode = m
-	if _self != null:
-		_self.mode_changed.emit(m)
+	mode_changed.emit(m)
 
 
 func _input(event: InputEvent) -> void:
@@ -76,7 +74,7 @@ func _input(event: InputEvent) -> void:
 
 
 ## Прицел считается один раз за кадр, при первом обращении — порядок узлов не важен.
-static func _update_aim() -> void:
+func _update_aim() -> void:
 	var f := Engine.get_process_frames()
 	if f == _frame:
 		return
@@ -95,7 +93,7 @@ static func _update_aim() -> void:
 	_visible_target = null
 	if mode == "kbm":
 		return
-	var auto_fire := bool(Game.setting("auto_fire")) and not release_fire()
+	var auto_fire := bool(Game.settings.get_value("auto_fire")) and not release_fire()
 	if auto_fire:
 		_visible_target = _nearest_visible()
 	if touch_target != null:
@@ -103,16 +101,16 @@ static func _update_aim() -> void:
 	if not _manual_aim:
 		if auto_fire and _visible_target != null:
 			_auto_target = _visible_target
-		elif bool(Game.setting("auto_aim")) and (Input.is_action_pressed("shoot") or touch_fire):
+		elif bool(Game.settings.get_value("auto_aim")) and (Input.is_action_pressed("shoot") or touch_fire):
 			_auto_target = _nearest_enemy()
 
 
 ## Ближайший живой враг на экране и в прямой видимости (для автоогня), или null.
-static func _nearest_visible() -> Variant:
+func _nearest_visible() -> Variant:
 	var main: Main = Game.main
-	if main == null or main.player == null or main.player.dead or _self == null:
+	if main == null or main.player == null or main.player.dead:
 		return null
-	var vp := _self.get_viewport()
+	var vp := get_viewport()
 	var view := vp.get_canvas_transform().affine_inverse() * vp.get_visible_rect()
 	view = view.grow(-20.0)
 	var pp := main.player.position
@@ -130,7 +128,7 @@ static func _nearest_visible() -> Variant:
 
 
 ## Ближайший живой враг в пределах AUTO_RANGE, лучше — в прямой видимости.
-static func _nearest_enemy() -> Variant:
+func _nearest_enemy() -> Variant:
 	var main: Main = Game.main
 	if main == null or main.player == null or main.player.dead:
 		return null
@@ -157,11 +155,9 @@ static func _nearest_enemy() -> Variant:
 
 
 ## Куда целится игрок (мировые координаты).
-static func aim_world(from: Vector2) -> Vector2:
+func aim_world(from: Vector2) -> Vector2:
 	if mode == "kbm":
-		if _self == null:
-			return from + _aim_dir * AIM_MAX
-		var vp := _self.get_viewport()
+		var vp := get_viewport()
 		return vp.get_canvas_transform().affine_inverse() * vp.get_mouse_position()
 	_update_aim()
 	if touch_target != null:
@@ -172,14 +168,14 @@ static func aim_world(from: Vector2) -> Vector2:
 
 
 ## Направление движения, длина 0..1.
-static func move_vector() -> Vector2:
+func move_vector() -> Vector2:
 	var v := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	return (v + touch_move).limit_length(1.0)
 
 
 ## Типы пушек (id основы), которые на сенсоре стреляют по отпусканию стика.
-static func release_types() -> Dictionary:
-	var src := str(Game.setting("touch_release_fire"))
+func release_types() -> Dictionary:
+	var src := str(Game.settings.get_value("touch_release_fire"))
 	if src != _release_src:
 		_release_src = src
 		var d: Variant = JSON.parse_string(src) if src != "" else {}
@@ -188,8 +184,8 @@ static func release_types() -> Dictionary:
 
 
 ## Текущая пушка стреляет по отпусканию стика (только сенсор и только стиком, не «по тапу»).
-static func release_fire() -> bool:
-	if mode != "touch" or bool(Game.setting("touch_tap_fire")):
+func release_fire() -> bool:
+	if mode != "touch" or bool(Game.settings.get_value("touch_tap_fire")):
 		return false
 	var main: Main = Game.main
 	if main == null or main.player == null:
@@ -199,24 +195,24 @@ static func release_fire() -> bool:
 
 
 ## Отпустили правый стик в режиме «по отпусканию» — выстрелить один раз.
-static func queue_shot() -> void:
+func queue_shot() -> void:
 	_shot_ms = Time.get_ticks_msec()
 
 
 ## Отпустили стик навыка — применить навык (dir — куда, len — насколько далеко 0..1; dir = ZERO — просто тап).
-static func queue_skill(dir: Vector2, len: float) -> void:
+func queue_skill(dir: Vector2, len: float) -> void:
 	_skill_cast = {"dir": dir, "len": len}
 
 
 ## Забрать отложенное применение навыка (или null).
-static func take_skill() -> Variant:
+func take_skill() -> Variant:
 	var c: Variant = _skill_cast
 	_skill_cast = null
 	return c
 
 
 ## Забрать отложенный выстрел. ready — ствол готов стрелять; не готов — ждём до SHOT_WAIT_MS.
-static func take_shot(ready: bool) -> bool:
+func take_shot(ready: bool) -> bool:
 	if _shot_ms == 0:
 		return false
 	if Time.get_ticks_msec() - _shot_ms > SHOT_WAIT_MS:
@@ -229,17 +225,17 @@ static func take_shot(ready: bool) -> bool:
 
 
 ## Зажат ли огонь.
-static func firing() -> bool:
+func firing() -> bool:
 	if Input.is_action_pressed("shoot") or touch_fire:
 		return true
-	if mode != "kbm" and bool(Game.setting("auto_fire")) and not release_fire():
+	if mode != "kbm" and bool(Game.settings.get_value("auto_fire")) and not release_fire():
 		_update_aim()
 		return _visible_target != null
 	return false
 
 
 ## Курсор-прицел на экране: мышь, а на геймпаде и сенсоре — точка прицела.
-static func cursor_screen(ci: CanvasItem) -> Vector2:
+func cursor_screen(ci: CanvasItem) -> Vector2:
 	if mode == "kbm" or Game.main == null or Game.main.player == null:
 		return ci.get_local_mouse_position()
 	var w := aim_world(Game.main.player.position)
@@ -247,7 +243,7 @@ static func cursor_screen(ci: CanvasItem) -> Vector2:
 
 
 ## Нажать / отпустить действие так, будто это кнопка (для экранных кнопок): и состояние, и событие.
-static func press(action: String, on: bool) -> void:
+func press(action: String, on: bool) -> void:
 	var ev := InputEventAction.new()
 	ev.action = action
 	ev.pressed = on
@@ -257,14 +253,14 @@ static func press(action: String, on: bool) -> void:
 # --- Подписи кнопок для подсказок -------------------------------------------------------
 
 ## Подпись действия в текущем режиме: "E" / "Y". На сенсоре — пусто (там подписаны сами кнопки).
-static func label(action: String) -> String:
+func label(action: String) -> String:
 	if mode == "touch":
 		return ""
 	return InputSetup.action_label(action, "pad" if mode == "pad" else "kb")
 
 
 ## Подпись движения: "WASD" / "LS".
-static func move_label() -> String:
+func move_label() -> String:
 	if mode == "pad":
 		return "LS"
 	var parts := PackedStringArray()
@@ -275,7 +271,7 @@ static func move_label() -> String:
 
 
 ## Подпись смены оружия: "1-4/Wheel" / "LB/RB".
-static func weapons_label() -> String:
+func weapons_label() -> String:
 	if mode == "pad":
 		return InputSetup.action_label("prev_weapon", "pad", 1) + "/" + InputSetup.action_label("next_weapon", "pad", 1)
 	return "1-4/" + InputSetup.action_label("next_weapon", "kb", 1)

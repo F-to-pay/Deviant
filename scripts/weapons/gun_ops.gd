@@ -68,7 +68,7 @@ static func run(g: Gun, ops: Variant, rng: RandomNumberGenerator) -> void:
 				if o.size() >= 3:
 					_stat(g, kind, str(o[1]), o[2], rng)
 			_:
-				DebugLog.warn("unknown operation %s" % str(o), "ops")
+				Game.debug_log.warn("unknown operation %s" % str(o), "ops")
 
 
 ## Число из описания: просто число или [мин, макс] (равномерно) или [мин, макс, обычно] — со смещением:
@@ -112,7 +112,7 @@ static func spec_text(v: Variant) -> String:
 
 static func _stat(g: Gun, kind: String, stat: String, v: Variant, rng: RandomNumberGenerator) -> void:
 	if not (stat in g):
-		DebugLog.warn("gun has no stat '%s'" % stat, "ops")
+		Game.debug_log.warn("gun has no stat '%s'" % stat, "ops")
 		return
 	var cur: Variant = g.get(stat)
 	var val: Variant = _value(stat, v, rng)
@@ -174,7 +174,7 @@ static func check(g: Gun, cond: Variant, rng: RandomNumberGenerator = null) -> b
 		cur = g.get(head)
 		val = _value(head, val, rng)
 	else:
-		DebugLog.warn("unknown condition %s" % str(c), "ops")
+		Game.debug_log.warn("unknown condition %s" % str(c), "ops")
 		return true
 	if (cur is int or cur is float or cur is bool) and (val is int or val is float or val is bool):
 		var a := float(cur)

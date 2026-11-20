@@ -299,16 +299,6 @@ static func _rar_name(i: int) -> String:
 	return _c(r["color"], _esc(U.t(str(r["name"]))))
 
 
-const SPECIALS := {
-	"ring": "Shoots a ring of 8 bullets (100% damage) by chance",
-	"nuke10": "Stores damage and fires a nuke",
-	"chaos": "Each bullet deals ×0 to ×2 damage",
-	"expert": "Lightning hits everyone nearby",
-	"singularity": "Every orb is a black hole",
-	"bounce_keep": "Ricochets do not reduce damage",
-}
-
-
 static func _auto_legendaries() -> String:
 	var t := ""
 	var col: Color = GunData.RARITIES[GunData.R_LEGENDARY]["color"]
@@ -324,7 +314,7 @@ static func _auto_legendaries() -> String:
 		fx.append_array(GunOps.describe(l.get("ops", [])))
 		var sp := str(l.get("special", ""))
 		if sp != "":
-			fx.append(U.t(SPECIALS.get(sp, sp)))
+			fx.append(U.t(GunData.SPECIALS.get(sp, sp)))
 		t += "   " + _esc(", ".join(fx)) + "\n"
 		var desc := describe("legendaries", str(l["id"]))
 		if desc != "":
@@ -374,12 +364,12 @@ static func _auto_dict(desc: Dictionary, names: Dictionary) -> String:
 
 static func _auto_rating() -> String:
 	var t := H % U.t("Points") + "\n"
-	t += U.t("(zone − 1) × %d + kills × %d + bosses × %d") % [Game.POINTS_ZONE, Game.POINTS_KILL, Game.POINTS_BOSS] + "\n\n"
+	t += U.t("(zone − 1) × %d + kills × %d + bosses × %d") % [RunConfig.POINTS_ZONE, RunConfig.POINTS_KILL, RunConfig.POINTS_BOSS] + "\n\n"
 	t += H % U.t("Multiplier") + "\n" + U.t("enemy health × enemy damage × (1 + bonuses)") + "\n\n"
-	for d in Game.DIFFICULTY:
+	for d in RunConfig.DIFFICULTY:
 		t += "%s — ×%.2f\n" % [U.t(str(d["n"])), float(d["hp"]) * float(d["dmg"])]
 	t += "\n"
-	for b in Game.RATING_BONUS:
+	for b in RunConfig.RATING_BONUS:
 		var v := float(b[2])
 		t += "%s  %s%d%%\n" % [_esc(U.t(str(b[3]))), "+" if v > 0.0 else "−", roundi(absf(v) * 100.0)]
 	return t
@@ -408,7 +398,7 @@ static func write_guide() -> String:
 	var path := Mods.base_dir().path_join(U.t("modding_guide.txt"))
 	var f := FileAccess.open(path, FileAccess.WRITE)
 	if f == null:
-		DebugLog.error("cannot write %s (%s)" % [path, error_string(FileAccess.get_open_error())], "codex")
+		Game.debug_log.error("cannot write %s (%s)" % [path, error_string(FileAccess.get_open_error())], "codex")
 		return ""
 	var nl := "\r\n" if OS.get_name() == "Windows" else "\n"
 	f.store_string(nl.join(out) + nl)
@@ -457,7 +447,7 @@ static func _reference() -> PackedStringArray:
 			("+" + str(l["arch2"])) if str(l.get("arch2", "")) != "" else "", JSON.stringify(l.get("perks", [])),
 			str(l.get("special", "")), Mods.source_of(str(l.get("_root", "res://")))])
 	r.append("")
-	r.append("[specials]  " + ", ".join(PackedStringArray(SPECIALS.keys())))
+	r.append("[specials]  " + ", ".join(PackedStringArray(GunData.SPECIALS.keys())))
 	r.append("[enemy types]  " + ", ".join(PackedStringArray(EnemyData.TYPES.keys())))
 	r.append("[elite affixes]  " + ", ".join(PackedStringArray(EnemyData.AFFIXES.keys())))
 	r.append("[languages]  " + ", ".join(PackedStringArray(I18n.available())))

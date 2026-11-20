@@ -15,7 +15,7 @@ extends CanvasLayer
 ##  Разобрать», у сундука — «Открыть», на экране смерти — «Ещё раз / В меню».
 ## Расположение и размер каждого элемента — редактор (start_edit, кнопка в «Управлении»),
 ## хранится в настройке touch_layout: {id: {"x": 0..1, "y": 0..1, "s": масштаб}} внутри отступов экрана.
-## Кнопки нажимают обычные действия (Controls.press), так что игра не отличает их от клавиатуры.
+## Кнопки нажимают обычные действия (Game.controls.press), так что игра не отличает их от клавиатуры.
 ## Пока кнопки активны, Godot не имитирует мышь из касаний (иначе любое касание = ЛКМ = огонь).
 
 const STICK_R := 115.0
@@ -65,7 +65,7 @@ func _ready() -> void:
 	add_child(_root)
 	_root.draw.connect(_draw_ui)
 	_load_layout()
-	Game.settings_changed.connect(_on_setting)
+	Game.settings.changed.connect(_on_setting)
 	get_viewport().size_changed.connect(_fit)
 	_fit()
 
@@ -85,7 +85,7 @@ func _on_setting(key: String) -> void:
 
 func _load_layout() -> void:
 	_layout = {}
-	var v: Variant = JSON.parse_string(str(Game.setting("touch_layout"))) if str(Game.setting("touch_layout")) != "" else {}
+	var v: Variant = JSON.parse_string(str(Game.settings.get_value("touch_layout"))) if str(Game.settings.get_value("touch_layout")) != "" else {}
 	var saved: Dictionary = v if v is Dictionary else {}
 	for id in ELEMENTS:
 		var d: Array = ELEMENTS[id]
@@ -99,7 +99,7 @@ func _load_layout() -> void:
 
 
 func _save_layout() -> void:
-	Game.set_setting("touch_layout", JSON.stringify(_layout))
+	Game.settings.set_value("touch_layout", JSON.stringify(_layout))
 
 
 func _pos(id: String) -> Vector2:
@@ -112,23 +112,23 @@ func _radius(id: String) -> float:
 
 
 func _gscale() -> float:
-	return clampf(float(Game.setting("touch_scale")), 0.5, 2.0)
+	return clampf(float(Game.settings.get_value("touch_scale")), 0.5, 2.0)
 
 
 func _tap_fire() -> bool:
-	return bool(Game.setting("touch_tap_fire"))
+	return bool(Game.settings.get_value("touch_tap_fire"))
 
 
 # --- Когда показывать --------------------------------------------------------------------
 
 ## Показывать ли экранные кнопки вообще (настройка + чем играют).
 func _enabled() -> bool:
-	match str(Game.setting("touch_controls")):
+	match str(Game.settings.get_value("touch_controls")):
 		"on":
 			return true
 		"off":
 			return false
-	return Controls.mode == "touch"
+	return Game.controls.mode == "touch"
 
 
 ## Идёт ли игра (а не меню / инвентарь / пауза), где кнопки работают.
@@ -162,13 +162,13 @@ func _release_all() -> void:
 	for i in _touches:
 		var t: Dictionary = _touches[i]
 		if str(t["role"]) == "btn":
-			Controls.press(str(t["action"]), false)
+			Game.controls.press(str(t["action"]), false)
 	_touches.clear()
-	Controls.touch_move = Vector2.ZERO
-	Controls.touch_aim = Vector2.ZERO
-	Controls.touch_fire = false
-	Controls.touch_target = null
-	Controls.skill_aim = Vector2.ZERO
+	Game.controls.touch_move = Vector2.ZERO
+	Game.controls.touch_aim = Vector2.ZERO
+	Game.controls.touch_fire = false
+	Game.controls.touch_target = null
+	Game.controls.skill_aim = Vector2.ZERO
 
 
 # --- Кнопки ----------------------------------------------------------------------------
@@ -244,7 +244,7 @@ func _input(event: InputEvent) -> void:
 		return
 	# первое же касание переключает игру на сенсор — и сразу обрабатывается кнопками
 	if event is InputEventScreenTouch or event is InputEventScreenDrag:
-		Controls._set_mode("touch")
+		Game.controls._set_mode("touch")
 	if not _active():
 		return
 	if event is InputEventScreenTouch:
@@ -271,7 +271,7 @@ func _touch_down(i: int, vpos: Vector2) -> void:
 		return
 	if not b.is_empty():
 		_touches[i] = {"role": "btn", "action": str(b[0]), "base": p, "pos": p, "vpos": vpos}
-		Controls.press(str(b[0]), true)
+		Game.controls.press(str(b[0]), true)
 		Sfx.ui("ui/click", -14.0)
 		return
 	# тап по слоту оружия внизу экрана — выбрать это оружие
@@ -284,7 +284,7 @@ func _touch_down(i: int, vpos: Vector2) -> void:
 				return
 	var role := ""
 	var base := p
-	if bool(Game.setting("touch_static")):
+	if bool(Game.settings.get_value("touch_static")):
 		if p.distance_to(_pos("move")) <= _radius("move") * GRAB:
 			role = "move"
 			base = _pos("move")
@@ -310,21 +310,21 @@ func _touch_up(i: int) -> void:
 	var t: Dictionary = _touches[i]
 	_touches.erase(i)
 	if str(t["role"]) == "btn":
-		Controls.press(str(t["action"]), false)
+		Game.controls.press(str(t["action"]), false)
 	elif str(t["role"]) == "skill":
 		var sv := ((t["pos"] as Vector2) - (t["base"] as Vector2)) / _skill_r()
 		sv = sv.limit_length(1.0)
 		if sv.length() > DEAD:
-			Controls.queue_skill(sv.normalized(), sv.length())
+			Game.controls.queue_skill(sv.normalized(), sv.length())
 		else:
-			Controls.queue_skill(Vector2.ZERO, 0.0)   # тап: бросок туда, куда смотрит ствол
+			Game.controls.queue_skill(Vector2.ZERO, 0.0)   # тап: бросок туда, куда смотрит ствол
 		_update_skill()
-	elif str(t["role"]) == "aim" and Controls.release_fire():
+	elif str(t["role"]) == "aim" and Game.controls.release_fire():
 		# «стрельба по отпусканию»: отпустил отклонённый стик — один выстрел туда, куда он смотрел
 		var base: Vector2 = t["base"]
 		var pos: Vector2 = t["pos"]
 		if ((pos - base) / _radius("aim")).length() > DEAD:
-			Controls.queue_shot()
+			Game.controls.queue_shot()
 	_update_sticks()
 
 
@@ -339,7 +339,7 @@ func _touch_move(i: int, vpos: Vector2) -> void:
 	if role == "skill":
 		_update_skill()
 		return
-	if (role == "move" or role == "aim") and not bool(Game.setting("touch_static")):
+	if (role == "move" or role == "aim") and not bool(Game.settings.get_value("touch_static")):
 		# палец ушёл дальше радиуса — плавающий стик едет за ним
 		var r := _radius(role)
 		var base: Vector2 = t["base"]
@@ -349,14 +349,14 @@ func _touch_move(i: int, vpos: Vector2) -> void:
 	_update_sticks()
 
 
-## Стик навыка → Controls.skill_aim (ZERO, пока палец в мёртвой зоне или стика нет).
+## Стик навыка → Game.controls.skill_aim (ZERO, пока палец в мёртвой зоне или стика нет).
 func _update_skill() -> void:
 	var v := Vector2.ZERO
 	for i in _touches:
 		var t: Dictionary = _touches[i]
 		if str(t["role"]) == "skill":
 			v = (((t["pos"] as Vector2) - (t["base"] as Vector2)) / _skill_r()).limit_length(1.0)
-	Controls.skill_aim = v if v.length() > DEAD else Vector2.ZERO
+	Game.controls.skill_aim = v if v.length() > DEAD else Vector2.ZERO
 
 
 ## «Стрельба по тапу»: мировая точка под пальцем — каждый кадр (камера едет за игроком).
@@ -367,7 +367,7 @@ func _update_tap_targets() -> void:
 		if str(t["role"]) == "tap":
 			var vpos: Vector2 = t["vpos"]
 			target = get_viewport().get_canvas_transform().affine_inverse() * vpos
-	Controls.touch_target = target
+	Game.controls.touch_target = target
 
 
 func _update_sticks() -> void:
@@ -391,14 +391,14 @@ func _update_sticks() -> void:
 		else:
 			aiming = true
 			aim = v if v.length() > DEAD else Vector2.ZERO
-	Controls.touch_move = mv
-	Controls.touch_aim = aim
-	if Controls.release_fire():
-		Controls.touch_fire = tapping   # стиком только целимся, выстрел — при отпускании (_touch_up)
-	elif bool(Game.setting("auto_aim")):
-		Controls.touch_fire = aiming or tapping
+	Game.controls.touch_move = mv
+	Game.controls.touch_aim = aim
+	if Game.controls.release_fire():
+		Game.controls.touch_fire = tapping   # стиком только целимся, выстрел — при отпускании (_touch_up)
+	elif bool(Game.settings.get_value("auto_aim")):
+		Game.controls.touch_fire = aiming or tapping
 	else:
-		Controls.touch_fire = aim != Vector2.ZERO or tapping
+		Game.controls.touch_fire = aim != Vector2.ZERO or tapping
 	_update_tap_targets()
 
 
@@ -502,7 +502,7 @@ func _tool(t: String) -> void:
 		"size":
 			pass
 		"reset":
-			Game.set_setting("touch_layout", "")
+			Game.settings.set_value("touch_layout", "")
 			_load_layout()
 			_sel = ""
 		"done":
@@ -528,7 +528,7 @@ func _draw_ui() -> void:
 	var main: Main = Game.main
 	var fb := U.font_bold()
 	if not main.hud.dead_screen:
-		var auto := bool(Game.setting("auto_aim"))
+		var auto := bool(Game.settings.get_value("auto_aim"))
 		_draw_stick(c, _stick_of("move"), _pos("move"), _radius("move"), "")
 		if not _tap_fire():
 			_draw_stick(c, _stick_of("aim"), _pos("aim"), _radius("aim"), U.t("FIRE") if auto else "")

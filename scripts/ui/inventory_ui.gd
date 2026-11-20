@@ -132,7 +132,7 @@ func _gui_input(event: InputEvent) -> void:
 
 ## Указатель: мышь или палец, а на геймпаде — свой указатель.
 func _pointer() -> Vector2:
-	return _pad if Controls.mode == "pad" and _pad.x >= 0.0 else get_local_mouse_position()
+	return _pad if Game.controls.mode == "pad" and _pad.x >= 0.0 else get_local_mouse_position()
 
 
 func _pointer_move(pos: Vector2) -> void:
@@ -368,7 +368,7 @@ func _process(delta: float) -> void:
 	if not visible:
 		_pad = Vector2(-1, -1)
 		return
-	if Controls.mode == "pad":
+	if Game.controls.mode == "pad":
 		if _pad.x < 0.0:
 			_pad_reset()
 		var v := Input.get_vector("move_left", "move_right", "move_up", "move_down")
@@ -460,7 +460,7 @@ func _draw() -> void:
 	var preview: Gun = dg if dg != null else _hovered_gun()
 	_zone(_drop_rect(), U.t("Drop"), U.t("drag here or outside the window"), Color(1.0, 0.75, 0.35),
 		hover_kind in ["drop", "out"] and dg != null, f, fb)
-	var scrap_sub := U.t("drag here or press [%s]") % Controls.label("scrap") if Controls.mode != "touch" \
+	var scrap_sub := U.t("drag here or press [%s]") % Game.controls.label("scrap") if Game.controls.mode != "touch" \
 		else U.t("drag a gun here")
 	if preview != null:
 		scrap_sub = U.t("+%d rounds (%s)") % [_scrap_preview(preview), GunData.ammo_label(preview.base_ammo_type())]
@@ -488,7 +488,7 @@ func _draw() -> void:
 
 	# Карточка под курсором
 	var hg := _hovered_gun()
-	if Controls.mode == "pad" and _pad.x >= 0.0:
+	if Game.controls.mode == "pad" and _pad.x >= 0.0:
 		_draw_pad_pointer()
 	if hg != null:
 		var m := _pointer()
@@ -509,14 +509,14 @@ func _draw_pad_pointer() -> void:
 
 ## Подсказка внизу — под то, чем играют.
 func _hint() -> String:
-	match Controls.mode:
+	match Game.controls.mode:
 		"pad":
 			return U.t("Stick — pointer · A — select / hold to drag · Y — slot ↔ backpack · %s — recycle · %s — close") % [
-				Controls.label("scrap"), Controls.label("inventory")]
+				Game.controls.label("scrap"), Game.controls.label("inventory")]
 		"touch":
 			return U.t("Drag guns with your finger · tap — select / equip · drag to Drop or Recycle")
 	return U.t("Drag guns with the mouse · LMB — select / equip · RMB — slot ↔ backpack · %s — recycle · %s/%s — close") % [
-		Controls.label("scrap"), InputSetup.action_label("inventory", "kb", 1), Controls.label("pause")]
+		Game.controls.label("scrap"), InputSetup.action_label("inventory", "kb", 1), Game.controls.label("pause")]
 
 
 ## Место, откуда тащим: пустая рамка-пунктир.

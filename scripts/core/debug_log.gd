@@ -7,24 +7,25 @@ extends RefCounted
 ## Сообщения движка (ошибки скриптов модов, push_warning, print) берутся из файла журнала Godot
 ## (user://logs/godot.log, на ПК пишется по умолчанию): poll_engine_log() дочитывает новые строки.
 ## На всякий случай add() потокобезопасна — мьютекс.
+## Единственный экземпляр — `Game.debug_log` (как `Game.settings`, `Game.profile`): пиши `Game.debug_log.warn(...)`.
 
 const MAX := 2000
 
-static var enabled := false          # отладчик включён (на этот запуск)
-static var logger_active := false    # журнал движка читается — push_warning из warn()/error() вернётся оттуда
-static var _log_path := ""           # файл журнала Godot
-static var _log_pos := 0             # сколько байт уже прочитано
-static var _pending := {}            # запись, ждущая строки "at: ..." с местом ошибки
-static var entries: Array = []       # [{level, text, src, n}]
-static var version := 0              # растёт при каждом изменении — консоль перерисовывается
-static var warns := 0
-static var errors := 0
-static var missing_tr := {}          # язык -> {строка: true} — строки без перевода, встреченные в игре
-static var _index := {}              # level|text|src -> запись
-static var _mx := Mutex.new()
+var enabled := false          # отладчик включён (на этот запуск)
+var logger_active := false    # журнал движка читается — push_warning из warn()/error() вернётся оттуда
+var _log_path := ""           # файл журнала Godot
+var _log_pos := 0             # сколько байт уже прочитано
+var _pending := {}            # запись, ждущая строки "at: ..." с местом ошибки
+var entries: Array = []       # [{level, text, src, n}]
+var version := 0              # растёт при каждом изменении — консоль перерисовывается
+var warns := 0
+var errors := 0
+var missing_tr := {}          # язык -> {строка: true} — строки без перевода, встреченные в игре
+var _index := {}              # level|text|src -> запись
+var _mx := Mutex.new()
 
 
-static func add(level: String, text: String, src: String = "") -> void:
+func add(level: String, text: String, src: String = "") -> void:
 	_mx.lock()
 	var key := level + "|" + text + "|" + src
 	if _index.has(key):
@@ -44,25 +45,25 @@ static func add(level: String, text: String, src: String = "") -> void:
 	_mx.unlock()
 
 
-static func info(text: String, src: String = "") -> void:
+func info(text: String, src: String = "") -> void:
 	add("info", text, src)
 
 
 ## Предупреждение: в журнал и (если Logger движка не установлен) в консоль Godot.
-static func warn(text: String, src: String = "") -> void:
+func warn(text: String, src: String = "") -> void:
 	add("warn", text, src)
 	if not logger_active:
 		push_warning(("[%s] " % src if src != "" else "") + text)
 
 
-static func error(text: String, src: String = "") -> void:
+func error(text: String, src: String = "") -> void:
 	add("error", text, src)
 	if not logger_active:
 		push_error(("[%s] " % src if src != "" else "") + text)
 
 
 ## Строка без перевода (вызывается из I18n, только при включённом отладчике).
-static func missing(lang: String, s: String) -> void:
+func missing(lang: String, s: String) -> void:
 	_mx.lock()
 	if not missing_tr.has(lang):
 		missing_tr[lang] = {}
@@ -74,7 +75,7 @@ static func missing(lang: String, s: String) -> void:
 		add("tr", "[%s] no translation: \"%s\"" % [lang, s], "i18n")
 
 
-static func clear() -> void:
+func clear() -> void:
 	_mx.lock()
 	entries.clear()
 	_index.clear()
@@ -87,7 +88,7 @@ static func clear() -> void:
 # --- Журнал движка ------------------------------------------------------------------
 
 ## Начать читать файл журнала Godot (если он ведётся). Читаем с начала — ошибки запуска тоже нужны.
-static func start_engine_log() -> void:
+func start_engine_log() -> void:
 	if not bool(ProjectSettings.get_setting("debug/file_logging/enable_file_logging", false)) and \
 			not bool(ProjectSettings.get_setting("debug/file_logging/enable_file_logging.pc", false)):
 		info("Godot file logging is off — engine errors are not captured", "debug")
@@ -98,7 +99,7 @@ static func start_engine_log() -> void:
 
 
 ## Дочитать новые целые строки журнала и разобрать. Зовётся консолью несколько раз в секунду.
-static func poll_engine_log() -> void:
+func poll_engine_log() -> void:
 	if _log_path == "":
 		return
 	var f := FileAccess.open(_log_path, FileAccess.READ)
@@ -124,7 +125,7 @@ static func poll_engine_log() -> void:
 
 ## Строка журнала Godot: "ERROR: ...", "WARNING: ...", "SCRIPT ERROR: ...", "USER WARNING: ...",
 ## за ней — "   at: функция (файл:строка)". Остальное — print().
-static func _engine_line(line: String) -> void:
+func _engine_line(line: String) -> void:
 	var t := line.strip_edges()
 	if t == "":
 		return
@@ -146,7 +147,7 @@ static func _engine_line(line: String) -> void:
 	add("print", t, "engine")
 
 
-static func _flush_pending() -> void:
+func _flush_pending() -> void:
 	if _pending.is_empty():
 		return
 	var e := _pending
@@ -163,7 +164,7 @@ static func _flush_pending() -> void:
 
 
 ## Копия записей для отрисовки (без гонок с другими потоками).
-static func snapshot() -> Array:
+func snapshot() -> Array:
 	_mx.lock()
 	var out := entries.duplicate()
 	_mx.unlock()

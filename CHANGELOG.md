@@ -12,6 +12,7 @@
   After the zone is laid out, `finish_zone()` computes `xp_scale`, so the XP of all its enemies adds up to exactly that budget; a kill gives `Game.enemy_xp × xp_scale` (`Director.kill_xp`). The F3 line shows the scale.
 - The Director likes elites: champion and leader packs come up 1.6× as often (`Director.ELITE_LOVE`; capped at 45% and 32% per pack). Normal packs are still the majority only in the first zones.
 - Boss zones follow the same rule: the boss pays out the whole budget.
+- The debug command `skip` pays like a cleared zone: every skipped zone gives the Director's budget (1.5 levels) instead of the old average formula, and a skipped boss zone pays the stage-boss coins (30, was 15). The coin formula for kills now lives in one place (`Balance.kill_coin_value`).
 
 ### Languages
 - Norwegian Bokmål is split out of the base game into the mod `Mods/Norwegian/` (strings, codex and modding guide). It is enabled by default, but **frozen**: new strings are no longer translated and show in English. The base game now has English and Russian only.

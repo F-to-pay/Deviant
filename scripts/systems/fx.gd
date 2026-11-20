@@ -71,7 +71,7 @@ func _process(delta: float) -> void:
 
 
 func shake(amount: float) -> void:
-	var k := float(Game.setting("shake"))
+	var k := float(Game.settings.get_value("shake"))
 	shake_amt = minf(maxf(shake_amt, amount * k), 18.0 * k)
 
 
@@ -160,7 +160,7 @@ func heal_fx(pos: Vector2) -> void:
 
 
 func damage_number(pos: Vector2, amount: float, crit: bool, el: int, on_player: bool = false) -> void:
-	if not on_player and not bool(Game.setting("damage_numbers")):
+	if not on_player and not bool(Game.settings.get_value("damage_numbers")):
 		return
 	if nums.size() >= MAX_NUMS:
 		nums.remove_at(0)

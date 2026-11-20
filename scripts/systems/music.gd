@@ -162,9 +162,9 @@ func title_of(path: String) -> String:
 
 
 func volume_text() -> String:
-	if bool(Game.setting("music_muted")):
+	if bool(Game.settings.get_value("music_muted")):
 		return U.t("off")
-	return "%d%%" % roundi(float(Game.setting("music_volume")) * 100.0)
+	return "%d%%" % roundi(float(Game.settings.get_value("music_volume")) * 100.0)
 
 
 # --- Воспроизведение ---------------------------------------------------------------
@@ -232,7 +232,7 @@ func _prepare(c: String) -> void:
 	_next[c] = path
 	if path.begins_with("res://"):
 		if ResourceLoader.load_threaded_request(path, "AudioStream") != OK:
-			DebugLog.warn("cannot start loading %s" % path, "music")
+			Game.debug_log.warn("cannot start loading %s" % path, "music")
 	elif not _raw_tasks.has(path):
 		_raw_tasks[path] = WorkerThreadPool.add_task(_load_raw.bind(path), false, "music " + path.get_file())
 
@@ -335,13 +335,13 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	var volume := float(Game.setting("music_volume"))
+	var volume := float(Game.settings.get_value("music_volume"))
 	if event.is_action_pressed("music_up"):
 		_set_volume(volume + VOL_STEP, false)
 	elif event.is_action_pressed("music_down"):
 		_set_volume(volume - VOL_STEP, false)
 	elif event.is_action_pressed("music_mute"):
-		_set_volume(volume, not bool(Game.setting("music_muted")))
+		_set_volume(volume, not bool(Game.settings.get_value("music_muted")))
 	else:
 		return
 	get_viewport().set_input_as_handled()
@@ -349,13 +349,13 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _set_volume(v: float, m: bool) -> void:
-	Game.set_setting("music_volume", clampf(snappedf(v, 0.01), 0.0, 1.0))
-	Game.set_setting("music_muted", m)
+	Game.settings.set_value("music_volume", clampf(snappedf(v, 0.01), 0.0, 1.0))
+	Game.settings.set_value("music_muted", m)
 	_apply_volume()
 
 
 func _apply_volume() -> void:
-	var v := 0.0 if bool(Game.setting("music_muted")) else float(Game.setting("music_volume")) * _duck
+	var v := 0.0 if bool(Game.settings.get_value("music_muted")) else float(Game.settings.get_value("music_volume")) * _duck
 	AudioServer.set_bus_mute(_bus, v <= 0.001)
 	AudioServer.set_bus_volume_db(_bus, linear_to_db(maxf(v, 0.0001)))
 

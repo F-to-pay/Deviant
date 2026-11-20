@@ -1,7 +1,7 @@
 class_name LevelTree
 extends RefCounted
-## Дерево навыков игрока: каждый уровень героя (Game.hero_level) даёт POINTS_PER_LEVEL очков, очки тратятся на узлы.
-## Прокачка живёт один забег (Game.tree: id узла -> уровень) и сбрасывается новым забегом — это не метапрогрессия.
+## Дерево навыков игрока: каждый уровень героя (Game.state.hero_level) даёт POINTS_PER_LEVEL очков, очки тратятся на узлы.
+## Прокачка живёт один забег (Game.state.tree: id узла -> уровень) и сбрасывается новым забегом — это не метапрогрессия.
 ##
 ## Данные — в data/skill_branches.json (ветки: вкладки меню) и data/skill_tree.json (узлы); моды добавляют и правят
 ## записи по id так же, как перки пушек (GunData.merge_list). Узел:
@@ -83,7 +83,7 @@ static func branch_color(b: Dictionary) -> Color:
 
 
 static func level(id: String) -> int:
-	return int(Game.tree.get(id, 0))
+	return int(Game.state.tree.get(id, 0))
 
 
 static func max_level(n: Dictionary) -> int:
@@ -93,7 +93,7 @@ static func max_level(n: Dictionary) -> int:
 static func current_hero() -> String:
 	if Game.main != null and Game.main.player != null:
 		return Game.main.player.hero
-	return Game.hero
+	return Game.profile.hero
 
 
 ## Личный узел доступен только своему герою; общий — всем.
@@ -115,7 +115,7 @@ static func branch_nodes(bid: String, hero: String) -> Array:
 # --- Очки ---------------------------------------------------------------------------
 
 static func total_points() -> int:
-	return POINTS_PER_LEVEL * maxi(0, Game.hero_level - 1)
+	return POINTS_PER_LEVEL * maxi(0, Game.state.hero_level - 1)
 
 
 ## Цена уровня N узла тира T: T × N, всего до уровня L — T × L(L+1)/2.
@@ -125,11 +125,11 @@ static func cost_of(n: Dictionary, lvl: int) -> int:
 
 static func spent_points() -> int:
 	var s := 0
-	for id in Game.tree:
+	for id in Game.state.tree:
 		var n := node(str(id))
 		if n.is_empty():
 			continue
-		var l := int(Game.tree[id])
+		var l := int(Game.state.tree[id])
 		s += maxi(1, int(n.get("tier", 1))) * l * (l + 1) / 2
 	return s
 
@@ -176,7 +176,7 @@ static func class_rival(n: Dictionary) -> String:
 static func buy(id: String) -> bool:
 	if block(id) != "":
 		return false
-	Game.tree[id] = level(id) + 1
+	Game.state.tree[id] = level(id) + 1
 	recompute()
 	if Game.main != null and Game.main.player != null:
 		Game.main.player.on_tree_changed()
@@ -189,9 +189,9 @@ static func buy(id: String) -> bool:
 static func recompute() -> void:
 	stats.clear()
 	var hero := current_hero()
-	for id in Game.tree:
+	for id in Game.state.tree:
 		var n := node(str(id))
-		var lv := int(Game.tree[id])
+		var lv := int(Game.state.tree[id])
 		if n.is_empty() or lv <= 0 or not hero_ok(n, hero):
 			continue
 		for ef in n.get("effects", []):
@@ -208,7 +208,7 @@ static func stat(name: String) -> float:
 static func effect_value(ef: Dictionary, lvl: int) -> float:
 	var v := float(ef.get("first", 0.0)) + float(ef.get("step", 0.0)) * float(lvl - 1)
 	if bool(ef.get("per_hero", false)):
-		v *= float(maxi(1, Game.hero_level))
+		v *= float(maxi(1, Game.state.hero_level))
 	return v
 
 

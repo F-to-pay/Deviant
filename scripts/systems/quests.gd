@@ -19,13 +19,6 @@ const TYPES := {
 	"coins": {"text": "Collect %d coins", "min": 120, "max": 240, "reward": 4},
 }
 
-static var active: Array = []
-
-
-static func reset() -> void:
-	active = []
-
-
 ## Предложения Гильдии в городе перед зоной level: разные виды, не совпадающие с уже взятыми.
 static func make_offers(level: int, rng: RandomNumberGenerator) -> Array:
 	var kinds: Array = TYPES.keys()
@@ -41,21 +34,21 @@ static func make_offers(level: int, rng: RandomNumberGenerator) -> Array:
 		var t: Dictionary = TYPES[k]
 		var need := rng.randi_range(int(t["min"]), int(t["max"]))
 		if k == "coins":
-			need = int(minf(Game.money(float(need) * Game.econ(level)), 1.0e15))
-		out.append({"type": str(k), "need": need, "have": 0, "reward": int(t["reward"]) + 2 * ((level - 1) / Game.TOWN_EVERY),
-			"coins": Game.money(float(COINS_REWARD) * Game.econ(level))})
+			need = int(minf(Balance.money(float(need) * Balance.econ(level)), 1.0e15))
+		out.append({"type": str(k), "need": need, "have": 0, "reward": int(t["reward"]) + 2 * ((level - 1) / RunConfig.TOWN_EVERY),
+			"coins": Balance.money(float(COINS_REWARD) * Balance.econ(level))})
 	return out
 
 
 static func has_type(t: String) -> bool:
-	for q in active:
+	for q in Game.state.quests:
 		if str(q["type"]) == t:
 			return true
 	return false
 
 
 static func can_take() -> bool:
-	return active.size() < MAX_ACTIVE
+	return Game.state.quests.size() < MAX_ACTIVE
 
 
 static func take(q: Dictionary) -> bool:
@@ -63,27 +56,27 @@ static func take(q: Dictionary) -> bool:
 		return false
 	var c := q.duplicate()
 	c["have"] = 0
-	active.append(c)
+	Game.state.quests.append(c)
 	return true
 
 
 static func abandon(i: int) -> void:
-	if i >= 0 and i < active.size():
-		active.remove_at(i)
+	if i >= 0 and i < Game.state.quests.size():
+		Game.state.quests.remove_at(i)
 
 
 ## Что-то произошло: засчитать задания этого вида. Выполненное — награда сразу.
 static func progress(t: String, n: float = 1.0) -> void:
-	if active.is_empty() or n <= 0:
+	if Game.state.quests.is_empty() or n <= 0:
 		return
-	for q in active.duplicate():
+	for q in Game.state.quests.duplicate():
 		if str(q["type"]) != t:
 			continue
 		q["have"] = int(minf(float(q["need"]), float(q["have"]) + minf(n, 1.0e15)))
 		if int(q["have"]) >= int(q["need"]):
-			active.erase(q)
+			Game.state.quests.erase(q)
 			Game.add_meta(int(q["reward"]))
-			Game.add_coins(float(q.get("coins", 0.0)))
+			Game.state.add_coins(float(q.get("coins", 0.0)))
 			Game.say(U.tm("Quest complete: %s — +%d ancient coins, +%d coins", [text(q), str(int(q["reward"])), U.money(float(q.get("coins", 0.0)))]),
 				Color(0.6, 1.0, 1.0))
 			Sfx.ui("pickup/relic", -3.0)

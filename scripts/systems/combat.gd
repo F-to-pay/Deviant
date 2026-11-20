@@ -74,7 +74,7 @@ static func explode(pos: Vector2, r: float, dmg: float, crit: bool, el: int, tea
 		var pd := pos.distance_to(pl.position)
 		# hurt_dot, а не take_damage: самоподрыв не должен давать i-frames (абуз). Перекат спасает.
 		if not pl.dead and pl.dodge_t <= 0.0 and pd < r + pl.radius * 0.6:
-			var lvl_mult: float = Game.gun_dmg_mult(Game.zone_level)
+			var lvl_mult: float = Balance.gun_dmg_mult(Game.state.zone_level)
 			var pk := lerpf(1.0, 0.2, clampf(pd / r, 0.0, 1.0))
 			pl.hurt_dot(dmg / lvl_mult * pk * SELF_DAMAGE, -1)
 	else:

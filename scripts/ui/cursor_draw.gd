@@ -8,9 +8,9 @@ var follow_aim := false
 
 
 func _draw() -> void:
-	if not follow_aim and Controls.mode != "kbm":
+	if not follow_aim and Game.controls.mode != "kbm":
 		return
-	var m := Controls.cursor_screen(self) if follow_aim else get_local_mouse_position()
+	var m := Game.controls.cursor_screen(self) if follow_aim else get_local_mouse_position()
 	var main: Main = Game.main
 	var gap := 6.0
 	var reload := 0.0

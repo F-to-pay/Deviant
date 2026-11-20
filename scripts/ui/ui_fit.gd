@@ -12,16 +12,16 @@ const KEYS := ["ui_scale", "ui_margin_x", "ui_margin_y", "ui_safe_area"]
 
 
 static func scale() -> float:
-	return clampf(float(Game.setting("ui_scale")), 0.7, 1.5)
+	return clampf(float(Game.settings.get_value("ui_scale")), 0.7, 1.5)
 
 
 ## Отступы (слева, сверху, справа, снизу) в координатах вьюпорта.
 static func insets(vp: Viewport) -> Vector4:
 	var size := vp.get_visible_rect().size
-	var mx := float(Game.setting("ui_margin_x"))
-	var my := float(Game.setting("ui_margin_y"))
+	var mx := float(Game.settings.get_value("ui_margin_x"))
+	var my := float(Game.settings.get_value("ui_margin_y"))
 	var out := Vector4(mx, my, mx, my)
-	if bool(Game.setting("ui_safe_area")) and (OS.has_feature("mobile") or OS.has_feature("web_android") or OS.has_feature("web_ios")):
+	if bool(Game.settings.get_value("ui_safe_area")) and (OS.has_feature("mobile") or OS.has_feature("web_android") or OS.has_feature("web_ios")):
 		var safe := DisplayServer.get_display_safe_area()
 		var wpos := DisplayServer.window_get_position()
 		var wsize := DisplayServer.window_get_size()

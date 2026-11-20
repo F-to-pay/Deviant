@@ -34,7 +34,19 @@ const R_ABSURD := 5
 const RESERVE_MAGS := 4
 const LOOT_GUN_LOADED := false   # новые пушки с пола/из сундуков приходят с пустым магазином
 
-## Спецфишки легендарок, реализованные в коде (projectiles/player), которые что-то взрывают.
+## Спецфишки легендарок, реализованные в коде (projectiles/player): id -> описание (ключ перевода, показывается в справочнике).
+## Единственный список: по нему же `Mods.validate` проверяет поле "special" легендарок. Новая спецфишка — запись здесь,
+## логика в `Projectiles` / `Player` и строка в lang/ru.json.
+const SPECIALS := {
+	"ring": "Shoots a ring of 8 bullets (100% damage) by chance",
+	"nuke10": "Stores damage and fires a nuke",
+	"chaos": "Each bullet deals ×0 to ×2 damage",
+	"expert": "Lightning hits everyone nearby",
+	"singularity": "Every orb is a black hole",
+	"bounce_keep": "Ricochets do not reduce damage",
+}
+
+## Из них те, что что-то взрывают.
 const EXPLOSIVE_SPECIALS := ["nuke10"]
 
 static var ARCH: Dictionary = {}

@@ -1,8 +1,8 @@
 class_name AntiPlayer
 extends Boss
-## Антиигрок — босс-«зеркало»: стреляет из лучшей пушки, найденной игроком (Game.best_gun), и пользуется навыком его героя.
+## Антиигрок — босс-«зеркало»: стреляет из лучшей пушки, найденной игроком (Game.state.best_gun), и пользуется навыком его героя.
 ## Держится на эффективной дальности пушки, но не дальше 15 м (MAX_RANGE), пятится, если подошли вплотную,
-## уходит рывками. Здоровье — как у мобов: растёт с зоной (Game.enemy_hp_mult). Появляется вместо обычного босса (roll).
+## уходит рывками. Здоровье — как у мобов: растёт с зоной (Balance.enemy_hp_mult). Появляется вместо обычного босса (roll).
 ## Урон его пушки нормирован: устойчивый урон в секунду ≈ урон босса × GUN_DPS_K (иначе пушка за 200 урона убивала бы с трёх выстрелов).
 ## Навык героя: граната — мина с задержкой под игроком, благословение — следующий залп втрое сильнее, удар — рубит вплотную
 ## с замахом. Перки навыков не копируются. Стрелять из пушек с миной / взрывом — через Projectiles (team 1).
@@ -43,7 +43,7 @@ var dmg_mult: float = 1.0
 
 ## Выпал ли Антиигрок на этой боссовой зоне.
 static func roll(level: int, rng: RandomNumberGenerator) -> bool:
-	return level >= ANTI_MIN_ZONE and Game.best_gun != null and rng.randf() < ANTI_CHANCE
+	return level >= ANTI_MIN_ZONE and Game.state.best_gun != null and rng.randf() < ANTI_CHANCE
 
 
 func setup_anti(lvl: int, rng: RandomNumberGenerator) -> void:
@@ -51,13 +51,13 @@ func setup_anti(lvl: int, rng: RandomNumberGenerator) -> void:
 	patterns = []
 	radius = 15.0
 	speed = MOVE_SPEED
-	max_hp = HP_BASE * Game.enemy_hp_mult(lvl) / HP_DIV
+	max_hp = HP_BASE * Balance.enemy_hp_mult(lvl, float(Game.run["hp"])) / HP_DIV
 	hp = max_hp
 	title = U.t("Anti-Player")
 	hero_id = Game.main.player.hero
 	var hc := Heroes.color(hero_id)
 	color = Color.from_hsv(fposmod(hc.h + 0.5, 1.0), clampf(hc.s, 0.3, 0.9), 0.85)   # цвет героя наизнанку
-	gun_ref = Game.best_gun
+	gun_ref = Game.state.best_gun
 	var g := gun_ref
 	var fr := minf(g.fire_rate, FIRE_RATE_CAP)
 	dmg_mult = dmg * GUN_DPS_K / maxf(1.0, g.dps()) * g.fire_rate / fr

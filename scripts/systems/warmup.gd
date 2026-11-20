@@ -123,7 +123,7 @@ func _run() -> void:
 		_progress = 0.05 + 0.3 * music.prepared_ratio()
 		await get_tree().process_frame
 	if music.prepared_ratio() < 1.0:
-		DebugLog.warn("music is still loading after %.0f s — continuing" % (MUSIC_TIMEOUT_MS / 1000.0), "warmup")
+		Game.debug_log.warn("music is still loading after %.0f s — continuing" % (MUSIC_TIMEOUT_MS / 1000.0), "warmup")
 
 	_step_to("Preparing fonts", 0.35)
 	var jobs: Array = []
@@ -161,7 +161,7 @@ func _run() -> void:
 	_warm.queue_redraw()
 
 	_step_to("Ready", 1.0)
-	DebugLog.info("warmup: %d ms, %d glyphs, %d guns" % [Time.get_ticks_msec() - t0, _glyphs, guns.size()], "warmup")
+	Game.debug_log.info("warmup: %d ms, %d glyphs, %d guns" % [Time.get_ticks_msec() - t0, _glyphs, guns.size()], "warmup")
 	await get_tree().process_frame
 	_done = true
 	_screen.mouse_filter = Control.MOUSE_FILTER_IGNORE

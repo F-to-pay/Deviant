@@ -274,7 +274,7 @@ func fire_nuke(g: Gun, pos: Vector2, dir: Vector2, dmg_mult: float = 1.0) -> Pro
 	p.accel = 1.5
 	p.life = 1.5
 	p.max_life = 1.5
-	var lvl_mult: float = Game.gun_dmg_mult(g.level)
+	var lvl_mult: float = Balance.gun_dmg_mult(g.level)
 	p.dmg = Gun.NUKE_COST * 0.4 * lvl_mult * dmg_mult
 	p.proc = 1.0
 	p.eff_range = FAR
@@ -504,17 +504,7 @@ func reflect(from: Vector2, dir: Vector2, r: float, half_arc: float, mult: float
 
 func _step(p: Proj, delta: float, zone: Zone, player: Player, main: Main) -> void:
 	if p.kind == K_SHELL:
-		# мина летит над всем, ни во что не врезается и взрывается в точке падения
-		p.age += delta
-		p.life -= delta
-		p.pos = p.start.lerp(p.target, clampf(p.age / p.max_life, 0.0, 1.0))
-		if p.life <= 0.0:
-			p.pos = p.target
-			if not p.payload.is_empty():
-				main.spawn_turret(p.payload, p.target)
-			else:
-				_detonate(p, p.target)
-			p.dead = true
+		_step_shell(p, delta, main)
 		return
 	p.age += delta
 	p.life -= delta
@@ -525,7 +515,36 @@ func _step(p: Proj, delta: float, zone: Zone, player: Player, main: Main) -> voi
 			_enemy_explode(p)
 		p.dead = true
 		return
+	if _steer(p, delta, zone, player, main):
+		return
+	_accelerate(p, delta)
+	var move := _displacement(p, delta)
+	var np := p.pos + move
+	if zone.blocks_shot_at(np):
+		_hit_wall(p, np, zone, main)
+		return
+	p.pos = np
+	p.traveled += move.length()
+	_collide(p, player, main)
 
+
+## Мина (K_SHELL): летит над всем, ни во что не врезается и взрывается (или ставит турель) в точке падения.
+func _step_shell(p: Proj, delta: float, main: Main) -> void:
+	p.age += delta
+	p.life -= delta
+	p.pos = p.start.lerp(p.target, clampf(p.age / p.max_life, 0.0, 1.0))
+	if p.life <= 0.0:
+		p.pos = p.target
+		if not p.payload.is_empty():
+			main.spawn_turret(p.payload, p.target)
+		else:
+			_detonate(p, p.target)
+		p.dead = true
+
+
+## Управление в полёте: самонаведение (вражеское — на героя, своё — на ближайшего врага), бумеранг, телепорт, посев.
+## true — снаряд закончился прямо здесь (бумеранг вернулся), остальной шаг пропускается.
+func _steer(p: Proj, delta: float, zone: Zone, player: Player, main: Main) -> bool:
 	if p.team == 1 and p.homing > 0.0 and player != null and not player.dead:
 		# вражеский самонаводящийся: поворот к игроку с ограниченной угловой скоростью
 		var seek_diff := wrapf((player.position - p.pos).angle() - p.vel.angle(), -PI, PI)
@@ -555,7 +574,7 @@ func _step(p: Proj, delta: float, zone: Zone, player: Player, main: Main) -> voi
 				p.life = maxf(p.life, 0.2)
 				if to.length() < 26.0:
 					p.dead = true
-					return
+					return true
 		if p.teleport > 0.0 and p.kind != K_GRENADE and p.kind != K_ROCKET and p.kind != K_SHELL:
 			p.tele_t -= delta
 			if p.tele_t <= 0.0:
@@ -567,55 +586,62 @@ func _step(p: Proj, delta: float, zone: Zone, player: Player, main: Main) -> voi
 			if p.seeder_t <= 0.0:
 				p.seeder_t = p.seeder
 				_seed(p)
+	return false
 
+
+## Разгон и сопротивление воздуха.
+func _accelerate(p: Proj, delta: float) -> void:
 	if p.accel != 0.0:
 		var sp := p.vel.length() * (1.0 + p.accel * delta)
 		p.vel = p.vel.normalized() * minf(sp, p.max_speed)
 	if p.drag > 0.0:
 		p.vel *= maxf(0.0, 1.0 - p.drag * delta)
 
+
+## Смещение за кадр: скорость плюс боковая «змейка» (sine).
+func _displacement(p: Proj, delta: float) -> Vector2:
 	var move := p.vel * delta
 	if p.sine > 0.0 and p.vel.length_squared() > 1.0:
 		var perp := p.vel.normalized().orthogonal()
 		# Боковое смещение A*sin(wt) -> скорость A*w*cos(wt); A ~ 3.5*sine пикселей.
 		move += perp * cos(p.age * 14.0 + p.sine_phase) * (p.sine * 3.5) * 14.0 * delta
-	var np := p.pos + move
+	return move
 
-	# Стены
-	if zone.blocks_shot_at(np):
-		if p.bounces > 0:
-			p.bounces -= 1
-			var bx := zone.blocks_shot_at(Vector2(np.x, p.pos.y))
-			var by := zone.blocks_shot_at(Vector2(p.pos.x, np.y))
-			if bx:
-				p.vel.x = -p.vel.x
-			if by:
-				p.vel.y = -p.vel.y
-			if not bx and not by:
-				p.vel = -p.vel
-			p.hit.clear()
-			if p.kind == K_GRENADE or p.kind == K_BOMBLET:
-				p.vel *= 0.7  # гранаты катятся по полу — урон не теряют
-			else:
-				if not p.bounce_keep:
-					p.dmg *= RICOCHET_MULT
-				if p.team == 0:
-					Sfx.at("hit/wall", p.pos, -16.0, 1.3, 0.1, 2, 0.06)
-			return
-		if p.team == 0:
-			if p.explode_r <= 0.0 and p.kind != K_ROCKET and p.kind != K_GRENADE:
-				Sfx.at("hit/wall", p.pos, -14.0, 1.0, 0.1, 3, 0.05)
-			_impact(p, p.pos)
-		elif _enemy_explodes(p):
-			_enemy_explode(p)
+
+## Снаряд упёрся в стену в точке np: рикошет (если остались) или попадание/взрыв и конец.
+func _hit_wall(p: Proj, np: Vector2, zone: Zone, main: Main) -> void:
+	if p.bounces > 0:
+		p.bounces -= 1
+		var bx := zone.blocks_shot_at(Vector2(np.x, p.pos.y))
+		var by := zone.blocks_shot_at(Vector2(p.pos.x, np.y))
+		if bx:
+			p.vel.x = -p.vel.x
+		if by:
+			p.vel.y = -p.vel.y
+		if not bx and not by:
+			p.vel = -p.vel
+		p.hit.clear()
+		if p.kind == K_GRENADE or p.kind == K_BOMBLET:
+			p.vel *= 0.7  # гранаты катятся по полу — урон не теряют
 		else:
-			main.fx.spark(p.pos, -p.vel.normalized(), p.color, 3, 120.0)
-		p.dead = true
+			if not p.bounce_keep:
+				p.dmg *= RICOCHET_MULT
+			if p.team == 0:
+				Sfx.at("hit/wall", p.pos, -16.0, 1.3, 0.1, 2, 0.06)
 		return
-	p.pos = np
-	p.traveled += move.length()
+	if p.team == 0:
+		if p.explode_r <= 0.0 and p.kind != K_ROCKET and p.kind != K_GRENADE:
+			Sfx.at("hit/wall", p.pos, -14.0, 1.0, 0.1, 3, 0.05)
+		_impact(p, p.pos)
+	elif _enemy_explodes(p):
+		_enemy_explode(p)
+	else:
+		main.fx.spark(p.pos, -p.vel.normalized(), p.color, 3, 120.0)
+	p.dead = true
 
-	# Попадания
+
+## Попадания после перемещения: свой снаряд — по врагам рядом (мимо уже поражённых), вражеский — по герою и турелям.
+func _collide(p: Proj, player: Player, main: Main) -> void:
 	if p.team == 0:
 		var cands: Array = main.grid_hash.query(p.pos, p.radius + 50.0)
 		for o in cands:

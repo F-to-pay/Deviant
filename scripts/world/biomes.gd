@@ -42,4 +42,4 @@ const LIST := [
 static func for_level(level: int) -> Dictionary:
 	if level == 1:
 		return LIST[0]
-	return LIST[(level - 1 + Game.biome_offset) % LIST.size()]
+	return LIST[(level - 1 + Game.state.biome_offset) % LIST.size()]

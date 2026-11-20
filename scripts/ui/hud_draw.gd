@@ -30,38 +30,38 @@ func _draw() -> void:
 		if main.near_item != null and is_instance_valid(main.near_item):
 			var g: Gun = main.near_item.gun
 			GunCard.draw_card(self, g, _card_pos(g, main.near_item.position, vp), p.gun())
-			if Controls.mode != "touch":   # на сенсоре вместо подсказки — кнопки
+			if Game.controls.mode != "touch":   # на сенсоре вместо подсказки — кнопки
 				U.draw_text_c(self, fb, Vector2(vp.x * 0.5, vp.y - 170.0), U.t("[%s] Pick up     [%s] Swap with current     [%s] Scrap for ammo") % [
-					Controls.label("interact"), Controls.label("swap"), Controls.label("scrap")], 18, Color(1, 1, 1), 4)
-		elif main.near_chest != null and is_instance_valid(main.near_chest) and Controls.mode != "touch":
-			U.draw_text_c(self, fb, Vector2(vp.x * 0.5, vp.y - 170.0), U.t("[%s] Open chest") % Controls.label("interact"), 18, Color(1.0, 0.9, 0.5), 4)
-		elif main.near_reset and Controls.mode != "touch":
-			U.draw_text_c(self, fb, Vector2(vp.x * 0.5, vp.y - 170.0), U.t("[%s] Restart: new starting town, new stock") % Controls.label("interact"),
+					Game.controls.label("interact"), Game.controls.label("swap"), Game.controls.label("scrap")], 18, Color(1, 1, 1), 4)
+		elif main.near_chest != null and is_instance_valid(main.near_chest) and Game.controls.mode != "touch":
+			U.draw_text_c(self, fb, Vector2(vp.x * 0.5, vp.y - 170.0), U.t("[%s] Open chest") % Game.controls.label("interact"), 18, Color(1.0, 0.9, 0.5), 4)
+		elif main.near_reset and Game.controls.mode != "touch":
+			U.draw_text_c(self, fb, Vector2(vp.x * 0.5, vp.y - 170.0), U.t("[%s] Restart: new starting town, new stock") % Game.controls.label("interact"),
 				18, Color(0.55, 0.9, 1.0), 4)
-		elif hud.stall == null and main.near_stall != null and is_instance_valid(main.near_stall) and Controls.mode != "touch":
-			U.draw_text_c(self, fb, Vector2(vp.x * 0.5, vp.y - 170.0), U.t("[%s] Talk") % Controls.label("interact"),
+		elif hud.stall == null and main.near_stall != null and is_instance_valid(main.near_stall) and Game.controls.mode != "touch":
+			U.draw_text_c(self, fb, Vector2(vp.x * 0.5, vp.y - 170.0), U.t("[%s] Talk") % Game.controls.label("interact"),
 				18, main.near_stall.color().lightened(0.3), 4)
 		if hud.stall != null and is_instance_valid(hud.stall):
 			_draw_stall(hud.stall, vp, f, fb)
 	_draw_messages(vp, fb)
 	_draw_banner(vp, fb, f)
-	if hud.help_t > 0.0 and Game.zone_level == 1 and Controls.mode != "touch":
+	if hud.help_t > 0.0 and Game.state.zone_level == 1 and Game.controls.mode != "touch":
 		var a := clampf(hud.help_t / 2.0, 0.0, 1.0)
 		U.draw_text_c(self, f, Vector2(vp.x * 0.5, vp.y - 205.0),
 			U.t("%s — move · %s — shoot · %s — dodge · %s — reload · %s — loot · %s — inventory · %s — weapons") % [
-				Controls.move_label(), Controls.label("shoot"), Controls.label("dodge"), Controls.label("reload"),
-				"/".join(PackedStringArray([Controls.label("interact"), Controls.label("swap"), Controls.label("scrap")])),
-				InputSetup.action_label("inventory", "pad" if Controls.mode == "pad" else "kb", 1), Controls.weapons_label()],
+				Game.controls.move_label(), Game.controls.label("shoot"), Game.controls.label("dodge"), Game.controls.label("reload"),
+				"/".join(PackedStringArray([Game.controls.label("interact"), Game.controls.label("swap"), Game.controls.label("scrap")])),
+				InputSetup.action_label("inventory", "pad" if Game.controls.mode == "pad" else "kb", 1), Game.controls.weapons_label()],
 			15, Color(1, 1, 1, 0.85 * a), 3)
 	if Game.debug:
 		U.draw_text(self, f, Vector2(12, vp.y - 12), U.t("FPS %d · enemies %d · projectiles %d") % [Engine.get_frames_per_second(),
 			main.enemies.size(), main.projectiles.count()], 13, Color(0.7, 1.0, 0.7), 3)
-		U.draw_text(self, f, Vector2(12, vp.y - 30), "LV %d · XP %.1f / %.1f · total %.1f" % [Game.hero_level, Game.xp,
-			Game.xp_need(Game.hero_level), Game.xp_total], 13, Color(0.7, 1.0, 0.7), 3)
+		U.draw_text(self, f, Vector2(12, vp.y - 30), "LV %d · XP %.1f / %.1f · total %.1f" % [Game.state.hero_level, Game.state.xp,
+			Balance.xp_need(Game.state.hero_level), Game.state.xp_total], 13, Color(0.7, 1.0, 0.7), 3)
 		U.draw_text(self, f, Vector2(12, vp.y - 48), "DIR " + main.director.describe(), 13, Color(0.7, 1.0, 0.7), 3)
 	if hud.fade > 0.0:
 		draw_rect(Rect2(-position - Vector2(64, 64), get_viewport_rect().size + Vector2(128, 128)), Color(0, 0, 0, hud.fade))
-	if bool(Game.setting("show_fps")) and not Game.debug:
+	if bool(Game.settings.get_value("show_fps")) and not Game.debug:
 		U.draw_text_r(self, f, Vector2(vp.x - 12, vp.y - 12), "FPS %d" % Engine.get_frames_per_second(), 14, Color(0.7, 1.0, 0.7), 3)
 	if hud.dead_screen:
 		_draw_death(vp, f, fb)
@@ -104,8 +104,8 @@ func _draw_hp(p: Player, f: Font, fb: Font) -> void:
 		var extra := "+%d" % (p.flasks - fmax)
 		U.draw_text(self, fb, Vector2(fx, r.position.y + 17.0), extra, 15, Color(1.0, 0.55, 0.6), 3)
 		fx += U.text_w(fb, extra, 15) + 8.0
-	if Controls.mode != "touch":
-		U.draw_text(self, f, Vector2(fx, r.position.y + 17.0), "[%s]" % Controls.label("flask"), 12, Color(1.0, 0.7, 0.7, 0.8), 2)
+	if Game.controls.mode != "touch":
+		U.draw_text(self, f, Vector2(fx, r.position.y + 17.0), "[%s]" % Game.controls.label("flask"), 12, Color(1.0, 0.7, 0.7, 0.8), 2)
 	# Перезарядка переката
 	var dk := 1.0 - clampf(p.dodge_cd / p.dodge_max_cd(), 0.0, 1.0)
 	var dodge_ready := p.dodge_cd <= 0.0
@@ -131,36 +131,36 @@ func _draw_hp(p: Player, f: Font, fb: Font) -> void:
 
 func _draw_zone_info(main: Main, f: Font, fb: Font) -> void:
 	var zname := U.t(str(main.zone.biome.get("name", "")))
-	if Game.in_town:
-		U.draw_text(self, fb, Vector2(24, 86), U.t("Town · %s") % Game.town_name, 17, Color(1.0, 0.85, 0.5), 3)
+	if Game.state.in_town:
+		U.draw_text(self, fb, Vector2(24, 86), U.t("Town · %s") % Game.state.town_name, 17, Color(1.0, 0.85, 0.5), 3)
 		U.draw_text(self, f, Vector2(24, 108), U.t("Next: zone %d · %s") % [main.zone.level, zname], 14, Color(0.8, 0.8, 0.85), 3)
 	else:
-		U.draw_text(self, fb, Vector2(24, 86), U.t("Zone %d · %s") % [Game.zone_level, zname], 17, Color(1, 1, 1), 3)
-		U.draw_text(self, f, Vector2(24, 108), U.t("Kills: %d   Time: %s") % [Game.kills, U.fmt_time(Game.run_time)], 14, Color(0.8, 0.8, 0.85), 3)
-	if Game.best_zone > 0:
-		U.draw_text(self, f, Vector2(24, 128), U.t("Best: zone %d") % Game.best_zone, 13, Color(0.7, 0.7, 0.75), 3)
+		U.draw_text(self, fb, Vector2(24, 86), U.t("Zone %d · %s") % [Game.state.zone_level, zname], 17, Color(1, 1, 1), 3)
+		U.draw_text(self, f, Vector2(24, 108), U.t("Kills: %d   Time: %s") % [Game.state.kills, U.fmt_time(Game.state.run_time)], 14, Color(0.8, 0.8, 0.85), 3)
+	if Game.profile.best_zone > 0:
+		U.draw_text(self, f, Vector2(24, 128), U.t("Best: zone %d") % Game.profile.best_zone, 13, Color(0.7, 0.7, 0.75), 3)
 	# монеты забега и древние (мета)
 	var y := 152.0
 	Coin.draw_icon(self, Vector2(32, y - 5.0), 7.0, false)
-	var cs := U.money(Game.coins)
+	var cs := U.money(Game.state.coins)
 	U.draw_text(self, fb, Vector2(44, y), cs, 15, Color(1.0, 0.85, 0.35), 3)
 	var x := 44.0 + U.text_w(fb, cs, 15) + 22.0
 	Coin.draw_icon(self, Vector2(x, y - 5.0), 7.0, true)
-	U.draw_text(self, fb, Vector2(x + 12.0, y), U.fmt(float(Game.meta_coins)), 15, Color(0.6, 1.0, 1.0), 3)
+	U.draw_text(self, fb, Vector2(x + 12.0, y), U.fmt(float(Game.profile.meta_coins)), 15, Color(0.6, 1.0, 1.0), 3)
 	# уровень героя, опыт и свободные очки дерева навыков
 	var ly := y + 24.0
-	_bar(Rect2(24, ly - 9.0, 120, 5), Game.xp / Game.xp_need(Game.hero_level), Color(0.55, 0.9, 0.4))
-	U.draw_text(self, f, Vector2(150, ly - 3.0), U.t("Level %d") % Game.hero_level, 12, Color(0.75, 0.95, 0.65, 0.9), 2)
+	_bar(Rect2(24, ly - 9.0, 120, 5), Game.state.xp / Balance.xp_need(Game.state.hero_level), Color(0.55, 0.9, 0.4))
+	U.draw_text(self, f, Vector2(150, ly - 3.0), U.t("Level %d") % Game.state.hero_level, 12, Color(0.75, 0.95, 0.65, 0.9), 2)
 	var fp := LevelTree.free_points()
 	var qy := ly + 20.0
 	if fp > 0:
 		var hint := U.t("Skill points: %d") % fp
-		if Controls.mode != "touch":
-			hint = "[%s] " % Controls.label("skill_tree") + hint
+		if Game.controls.mode != "touch":
+			hint = "[%s] " % Game.controls.label("skill_tree") + hint
 		U.draw_text(self, f, Vector2(24, qy), hint, 13, Color(0.75, 1.0, 0.55), 3)
 		qy += 18.0
 	# задания Гильдии
-	for q in Quests.active:
+	for q in Game.state.quests:
 		U.draw_text(self, f, Vector2(24, qy), "• " + Quests.line(q), 13, Color(0.75, 0.95, 0.95, 0.9), 3)
 		qy += 18.0
 
@@ -182,7 +182,7 @@ func _draw_stall(st: Stall, vp: Vector2, f: Font, fb: Font) -> void:
 	for s in soon:
 		U.draw_text_c(self, f, Vector2(cx, y), U.t("%s — soon") % U.t(str(s)), 16, Color(0.6, 0.6, 0.65), 0)
 		y += 28.0
-	var close := U.t("Walk away to close") if Controls.mode == "touch" else U.t("[%s] Close") % Controls.label("interact")
+	var close := U.t("Walk away to close") if Game.controls.mode == "touch" else U.t("[%s] Close") % Game.controls.label("interact")
 	U.draw_text_c(self, f, Vector2(cx, r.end.y - 14.0), close, 14, Color(0.7, 0.7, 0.75), 3)
 
 
@@ -238,10 +238,10 @@ func _draw_weapons(p: Player, vp: Vector2, f: Font, fb: Font) -> void:
 			res = 1
 			ammo_s = U.t("%d / %d   ·   reserve ∞") % [ag.ammo, ag.mag_size]
 		if p.is_reloading():
-			ammo_s = U.t("RELOADING") + ("  ·  " + U.t("on the beat: [%s] or fire") % Controls.label("reload") if ag.rhythm else "")
+			ammo_s = U.t("RELOADING") + ("  ·  " + U.t("on the beat: [%s] or fire") % Game.controls.label("reload") if ag.rhythm else "")
 		elif ag.ammo <= 0:
 			if res > 0:
-				ammo_s = U.t("EMPTY — [%s]") % Controls.label("reload") if Controls.mode != "touch" else U.t("EMPTY")
+				ammo_s = U.t("EMPTY — [%s]") % Game.controls.label("reload") if Game.controls.mode != "touch" else U.t("EMPTY")
 			else:
 				ammo_s = U.t("NO AMMO: %s") % ag.ammo_name()
 		var rb := ag.rhythm_bonus
@@ -330,40 +330,40 @@ func _draw_death(vp: Vector2, f: Font, fb: Font) -> void:
 	U.draw_text_c(self, fb, Vector2(vp.x * 0.5, vp.y * 0.26), U.t(hud.death_title), 60, Color(1.0, 0.3, 0.25, a), 7)
 	var y := vp.y * 0.38
 	var lines: Array = [
-		U.t("Reached zone %d") % Game.zone_level,
-		U.t("Kills: %d   ·   Time: %s   ·   Guns found: %d") % [Game.kills, U.fmt_time(Game.run_time), Game.guns_found],
-		U.t("Ancient coins: +%d (total %d)") % [Game.meta_run, Game.meta_coins],
-		Menu.run_info(),
-		U.t("Rating: %s   (points %s × %.2f)%s") % [U.fmt(float(Game.rating())), U.fmt(float(Game.run_points())), Game.rating_mult(),
-			U.t("   — NEW BEST!") if Game.new_rating_record else U.t("   · best: ") + U.fmt(float(Game.best_rating))],
+		U.t("Reached zone %d") % Game.state.zone_level,
+		U.t("Kills: %d   ·   Time: %s   ·   Guns found: %d") % [Game.state.kills, U.fmt_time(Game.state.run_time), Game.state.guns_found],
+		U.t("Ancient coins: +%d (total %d)") % [Game.state.meta_run, Game.profile.meta_coins],
+		PauseScreen.run_info(),
+		U.t("Rating: %s   (points %s × %.2f)%s") % [U.fmt(float(Game.state.rating(Game.run))), U.fmt(float(Game.state.points())), RunConfig.rating_mult(Game.run),
+			U.t("   — NEW BEST!") if Game.state.new_rating_record else U.t("   · best: ") + U.fmt(float(Game.profile.best_rating))],
 	]
 	for l in lines:
 		U.draw_text_c(self, f, Vector2(vp.x * 0.5, y), str(l), 22, Color(1, 1, 1, a), 3)
 		y += 36.0
-	if Game.best_gun != null:
+	if Game.state.best_gun != null:
 		U.draw_text_c(self, f, Vector2(vp.x * 0.5, y), U.t("Best find:"), 18, Color(0.8, 0.8, 0.8, a), 3)
 		y += 30.0
-		U.draw_text_c(self, fb, Vector2(vp.x * 0.5, y), Game.best_gun.gun_name, 22, Color(Game.best_gun.rarity_color(), a), 4)
+		U.draw_text_c(self, fb, Vector2(vp.x * 0.5, y), Game.state.best_gun.gun_name, 22, Color(Game.state.best_gun.rarity_color(), a), 4)
 		y += 40.0
 	if hud.new_record:
 		U.draw_text_c(self, fb, Vector2(vp.x * 0.5, y), U.t("NEW RECORD!"), 28, Color(1.0, 0.85, 0.3, a), 4)
-	elif not Game.counts_for_records():
+	elif not RunConfig.counts_for_records(Game.run):
 		U.draw_text_c(self, f, Vector2(vp.x * 0.5, y), U.t("Custom start — record not counted"), 18, Color(0.8, 0.8, 0.8, a), 3)
 	else:
-		U.draw_text_c(self, f, Vector2(vp.x * 0.5, y), U.t("Best: zone %d") % Game.best_zone, 18, Color(0.8, 0.8, 0.8, a), 3)
+		U.draw_text_c(self, f, Vector2(vp.x * 0.5, y), U.t("Best: zone %d") % Game.profile.best_zone, 18, Color(0.8, 0.8, 0.8, a), 3)
 	y += 60.0
 	if hud.death_t > 0.6:
-		if Controls.mode != "touch":    # на сенсоре — кнопки (TouchControls)
-			var again := InputSetup.action_label("restart", "pad", 1) if Controls.mode == "pad" else Controls.label("reload")
+		if Game.controls.mode != "touch":    # на сенсоре — кнопки (TouchControls)
+			var again := InputSetup.action_label("restart", "pad", 1) if Game.controls.mode == "pad" else Game.controls.label("reload")
 			U.draw_text_c(self, fb, Vector2(vp.x * 0.5, y), U.t("[%s] — one more time") % again, 24, Color(1, 1, 1, a), 4)
-			U.draw_text_c(self, f, Vector2(vp.x * 0.5, y + 36.0), U.t("[%s] — main menu") % Controls.label("pause"), 18, Color(0.8, 0.8, 0.8, a), 3)
+			U.draw_text_c(self, f, Vector2(vp.x * 0.5, y + 36.0), U.t("[%s] — main menu") % Game.controls.label("pause"), 18, Color(0.8, 0.8, 0.8, a), 3)
 
 
 ## Где показать карточку пушки на земле (настройка gun_card): справа, слева или над самой пушкой.
 func _card_pos(g: Gun, world: Vector2, vp: Vector2) -> Vector2:
 	var card_h := GunCard.height(g)
 	var cy := clampf(vp.y * 0.5 - card_h * 0.5, 70.0, vp.y - card_h - 150.0)
-	match str(Game.setting("gun_card")):
+	match str(Game.settings.get_value("gun_card")):
 		"left":
 			return Vector2(24.0, maxf(cy, 150.0))
 		"above":

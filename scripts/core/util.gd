@@ -2,6 +2,15 @@ class_name U
 extends RefCounted
 ## Общие утилиты: шрифты, стихии, форматирование чисел.
 
+## Значение из файла настроек приводим к типу значения по умолчанию d.
+static func typed(d: Variant, v: Variant) -> Variant:
+	if d is float:
+		return float(v)
+	if d is bool:
+		return bool(v)
+	return str(v)
+
+
 const EL_NONE := -1
 const EL_FIRE := 0
 const EL_SHOCK := 1

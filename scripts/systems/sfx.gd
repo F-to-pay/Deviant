@@ -51,7 +51,7 @@ func _ready() -> void:
 	add_child(_reload)
 	rescan()
 	_apply_volume()
-	Game.settings_changed.connect(_on_setting)
+	Game.settings.changed.connect(_on_setting)
 
 
 func _process(delta: float) -> void:
@@ -190,11 +190,11 @@ func empty_click() -> void:
 # --- Громкость -------------------------------------------------------------------
 
 func volume_text() -> String:
-	return "%d%%" % roundi(float(Game.setting("sfx_volume")) * 100.0)
+	return "%d%%" % roundi(float(Game.settings.get_value("sfx_volume")) * 100.0)
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	var volume := float(Game.setting("sfx_volume"))
+	var volume := float(Game.settings.get_value("sfx_volume"))
 	if event.is_action_pressed("sfx_up"):
 		_set_volume(volume + VOL_STEP)
 	elif event.is_action_pressed("sfx_down"):
@@ -211,12 +211,12 @@ func _on_setting(key: String) -> void:
 
 
 func _set_volume(v: float) -> void:
-	Game.set_setting("sfx_volume", clampf(snappedf(v, 0.01), 0.0, 1.0))
+	Game.settings.set_value("sfx_volume", clampf(snappedf(v, 0.01), 0.0, 1.0))
 
 
 func _apply_volume() -> void:
-	_set_bus(_bus, float(Game.setting("sfx_volume")))
-	_set_bus(_ui_bus, float(Game.setting("ui_volume")))
+	_set_bus(_bus, float(Game.settings.get_value("sfx_volume")))
+	_set_bus(_ui_bus, float(Game.settings.get_value("ui_volume")))
 
 
 static func _set_bus(idx: int, v: float) -> void:

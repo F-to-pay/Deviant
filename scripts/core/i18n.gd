@@ -99,8 +99,8 @@ static func t(s: String) -> String:
 		return e
 	if e is Dictionary:
 		return str(e.get("text", e.get("m", s)))
-	if DebugLog.enabled and lang != "en" and s != "":
-		DebugLog.missing(lang, s)
+	if Game.debug_log.enabled and lang != "en" and s != "":
+		Game.debug_log.missing(lang, s)
 	return s
 
 

@@ -9,5 +9,5 @@ modding_guide.txt
 music/**/*.ogg
 music/**/*.mp3
 music/**/*.wav
-# резервная копия полной истории (до вычистки музыки)
+# резервная копия полной истории (до вычистки музыки) лежит вне проекта: ../Deviant_backup/deviant-full-history.bundle
 _backup/

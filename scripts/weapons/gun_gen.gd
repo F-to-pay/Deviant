@@ -553,7 +553,7 @@ static func _finalize(g: Gun, rng: RandomNumberGenerator, leg: Dictionary) -> vo
 		g.leech = 0.0   # и у легендарок
 	if g.element == U.EL_CURSE:
 		g.damage *= CURSE_DMG   # цена проклятия — откуда бы оно ни взялось (мод, Эррозия)
-	var lvl_mult: float = Game.gun_dmg_mult(g.level)
+	var lvl_mult: float = Balance.gun_dmg_mult(g.level)
 	g.damage *= lvl_mult * float(rar.get("damage_mult", 1.0))
 	g.fire_rate = clampf(g.fire_rate, 0.25, 30.0)
 	g.spread = clampf(g.spread, 0.0, 110.0)
