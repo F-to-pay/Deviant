@@ -88,6 +88,16 @@ func _ready() -> void:
 	_apply_volume()
 
 
+## При выходе: остановить плееры и забрать у загрузчика заготовленные в фоне треки — иначе движок
+## сообщает об утечке объектов (ObjectDB): играющий поток и недогруженные заготовки остаются висеть.
+func _exit_tree() -> void:
+	for p in _players:
+		(p as AudioStreamPlayer).stop()
+		(p as AudioStreamPlayer).stream = null
+	_saved = {}
+	_drop_prepared()
+
+
 # --- Сценарии игры ---------------------------------------------------------------
 
 func on_menu() -> void:

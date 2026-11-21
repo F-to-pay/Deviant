@@ -33,7 +33,7 @@ if (-not $Godot -or -not (Test-Path $Godot)) {
     Write-Error "Не найден Godot. Укажите -Godot <путь к консольному exe> или переменную GODOT_BIN."
 }
 
-$ASSERT = @('unit_core', 'skip_zone', 'zone_source', 'mod_data', 'run_save')
+$ASSERT = @('unit_core', 'skip_zone', 'zone_source', 'mod_data', 'run_save', 'leak_check')
 $GOLDEN = @('smoke', 'ui_screens', 'ui_actions', 'gen_fingerprint', 'proj_fingerprint', 'player_state', 'controls_state',
     'console_commands', 'data_tables')
 $all = $ASSERT + $GOLDEN
