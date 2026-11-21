@@ -8,6 +8,7 @@ extends Node
 ## Числа баланса и кривые — `Balance`, правила забега и рейтинг — `RunConfig`, файл — `Save`.
 
 signal message(text: String, color: Color)
+signal safe_area_changed   # вырез/скругления переехали (переворот альбома на 180° размер окна не меняет)
 
 var settings := Settings.new()
 var profile := Profile.new()
@@ -20,6 +21,7 @@ var debug: bool = false
 var debug_console: DebugConsole = null
 var controls := Controls.new()   # ввод игрока (kbm / геймпад / сенсор): режим, прицел, подписи кнопок
 var debug_log := DebugLog.new()   # журнал отладчика модов (предупреждения загрузчика, ошибки скриптов, строки движка)
+var _safe_area := Rect2i()
 
 
 func _ready() -> void:
@@ -35,6 +37,18 @@ func _ready() -> void:
 		_start_debugger()
 	load_content()
 	settings.apply_all()
+
+
+## На телефоне следит за безопасной зоной: при развороте альбома на 180° `size_changed` не приходит,
+## а вырез под камеру оказывается с другой стороны — интерфейс надо пересчитать отступы.
+func _process(_delta: float) -> void:
+	if not (OS.has_feature("mobile") or OS.has_feature("web_android") or OS.has_feature("web_ios")):
+		set_process(false)
+		return
+	var safe := DisplayServer.get_display_safe_area()
+	if safe != _safe_area:
+		_safe_area = safe
+		safe_area_changed.emit()
 
 
 func save() -> void:

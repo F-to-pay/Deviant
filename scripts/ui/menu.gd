@@ -36,6 +36,7 @@ func _ready() -> void:
 	Game.settings.changed.connect(_on_setting)
 	Game.controls.mode_changed.connect(_on_input_mode)
 	get_viewport().size_changed.connect(_fit)
+	Game.safe_area_changed.connect(_fit)
 
 
 ## Экраны создаются один раз и живут, пока живо меню: их состояние (страница справочника, выбранная пушка Мастерской)

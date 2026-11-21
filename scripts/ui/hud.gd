@@ -44,6 +44,7 @@ func _ready() -> void:
 	Game.message.connect(_on_message)
 	Game.settings.changed.connect(_on_setting)
 	get_viewport().size_changed.connect(fit)
+	Game.safe_area_changed.connect(fit)
 	fit()
 
 

@@ -67,6 +67,7 @@ func _ready() -> void:
 	_load_layout()
 	Game.settings.changed.connect(_on_setting)
 	get_viewport().size_changed.connect(_fit)
+	Game.safe_area_changed.connect(_fit)
 	_fit()
 
 
